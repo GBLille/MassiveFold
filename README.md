@@ -1,5 +1,9 @@
 ![header](imgs/header.jpg)
 
+# MassiveFold
+
+This Alphafold version is in development.
+
 # AlphaFold
 
 This package provides an implementation of the inference pipeline of AlphaFold
