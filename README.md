@@ -2,7 +2,7 @@
 
 # MassiveFold
 
-This Alphafold version is in development.
+This Alphafold version is in development. It aims at massively expand the sampling of structure predictions following Björn Wallner's AFsample version of AlphaFold and to provide some optimizations in the computing.
 
 # AlphaFold
 
