@@ -3,7 +3,7 @@
 # MassiveFold
 
 This Alphafold version is in development. It aims at massively expand the sampling of structure predictions following Björn Wallner's AFsample version of AlphaFold and to provide some optimizations in the computing.
-Starting from AlphaFold v2.3.1, the project plans to integrate Björn Wallner's modifications and bring additional optimizations.
+Starting from AlphaFold v2.3.1, the project plans to integrate Björn Wallner's modifications and bring additional optimizations. These optimizations involve parallelization, dropout, compiling neural network models and adding checkpoints.
 
 # AlphaFold
 
