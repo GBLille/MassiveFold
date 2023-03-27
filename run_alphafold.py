@@ -121,9 +121,9 @@ flags.DEFINE_integer('num_multimer_predictions_per_model', 5, 'How many '
                      'generated per model. E.g. if this is 2 and there are 5 '
                      'models then there will be 10 predictions per input. '
                      'Note: this FLAG only applies if model_preset=multimer')
-flags.DEFINE_integer('nstruct_start', 0, 'model to start with, can be used to parallelize jobs, '
-                     'e.g --nstruct 20 --nstruct_start 20 will only make model _20'
-                     'e.g --nstruct 21 --nstruct_start 20 will make model _20 and _21 etc.')
+flags.DEFINE_integer('start_multimer_prediction', 0, 'model to start with, can be used to parallelize jobs, '
+                     'e.g --num_multimer_predictions_per_model 20 --start_multimer_prediction 20 will only make model _20'
+                     'e.g --num_multimer_predictions_per_model 21 --start_multimer_prediction 20 will make model _20 and _21 etc.')
 flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
                      'have been written to disk instead of running the MSA '
                      'tools. The MSA files are looked up in the output '
