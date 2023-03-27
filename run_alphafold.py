@@ -190,7 +190,8 @@ def predict_structure(
     amber_relaxer: relax.AmberRelaxation,
     benchmark: bool,
     random_seed: int,
-    models_to_relax: ModelsToRelax):
+    models_to_relax: ModelsToRelax,
+    alignments_only: bool):
   """Predicts structure using AlphaFold for the given sequence."""
   logging.info('Predicting %s', fasta_name)
   timings = {}
@@ -473,7 +474,8 @@ def main(argv):
         amber_relaxer=amber_relaxer,
         benchmark=FLAGS.benchmark,
         random_seed=random_seed,
-        models_to_relax=FLAGS.models_to_relax)
+        models_to_relax=FLAGS.models_to_relax,
+        alignments_only=FLAGS.alignments_only)
 
 
 if __name__ == '__main__':
