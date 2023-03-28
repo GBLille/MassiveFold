@@ -22,6 +22,18 @@ NUM_MSA_SEQ = shape_placeholders.NUM_MSA_SEQ
 NUM_EXTRA_SEQ = shape_placeholders.NUM_EXTRA_SEQ
 NUM_TEMPLATES = shape_placeholders.NUM_TEMPLATES
 
+DROPOUT_RATES = ml_collections.ConfigDict({
+    'dropout_rate_msa_row_attention_with_pair_bias': 0.15,
+    'dropout_rate_msa_column_attention': 0.0,
+    'dropout_rate_msa_transition': 0.0,
+    'dropout_rate_outer_product_mean': 0.0,
+    'dropout_rate_triangle_attention_starting_node': 0.25,
+    'dropout_rate_triangle_attention_ending_node': 0.25,
+    'dropout_rate_triangle_multiplication_outgoing': 0.25,
+    'dropout_rate_triangle_multiplication_incoming': 0.25,
+    'dropout_rate_pair_transition': 0.0,
+    'dropout_rate_structure_module': 0.1
+})
 
 def model_config(name: str) -> ml_collections.ConfigDict:
   """Get the ConfigDict of a CASP14 model."""
@@ -248,21 +260,21 @@ CONFIG = ml_collections.ConfigDict({
             'evoformer_num_block': 48,
             'evoformer': {
                 'msa_row_attention_with_pair_bias': {
-                    'dropout_rate': 0.15,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_msa_row_attention_with_pair_bias'],
                     'gating': True,
                     'num_head': 8,
                     'orientation': 'per_row',
                     'shared_dropout': True
                 },
                 'msa_column_attention': {
-                    'dropout_rate': 0.0,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_msa_column_attention'],
                     'gating': True,
                     'num_head': 8,
                     'orientation': 'per_column',
                     'shared_dropout': True
                 },
                 'msa_transition': {
-                    'dropout_rate': 0.0,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_msa_transition'],
                     'num_intermediate_factor': 4,
                     'orientation': 'per_row',
                     'shared_dropout': True
@@ -270,27 +282,27 @@ CONFIG = ml_collections.ConfigDict({
                 'outer_product_mean': {
                     'first': False,
                     'chunk_size': 128,
-                    'dropout_rate': 0.0,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_outer_product_mean'],
                     'num_outer_channel': 32,
                     'orientation': 'per_row',
                     'shared_dropout': True
                 },
                 'triangle_attention_starting_node': {
-                    'dropout_rate': 0.25,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_attention_starting_node'],
                     'gating': True,
                     'num_head': 4,
                     'orientation': 'per_row',
                     'shared_dropout': True
                 },
                 'triangle_attention_ending_node': {
-                    'dropout_rate': 0.25,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_attention_ending_node'],
                     'gating': True,
                     'num_head': 4,
                     'orientation': 'per_column',
                     'shared_dropout': True
                 },
                 'triangle_multiplication_outgoing': {
-                    'dropout_rate': 0.25,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_multiplication_outgoing'],
                     'equation': 'ikc,jkc->ijc',
                     'num_intermediate_channel': 128,
                     'orientation': 'per_row',
@@ -298,7 +310,7 @@ CONFIG = ml_collections.ConfigDict({
                     'fuse_projection_weights': False,
                 },
                 'triangle_multiplication_incoming': {
-                    'dropout_rate': 0.25,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_multiplication_incoming'],
                     'equation': 'kjc,kic->ijc',
                     'num_intermediate_channel': 128,
                     'orientation': 'per_row',
@@ -306,7 +318,7 @@ CONFIG = ml_collections.ConfigDict({
                     'fuse_projection_weights': False,
                 },
                 'pair_transition': {
-                    'dropout_rate': 0.0,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_pair_transition'],
                     'num_intermediate_factor': 4,
                     'orientation': 'per_row',
                     'shared_dropout': True
@@ -342,7 +354,7 @@ CONFIG = ml_collections.ConfigDict({
                 'template_pair_stack': {
                     'num_block': 2,
                     'triangle_attention_starting_node': {
-                        'dropout_rate': 0.25,
+                        'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_attention_starting_node'],
                         'gating': True,
                         'key_dim': 64,
                         'num_head': 4,
@@ -351,7 +363,7 @@ CONFIG = ml_collections.ConfigDict({
                         'value_dim': 64
                     },
                     'triangle_attention_ending_node': {
-                        'dropout_rate': 0.25,
+                        'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_attention_ending_node'],
                         'gating': True,
                         'key_dim': 64,
                         'num_head': 4,
@@ -360,7 +372,7 @@ CONFIG = ml_collections.ConfigDict({
                         'value_dim': 64
                     },
                     'triangle_multiplication_outgoing': {
-                        'dropout_rate': 0.25,
+                        'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_multiplication_outgoing'],
                         'equation': 'ikc,jkc->ijc',
                         'num_intermediate_channel': 64,
                         'orientation': 'per_row',
@@ -368,7 +380,7 @@ CONFIG = ml_collections.ConfigDict({
                         'fuse_projection_weights': False,
                     },
                     'triangle_multiplication_incoming': {
-                        'dropout_rate': 0.25,
+                        'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_multiplication_incoming'],
                         'equation': 'kjc,kic->ijc',
                         'num_intermediate_channel': 64,
                         'orientation': 'per_row',
@@ -376,7 +388,7 @@ CONFIG = ml_collections.ConfigDict({
                         'fuse_projection_weights': False,
                     },
                     'pair_transition': {
-                        'dropout_rate': 0.0,
+                        'dropout_rate': DROPOUT_RATES['dropout_rate_pair_transition'],
                         'num_intermediate_factor': 2,
                         'orientation': 'per_row',
                         'shared_dropout': True
@@ -432,7 +444,7 @@ CONFIG = ml_collections.ConfigDict({
                 'chi_weight': 0.5,
                 'clash_overlap_tolerance': 1.5,
                 'compute_in_graph_metrics': True,
-                'dropout': 0.1,
+                'dropout': DROPOUT_RATES['dropout_rate_structure_module'],
                 'num_channel': 384,
                 'num_head': 12,
                 'num_layer_in_transition': 3,
@@ -477,55 +489,55 @@ CONFIG_MULTIMER = ml_collections.ConfigDict({
             'evoformer_num_block': 48,
             'evoformer': {
                 'msa_column_attention': {
-                    'dropout_rate': 0.0,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_msa_column_attention'],
                     'gating': True,
                     'num_head': 8,
                     'orientation': 'per_column',
                     'shared_dropout': True
                 },
                 'msa_row_attention_with_pair_bias': {
-                    'dropout_rate': 0.15,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_msa_row_attention_with_pair_bias'],
                     'gating': True,
                     'num_head': 8,
                     'orientation': 'per_row',
                     'shared_dropout': True
                 },
                 'msa_transition': {
-                    'dropout_rate': 0.0,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_msa_transition'],
                     'num_intermediate_factor': 4,
                     'orientation': 'per_row',
                     'shared_dropout': True
                 },
                 'outer_product_mean': {
                     'chunk_size': 128,
-                    'dropout_rate': 0.0,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_outer_product_mean'],
                     'first': True,
                     'num_outer_channel': 32,
                     'orientation': 'per_row',
                     'shared_dropout': True
                 },
                 'pair_transition': {
-                    'dropout_rate': 0.0,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_pair_transition'],
                     'num_intermediate_factor': 4,
                     'orientation': 'per_row',
                     'shared_dropout': True
                 },
                 'triangle_attention_ending_node': {
-                    'dropout_rate': 0.25,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_attention_ending_node'],
                     'gating': True,
                     'num_head': 4,
                     'orientation': 'per_column',
                     'shared_dropout': True
                 },
                 'triangle_attention_starting_node': {
-                    'dropout_rate': 0.25,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_attention_starting_node'],
                     'gating': True,
                     'num_head': 4,
                     'orientation': 'per_row',
                     'shared_dropout': True,
                 },
                 'triangle_multiplication_incoming': {
-                    'dropout_rate': 0.25,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_multiplication_incoming'],
                     'equation': 'kjc,kic->ijc',
                     'num_intermediate_channel': 128,
                     'orientation': 'per_row',
@@ -533,7 +545,7 @@ CONFIG_MULTIMER = ml_collections.ConfigDict({
                     'fuse_projection_weights': True,
                 },
                 'triangle_multiplication_outgoing': {
-                    'dropout_rate': 0.25,
+                    'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_multiplication_outgoing'],
                     'equation': 'ikc,jkc->ijc',
                     'num_intermediate_channel': 128,
                     'orientation': 'per_row',
@@ -581,27 +593,27 @@ CONFIG_MULTIMER = ml_collections.ConfigDict({
                 'template_pair_stack': {
                     'num_block': 2,
                     'pair_transition': {
-                        'dropout_rate': 0.0,
+                        'dropout_rate': DROPOUT_RATES['dropout_rate_pair_transition'],
                         'num_intermediate_factor': 2,
                         'orientation': 'per_row',
                         'shared_dropout': True
                     },
                     'triangle_attention_ending_node': {
-                        'dropout_rate': 0.25,
+                        'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_attention_ending_node'],
                         'gating': True,
                         'num_head': 4,
                         'orientation': 'per_column',
                         'shared_dropout': True
                     },
                     'triangle_attention_starting_node': {
-                        'dropout_rate': 0.25,
+                        'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_attention_starting_node'],
                         'gating': True,
                         'num_head': 4,
                         'orientation': 'per_row',
                         'shared_dropout': True
                     },
                     'triangle_multiplication_incoming': {
-                        'dropout_rate': 0.25,
+                        'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_multiplication_incoming'],
                         'equation': 'kjc,kic->ijc',
                         'num_intermediate_channel': 64,
                         'orientation': 'per_row',
@@ -609,7 +621,7 @@ CONFIG_MULTIMER = ml_collections.ConfigDict({
                         'fuse_projection_weights': True,
                     },
                     'triangle_multiplication_outgoing': {
-                        'dropout_rate': 0.25,
+                        'dropout_rate': DROPOUT_RATES['dropout_rate_triangle_multiplication_outgoing'],
                         'equation': 'ikc,jkc->ijc',
                         'num_intermediate_channel': 64,
                         'orientation': 'per_row',
@@ -666,7 +678,7 @@ CONFIG_MULTIMER = ml_collections.ConfigDict({
                 'angle_norm_weight': 0.01,
                 'chi_weight': 0.5,
                 'clash_overlap_tolerance': 1.5,
-                'dropout': 0.1,
+                'dropout': DROPOUT_RATES['dropout_rate_structure_module'],
                 'interface_fape': {
                     'atom_clamp_distance': 1000.0,
                     'loss_unit_distance': 20.0
