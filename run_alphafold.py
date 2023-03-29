@@ -427,6 +427,10 @@ def main(argv):
 
   model_runners = {}
   model_names = config.MODEL_PRESETS[FLAGS.model_preset]
+  
+  # this lines should be removed, used to know the model_names format
+  logging.info(f"/!\\ this is the model_names : {model_names}")
+
   if FLAGS.models_to_use:
     model_names =[m for m in model_names if m in FLAGS.models_to_use]
   if len(model_names)==0:
