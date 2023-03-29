@@ -32,6 +32,7 @@ from alphafold.model import layer_stack
 from alphafold.model import modules
 from alphafold.model import prng
 from alphafold.model import utils
+from absl import logging
 
 import haiku as hk
 import jax
@@ -414,7 +415,7 @@ class AlphaFold(hk.Module):
 
   def __init__(self, config, name='alphafold'):
     super().__init__(name=name)
-    self.config = config
+    self.config = config""
     self.global_config = config.global_config
 
   def __call__(
@@ -484,6 +485,7 @@ class AlphaFold(hk.Module):
         i, _, prev, safe_key = x
         safe_key1, safe_key2 = safe_key.split() if c.resample_msa_in_recycling else safe_key.duplicate()  # pylint: disable=line-too-long
         ret = apply_network(prev=prev, safe_key=safe_key2)
+        logging.info(f'Recycling {i} done.')
         return i+1, prev, get_prev(ret), safe_key1
 
       def recycle_cond(x):
