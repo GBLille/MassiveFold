@@ -32,6 +32,7 @@ from alphafold.model import layer_stack
 from alphafold.model import modules
 from alphafold.model import prng
 from alphafold.model import utils
+
 from absl import logging
 
 import haiku as hk
