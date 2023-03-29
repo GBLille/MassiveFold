@@ -416,7 +416,7 @@ class AlphaFold(hk.Module):
 
   def __init__(self, config, name='alphafold'):
     super().__init__(name=name)
-    self.config = config""
+    self.config = config
     self.global_config = config.global_config
 
   def __call__(
