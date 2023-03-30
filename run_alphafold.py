@@ -448,11 +448,8 @@ def main(argv):
     if FLAGS.dropout_rates_filename:
         with open(FLAGS.dropout_rates_filename, 'r') as f:
             dropout_dict = json.load(f)
-        logging.info(f'DROPOUT: {dropout_dict}')
-        logging.info(f'DROPOUT config init: {config.DROPOUT_RATES}')
-        #model_config.dropout_rates = ml_collections.ConfigDict(dropout_dict)
         config.DROPOUT_RATES = dropout_dict
-        logging.info(f'DROPOUT config modif: {config.DROPOUT_RATES}')
+        logging.info(f'DROPOUT rates used: {config.DROPOUT_RATES}')
 
     model_params = data.get_model_haiku_params(
         model_name=model_name, data_dir=FLAGS.data_dir)
@@ -475,6 +472,8 @@ def main(argv):
   if random_seed is None:
     random_seed = random.randrange(sys.maxsize // len(model_runners))
   logging.info('Using random seed %d for the data pipeline', random_seed)
+
+  logging.info(f'model_config.model rel dropout rates: {model_config.model}')
 
   # Predict structure for each of the sequences.
   for i, fasta_path in enumerate(FLAGS.fasta_paths):
