@@ -475,8 +475,6 @@ def main(argv):
     random_seed = random.randrange(sys.maxsize // len(model_runners))
   logging.info('Using random seed %d for the data pipeline', random_seed)
 
-  logging.info(f'model_config.model rel dropout rates: {model_config.model}')
-
   # Predict structure for each of the sequences.
   for i, fasta_path in enumerate(FLAGS.fasta_paths):
     fasta_name = fasta_names[i]
