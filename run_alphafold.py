@@ -446,7 +446,7 @@ def main(argv):
 
     # reads the dropout rates from the json file
     if FLAGS.dropout_rates_filename:
-        with open('dropout_rates.json', 'r') as f:
+        with open(FLAGS.dropout_rates_filename, 'r') as f:
             dropout_dict = json.load(f)
         logging.info(f'DROPOUT: {dropout_dict}')
         logging.info(f'DROPOUT config init: {config.DROPOUT_RATES}')
