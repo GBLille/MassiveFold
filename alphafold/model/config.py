@@ -23,16 +23,18 @@ NUM_EXTRA_SEQ = shape_placeholders.NUM_EXTRA_SEQ
 NUM_TEMPLATES = shape_placeholders.NUM_TEMPLATES
 
 DROPOUT_RATES = ml_collections.ConfigDict({
-    'dropout_rate_msa_row_attention_with_pair_bias': 0.15,
-    'dropout_rate_msa_column_attention': 0.0,
-    'dropout_rate_msa_transition': 0.0,
-    'dropout_rate_outer_product_mean': 0.0,
-    'dropout_rate_triangle_attention_starting_node': 0.25,
-    'dropout_rate_triangle_attention_ending_node': 0.25,
-    'dropout_rate_triangle_multiplication_outgoing': 0.25,
-    'dropout_rate_triangle_multiplication_incoming': 0.25,
-    'dropout_rate_pair_transition': 0.0,
-    'dropout_rate_structure_module': 0.1
+    'dropout_rates': {
+        'dropout_rate_msa_row_attention_with_pair_bias': 0.15,
+        'dropout_rate_msa_column_attention': 0.0,
+        'dropout_rate_msa_transition': 0.0,
+        'dropout_rate_outer_product_mean': 0.0,
+        'dropout_rate_triangle_attention_starting_node': 0.25,
+        'dropout_rate_triangle_attention_ending_node': 0.25,
+        'dropout_rate_triangle_multiplication_outgoing': 0.25,
+        'dropout_rate_triangle_multiplication_incoming': 0.25,
+        'dropout_rate_pair_transition': 0.0,
+        'dropout_rate_structure_module': 0.1
+    }
 })
 
 def model_config(name: str) -> ml_collections.ConfigDict:

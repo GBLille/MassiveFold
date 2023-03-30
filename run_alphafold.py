@@ -449,9 +449,9 @@ def main(argv):
         with open('dropout_rates.json', 'r') as f:
             dropout_dict = json.load(f)
         logging.info(f'DROPOUT: {dropout_dict}')
-        logging.info(f'DROPOUT config init: {model_config.DROPOUT_RATES}')
-        model_config.DROPOUT_RATES = ml_collections.ConfigDict(dropout_dict)
-        logging.info(f'DROPOUT config modif: {model_config.DROPOUT_RATES}')
+        logging.info(f'DROPOUT config init: {model_config.dropout_rates}')
+        model_config.dropout_rates = ml_collections.ConfigDict(dropout_dict)
+        logging.info(f'DROPOUT config modif: {model_config.dropout_rates}')
 
     model_params = data.get_model_haiku_params(
         model_name=model_name, data_dir=FLAGS.data_dir)
