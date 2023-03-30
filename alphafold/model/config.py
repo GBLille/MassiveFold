@@ -16,6 +16,7 @@
 import copy
 from alphafold.model.tf import shape_placeholders
 import ml_collections
+from absl import logging
 
 NUM_RES = shape_placeholders.NUM_RES
 NUM_MSA_SEQ = shape_placeholders.NUM_MSA_SEQ
@@ -49,6 +50,58 @@ DROPOUT_RATES = {
     'dropout_rate_pair_transition': 0.0,
     'dropout_rate_structure_module': 0.1
 }
+
+def set_dropout_rates(config_dict, dropout_dict:dict=DROPOUT_RATES):
+    """
+    Set the dropout rate values of config_dict to the values that are given in the dictionary.
+    """
+
+    evoformer = config_dict['model']['embeddings_and_evoformer']['evoformer']
+    evoformer['msa_row_attention_with_pair_bias']['dropout_rate'] = dropout_dict['dropout_rate_msa_row_attention_with_pair_bias']
+    evoformer['msa_column_attention']['dropout_rate'] = dropout_dict['dropout_rate_msa_column_attention']
+    evoformer['msa_transition']['dropout_rate'] = dropout_dict['dropout_rate_msa_transition']
+    evoformer['outer_product_mean']['dropout_rate'] = dropout_dict['dropout_rate_outer_product_mean']
+    evoformer['triangle_attention_starting_node']['dropout_rate'] = dropout_dict['dropout_rate_triangle_attention_starting_node']
+    evoformer['triangle_attention_ending_node']['dropout_rate'] = dropout_dict['dropout_rate_triangle_attention_ending_node']
+    evoformer['triangle_multiplication_outgoing']['dropout_rate'] = dropout_dict['dropout_rate_triangle_multiplication_outgoing']
+    evoformer['triangle_multiplication_incoming']['dropout_rate'] = dropout_dict['dropout_rate_triangle_multiplication_incoming']
+    evoformer['pair_transition']['dropout_rate'] = dropout_dict['dropout_rate_pair_transition']
+
+    template = config_dict['model']['embeddings_and_evoformer']['template']['template_pair_stack']
+    template['triangle_attention_starting_node']['dropout_rate'] = dropout_dict['dropout_rate_triangle_attention_starting_node']
+    template['triangle_attention_ending_node']['dropout_rate'] = dropout_dict['dropout_rate_triangle_attention_ending_node']
+    template['triangle_multiplication_outgoing']['dropout_rate'] = dropout_dict['dropout_rate_triangle_multiplication_outgoing']
+    template['triangle_multiplication_incoming']['dropout_rate'] = dropout_dict['dropout_rate_triangle_multiplication_incoming']
+    template['pair_transition']['dropout_rate'] = dropout_dict['dropout_rate_pair_transition']
+
+    structure_module = config_dict['model']['heads']['structure_module']
+    structure_module['dropout'] = dropout_dict['dropout_rate_structure_module']
+
+def read_dropout_rates(config_dict):
+    """
+    Send the dropout rates to the log file.
+    """
+
+    evoformer = config_dict['model']['embeddings_and_evoformer']['evoformer']
+    logging.info(f'dropout rate - evoformer - msa_row_attention_with_pair_bias: {evoformer["msa_row_attention_with_pair_bias"]["dropout_rate"]}')
+    logging.info(f'dropout rate - evoformer - msa_column_attention: {evoformer["msa_column_attention"]["dropout_rate"]}')
+    logging.info(f'dropout rate - evoformer - msa_transition: {evoformer["msa_transition"]["dropout_rate"]}')
+    logging.info(f'dropout rate - evoformer - outer_product_mean: {evoformer["outer_product_mean"]["dropout_rate"]}')
+    logging.info(f'dropout rate - evoformer - triangle_attention_starting_node: {evoformer["triangle_attention_starting_node"]["dropout_rate"]}')
+    logging.info(f'dropout rate - evoformer - triangle_attention_ending_node: {evoformer["triangle_attention_ending_node"]["dropout_rate"]}')
+    logging.info(f'dropout rate - evoformer - triangle_multiplication_outgoing: {evoformer["triangle_multiplication_outgoing"]["dropout_rate"]}')
+    logging.info(f'dropout rate - evoformer - triangle_multiplication_incoming: {evoformer["triangle_multiplication_incoming"]["dropout_rate"]}')
+    logging.info(f'dropout rate - evoformer - pair_transition: {evoformer["pair_transition"]["dropout_rate"]}')
+
+    template = config_dict['model']['embeddings_and_evoformer']['template']['template_pair_stack']
+    logging.info(f'dropout rate - template - triangle_attention_starting_node: {template["triangle_attention_starting_node"]["dropout_rate"]}')
+    logging.info(f'dropout rate - template - triangle_attention_ending_node: {template["triangle_attention_ending_node"]["dropout_rate"]}')
+    logging.info(f'dropout rate - template - triangle_multiplication_outgoing: {template["triangle_multiplication_outgoing"]["dropout_rate"]}')
+    logging.info(f'dropout rate - template - triangle_multiplication_incoming: {template["triangle_multiplication_incoming"]["dropout_rate"]}')
+    logging.info(f'dropout rate - template - pair_transition: {template["pair_transition"]["dropout_rate"]}')
+
+    structure_module = config_dict['model']['heads']['structure_module']
+    logging.info(f'dropout rate - structure_module: {structure_module["dropout"]}')
 
 def model_config(name: str) -> ml_collections.ConfigDict:
   """Get the ConfigDict of a CASP14 model."""

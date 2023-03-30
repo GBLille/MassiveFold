@@ -372,13 +372,6 @@ def main(argv):
   else:
     num_ensemble = 1
 
-  # reads the dropout rates from the json file
-  if FLAGS.dropout and FLAGS.dropout_rates_filename:
-    with open(FLAGS.dropout_rates_filename, 'r') as f:
-        dropout_dict = json.load(f)
-    config.DROPOUT_RATES = dropout_dict
-    logging.info(f'DROPOUT rates used: {config.DROPOUT_RATES}')
-
   # Check for duplicate FASTA file names.
   fasta_names = [pathlib.Path(p).stem for p in FLAGS.fasta_paths]
   if len(fasta_names) != len(set(fasta_names)):
@@ -451,6 +444,13 @@ def main(argv):
     logging.info(f'Setting early stop tolerance to {model_config.model.recycle_early_stop_tolerance}')
     logging.info(f'Setting dropout to {model_config.model.global_config.eval_dropout}')
 
+    # reads the dropout rates from the json file
+    if FLAGS.dropout and FLAGS.dropout_rates_filename:
+        with open(FLAGS.dropout_rates_filename, 'r') as f:
+            dropout_dict = json.load(f)
+        logging.info(f'DROPOUT rates loaded: {dropout_dict}')
+        config.set_dropout_rates(model_config, dropout_dict)
+        config.read_dropout_rates(model_config)
 
 
     model_params = data.get_model_haiku_params(
