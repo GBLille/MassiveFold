@@ -142,11 +142,11 @@ MODEL_PRESETS = {
         'model_3_multimer_v2',
         'model_4_multimer_v2',
         'model_5_multimer_v2',
-        'model_1_multimer',
-        'model_2_multimer',
-        'model_3_multimer',
-        'model_4_multimer',
-        'model_5_multimer',
+        'model_1_multimer_v1',
+        'model_2_multimer_v1',
+        'model_3_multimer_v1',
+        'model_4_multimer_v1',
+        'model_5_multimer_v1',
     ),
 }
 MODEL_PRESETS['monomer_casp14'] = MODEL_PRESETS['monomer']
@@ -230,7 +230,7 @@ common_updates = {
     'model.embeddings_and_evoformer.template.template_pair_stack.triangle_multiplication_outgoing.fuse_projection_weights': False,
 }
 CONFIG_DIFFS.update(
-    {f'model_{i}_multimer': common_updates for i in range(1, 6)})
+    {f'model_{i}_multimer_v1': common_updates for i in range(1, 6)})
 CONFIG_DIFFS.update(
     {f'model_{i}_multimer_v2': common_updates for i in range(1, 6)})
 
