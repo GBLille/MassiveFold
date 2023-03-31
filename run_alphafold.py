@@ -443,7 +443,7 @@ def main(argv):
     model_params = data.get_model_haiku_params(
         model_name=model_name, data_dir=FLAGS.data_dir)
     model_runner = model.RunModel(model_config, model_params)
-    for i in range(FLAGS.nstruct_start, num_predictions_per_model):
+    for i in range(FLAGS.nstruct_start, num_predictions_per_model+1):
       model_runners[f'{model_name}_pred_{i}'] = model_runner
 
   logging.info('Have %d models: %s', len(model_runners),
