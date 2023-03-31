@@ -132,7 +132,7 @@ flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
                      'runs that are to reuse the MSAs. WARNING: This will not '
                      'check if the sequence, database or configuration have '
                      'changed.')
-flags.DEFINE_integer('max_recycles', 3,'Max recycles')
+flags.DEFINE_integer('max_recycles', 20,'Max recycles')
 flags.DEFINE_float('early_stop_tolerance', 0.5,'early stopping threshold')
 flags.DEFINE_enum_class('models_to_relax', ModelsToRelax.BEST, ModelsToRelax,
                         'The models to run the final relaxation step on. '
