@@ -134,9 +134,9 @@ flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
                      'changed.')
 flags.DEFINE_integer('max_recycles', 20,'Max recycles')
 flags.DEFINE_integer('uniprot_max_hits', 50000, 'Max hits in uniprot MSA')
-flags.DEFINE_integer('mgnify_max_hits', 500, 'Max hits in uniprot MSA')
-flags.DEFINE_integer('uniref_max_hits', 10000, 'Max hits in uniprot MSA')
-flags.DEFINE_integer('bfd_max_hits', 10000, 'Max hits in uniprot MSA')
+flags.DEFINE_integer('mgnify_max_hits', 500, 'Max hits in mgnify MSA')
+flags.DEFINE_integer('uniref_max_hits', 10000, 'Max hits in uniref MSA')
+flags.DEFINE_integer('bfd_max_hits', 10000, 'Max hits in BFD/uniref MSA')
 flags.DEFINE_float('early_stop_tolerance', 0.5,'early stopping threshold')
 flags.DEFINE_enum_class('models_to_relax', ModelsToRelax.BEST, ModelsToRelax,
                         'The models to run the final relaxation step on. '
