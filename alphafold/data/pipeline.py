@@ -124,6 +124,7 @@ class DataPipeline:
                use_small_bfd: bool,
                mgnify_max_hits: int = 501,
                uniref_max_hits: int = 10000,
+               no_templates: bool = False,
                use_precomputed_msas: bool = False):
     """Initializes the data pipeline."""
     self._use_small_bfd = use_small_bfd
@@ -145,6 +146,7 @@ class DataPipeline:
     self.template_featurizer = template_featurizer
     self.mgnify_max_hits = mgnify_max_hits
     self.uniref_max_hits = uniref_max_hits
+    self.no_templates=no_templates
     self.use_precomputed_msas = use_precomputed_msas
 
   def process(self, input_fasta_path: str, msa_output_dir: str) -> FeatureDict:
@@ -198,7 +200,11 @@ class DataPipeline:
     uniref90_msa = parsers.parse_stockholm(jackhmmer_uniref90_result['sto'])
     mgnify_msa = parsers.parse_stockholm(jackhmmer_mgnify_result['sto'])
 
-    pdb_template_hits = self.template_searcher.get_template_hits(
+    if self.no_templates:
+      logging.info('Using no template information at all')
+      pdb_template_hits=[]
+    else:
+      pdb_template_hits = self.template_searcher.get_template_hits(
         output_string=pdb_templates_result, input_sequence=input_sequence)
 
     if self._use_small_bfd:
@@ -219,7 +225,7 @@ class DataPipeline:
           msa_format='a3m',
           use_precomputed_msas=self.use_precomputed_msas)
       bfd_msa = parsers.parse_a3m(hhblits_bfd_uniref_result['a3m'])
-
+  
     templates_result = self.template_featurizer.get_templates(
         query_sequence=input_sequence,
         hits=pdb_template_hits)
