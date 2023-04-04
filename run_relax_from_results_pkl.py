@@ -80,7 +80,7 @@ def main():
     if os.path.exists(relaxed_output_path):
         print(f'{relaxed_output_path} exists, delete if you want to rerun.')
         sys.exit(0)
-    match=re.search('result_(model_[\d]*["_ptm"]*["_multimer"]*["_v[2-3]"]*)_\d+\.pkl',result_pickle)
+    match=re.search('result_(model_[\d]*["_ptm"]*["_multimer"]*["_v1"]*["_v2"]*["_v3"]*)_pred_\d+\.pkl',result_pickle)
     if match:
         model_name=match.group(1)
     else:
