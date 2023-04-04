@@ -65,7 +65,7 @@ def main():
     tolerance=RELAX_ENERGY_TOLERANCE,
     stiffness=RELAX_STIFFNESS,
     exclude_residues=RELAX_EXCLUDE_RESIDUES,
-    max_outer_iterations=RELAX_MAX_OUTER_ITERATIONSi,
+    max_outer_iterations=RELAX_MAX_OUTER_ITERATIONS,
     use_gpu=false)
 
 
