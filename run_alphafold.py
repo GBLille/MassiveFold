@@ -459,14 +459,17 @@ def main(argv):
         model_name=model_name, data_dir=FLAGS.data_dir)
     model_runner = model.RunModel(model_config, model_params)
 
+    logging.info('Opening file for init')
     with open(f"/gpfswork/rech/uzu/commun/serialized_model/test_monomer/{model_name}_init.pkl", "wb") as init:
         cloudpickle.dump(model_runner.init, init)
         logging.info('Init serialized')
 
+    logging.info('Opening file for apply')
     with open(f"/gpfswork/rech/uzu/commun/serialized_model/test_monomer/{model_name}_apply.pkl", "wb") as apply:
         cloudpickle.dump(model_runner.apply, apply)
         logging.info('Apply serialized')
 
+    logging.info('Opening file for test')
     with open("/gpfswork/rech/uzu/commun/serialized_model/test_monomer/test.pkl", "wb") as test:
         test.write(b"Did this work ?")
         logging.info('Test writing in test.pkl')
