@@ -90,16 +90,6 @@ class RunModel:
     self.apply = jax.jit(hk.transform(_forward_fn).apply)
     self.init = jax.jit(hk.transform(_forward_fn).init)
 
-    with open("/gpfswork/rech/uzu/commun/serialized_model/test_monomer/init.pkl", "wb") as init:
-        cloudpickle.dump(self.init, init)
-        init.write(b'Did this work ?')
-        logging.info('Init serialized')
-
-    with open("/gpfswork/rech/uzu/commun/serialized_model/test_monomer/apply.pkl", "wb") as apply:
-        cloudpickle.dump(self.apply, apply)
-        init.write(b'Did this work ?')
-        logging.info('Apply serialized')
-
   def init_params(self, feat: features.FeatureDict, random_seed: int = 0):
     """Initializes the model parameters.
 

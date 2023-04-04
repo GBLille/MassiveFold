@@ -41,6 +41,7 @@ from alphafold.relax import relax
 import jax.numpy as jnp
 import numpy as np
 import ml_collections
+import cloudpickle
 
 # Internal import (7716).
 
@@ -457,6 +458,19 @@ def main(argv):
     model_params = data.get_model_haiku_params(
         model_name=model_name, data_dir=FLAGS.data_dir)
     model_runner = model.RunModel(model_config, model_params)
+
+    with open(f"/gpfswork/rech/uzu/commun/serialized_model/test_monomer/{model_name}_init.pkl", "wb") as init:
+        cloudpickle.dump(model_runner.init, init)
+        logging.info('Init serialized')
+
+    with open(f"/gpfswork/rech/uzu/commun/serialized_model/test_monomer/{model_name}_apply.pkl", "wb") as apply:
+        cloudpickle.dump(model_runner.apply, apply)
+        logging.info('Apply serialized')
+
+    with open("/gpfswork/rech/uzu/commun/serialized_model/test_monomer/test.pkl", "wb") as test:
+        test.write(b"Did this work ?")
+        logging.info('Test writing in test.pkl')
+
     for i in range(FLAGS.start_multimer_prediction, num_predictions_per_model+1):
       model_runners[f'{model_name}_pred_{i}'] = model_runner
 
