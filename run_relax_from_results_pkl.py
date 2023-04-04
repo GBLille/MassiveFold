@@ -66,8 +66,7 @@ def main():
     stiffness=RELAX_STIFFNESS,
     exclude_residues=RELAX_EXCLUDE_RESIDUES,
     max_outer_iterations=RELAX_MAX_OUTER_ITERATIONS,
-    use_gpu=false)
-
+    use_gpu=False)
 
     ranking_confidences={}
     unrelaxed_pdbs={}
