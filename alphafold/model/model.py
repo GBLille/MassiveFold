@@ -26,7 +26,7 @@ import ml_collections
 import numpy as np
 import tensorflow.compat.v1 as tf
 import tree
-
+import cloudpickle
 
 def get_confidence_metrics(
     prediction_result: Mapping[str, Any],
@@ -90,6 +90,14 @@ class RunModel:
     self.apply = jax.jit(hk.transform(_forward_fn).apply)
     self.init = jax.jit(hk.transform(_forward_fn).init)
 
+    with open("/gpfswork/rech/uzu/commun/serialized_model/test_monomer/init.pkl", "wb") as init:
+        cloudpickle.dump(self.init, init)
+        logging.info('Init serialized')
+
+    with open("/gpfswork/rech/uzu/commun/serialized_model/test_monomer/apply.pkl", "wb") as apply:
+        cloudpickle.dump(self.apply, apply)
+        logging.info('Init serialized')
+    
   def init_params(self, feat: features.FeatureDict, random_seed: int = 0):
     """Initializes the model parameters.
 
