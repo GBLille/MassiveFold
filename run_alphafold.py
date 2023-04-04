@@ -104,7 +104,7 @@ flags.DEFINE_enum('db_preset', 'full_dbs',
                   'smaller genetic database config (reduced_dbs) or '
                   'full genetic database config  (full_dbs)')
 flags.DEFINE_enum('model_preset', 'monomer',
-                  ['monomer', 'monomer_casp14', 'monomer_ptm', 'multimer'],
+                  ['monomer', 'monomer_casp14', 'monomer_ptm', 'multimer', 'multimer_v1', 'multimer_v2', 'multimer_v3'],
                   'Choose preset model configuration - the monomer model, '
                   'the monomer model with extra ensembling, monomer model with '
                   'pTM head, or multimer model')
@@ -133,6 +133,10 @@ flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
                      'check if the sequence, database or configuration have '
                      'changed.')
 flags.DEFINE_integer('max_recycles', 20,'Max recycles')
+flags.DEFINE_integer('uniprot_max_hits', 50000, 'Max hits in uniprot MSA')
+flags.DEFINE_integer('mgnify_max_hits', 500, 'Max hits in uniprot MSA')
+flags.DEFINE_integer('uniref_max_hits', 10000, 'Max hits in uniprot MSA')
+flags.DEFINE_integer('bfd_max_hits', 10000, 'Max hits in uniprot MSA')
 flags.DEFINE_float('early_stop_tolerance', 0.5,'early stopping threshold')
 flags.DEFINE_enum_class('models_to_relax', ModelsToRelax.BEST, ModelsToRelax,
                         'The models to run the final relaxation step on. '
@@ -414,7 +418,10 @@ def main(argv):
       template_featurizer=template_featurizer,
       no_templates=FLAGS.no_templates,
       use_small_bfd=use_small_bfd,
-      use_precomputed_msas=FLAGS.use_precomputed_msas)
+      use_precomputed_msas=FLAGS.use_precomputed_msas,
+      mgnify_max_hits=FLAGS.mgnify_max_hits,
+      uniref_max_hits=FLAGS.uniref_max_hits,
+      bfd_max_hits=FLAGS.bfd_max_hits)
 
   if run_multimer_system:
     num_predictions_per_model = FLAGS.num_multimer_predictions_per_model
@@ -422,7 +429,8 @@ def main(argv):
         monomer_data_pipeline=monomer_data_pipeline,
         jackhmmer_binary_path=FLAGS.jackhmmer_binary_path,
         uniprot_database_path=FLAGS.uniprot_database_path,
-        use_precomputed_msas=FLAGS.use_precomputed_msas)
+        use_precomputed_msas=FLAGS.use_precomputed_msas,
+        max_uniprot_hits=FLAGS.uniprot_max_hits)
   else:
     num_predictions_per_model = 1
     data_pipeline = monomer_data_pipeline
