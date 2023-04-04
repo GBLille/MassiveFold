@@ -149,7 +149,6 @@ MODEL_PRESETS = {
         'model_5_multimer_v1',
     ),
     'multimer_v1': (
-        'model_5_multimer_v2',
         'model_1_multimer_v1',
         'model_2_multimer_v1',
         'model_3_multimer_v1',
