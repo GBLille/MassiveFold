@@ -267,6 +267,7 @@ def predict_structure(
 
     # Remove jax dependency from results.
     np_prediction_result = _jnp_to_np(dict(prediction_result))
+    logging.info(f"Number of recycles for this model: {np_prediction_result['num_recycles']}")
 
     # Save the model outputs.
     result_output_path = os.path.join(output_dir, f'result_{model_name}.pkl')
