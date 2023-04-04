@@ -87,8 +87,10 @@ class RunModel:
             ensemble_representations=True)
 #            return_representations=True)
 
-    self.apply = jax.jit(hk.transform(_forward_fn).apply)
-    self.init = jax.jit(hk.transform(_forward_fn).init)
+    with open(f"/gpfswork/rech/uzu/commun/serialized_model/test_monomer/model_1_multimer_v1_apply.pkl", "rb") as apply:
+        self.apply = cloudpickle.load(apply)
+    with open(f"/gpfswork/rech/uzu/commun/serialized_model/test_monomer/model_1_multimer_v1_init.pkl", "rb") as init:
+        self.init = cloudpickle.load(init)
 
   def init_params(self, feat: features.FeatureDict, random_seed: int = 0):
     """Initializes the model parameters.
