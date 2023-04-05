@@ -122,7 +122,7 @@ flags.DEFINE_integer('num_predictions_per_model', 5, 'How many '
                      'generated per model. E.g. if this is 2 and there are 5 '
                      'models then there will be 10 predictions per input. '
                      'Note: this FLAG only applies if model_preset=multimer')
-flags.DEFINE_integer('start_prediction', 0, 'model to start with, can be used to parallelize jobs, '
+flags.DEFINE_integer('start_prediction', 1, 'model to start with, can be used to parallelize jobs, '
                      'e.g --num_predictions_per_model 20 --start_multimer_prediction 20 will only make model _20'
                      'e.g --num_predictions_per_model 21 --start_multimer_prediction 20 will make model _20 and _21 etc.')
 flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
@@ -468,7 +468,7 @@ def main(argv):
     model_params = data.get_model_haiku_params(
         model_name=model_name, data_dir=FLAGS.data_dir)
     model_runner = model.RunModel(model_config, model_params)
-    for i in range(FLAGS.start_prediction, num_predictions_per_model+1):
+    for i in range(FLAGS.start_prediction, num_predictions_per_model):
       model_runners[f'{model_name}_pred_{i}'] = model_runner
 
   logging.info('Have %d models: %s', len(model_runners),
