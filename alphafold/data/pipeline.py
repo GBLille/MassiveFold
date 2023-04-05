@@ -90,7 +90,7 @@ def run_msa_tool(msa_runner, input_fasta_path: str, msa_out_path: str,
                  ) -> Mapping[str, Any]:
   """Runs an MSA tool, checking if output already exists first."""
   if not use_precomputed_msas or not os.path.exists(msa_out_path):
-    if msa_format == 'sto' and max_sto_sequences is not None:
+    if max_sto_sequences is not None:
       result = msa_runner.query(input_fasta_path, max_sto_sequences)[0]  # pytype: disable=wrong-arg-count
     else:
       result = msa_runner.query(input_fasta_path)[0]
@@ -102,6 +102,9 @@ def run_msa_tool(msa_runner, input_fasta_path: str, msa_out_path: str,
       precomputed_msa = parsers.truncate_stockholm_msa(
           msa_out_path, max_sto_sequences)
       result = {'sto': precomputed_msa}
+    elif max_sto_sequences is not None:
+      with open(msa_out_path, 'r') as f:
+        result = {msa_format: "\n".join(f.read().split("\n")[:max_sto_sequences*2])}
     else:
       with open(msa_out_path, 'r') as f:
         result = {msa_format: f.read()}
@@ -124,6 +127,8 @@ class DataPipeline:
                use_small_bfd: bool,
                mgnify_max_hits: int = 501,
                uniref_max_hits: int = 10000,
+               no_templates: bool = False,
+               bfd_max_hits: int = 10000,
                use_precomputed_msas: bool = False):
     """Initializes the data pipeline."""
     self._use_small_bfd = use_small_bfd
@@ -145,6 +150,8 @@ class DataPipeline:
     self.template_featurizer = template_featurizer
     self.mgnify_max_hits = mgnify_max_hits
     self.uniref_max_hits = uniref_max_hits
+    self.no_templates=no_templates
+    self.bfd_max_hits = bfd_max_hits
     self.use_precomputed_msas = use_precomputed_msas
 
   def process(self, input_fasta_path: str, msa_output_dir: str) -> FeatureDict:
@@ -198,7 +205,11 @@ class DataPipeline:
     uniref90_msa = parsers.parse_stockholm(jackhmmer_uniref90_result['sto'])
     mgnify_msa = parsers.parse_stockholm(jackhmmer_mgnify_result['sto'])
 
-    pdb_template_hits = self.template_searcher.get_template_hits(
+    if self.no_templates:
+      logging.info('Using no template information at all')
+      pdb_template_hits = []
+    else:
+      pdb_template_hits = self.template_searcher.get_template_hits(
         output_string=pdb_templates_result, input_sequence=input_sequence)
 
     if self._use_small_bfd:
@@ -208,7 +219,8 @@ class DataPipeline:
           input_fasta_path=input_fasta_path,
           msa_out_path=bfd_out_path,
           msa_format='sto',
-          use_precomputed_msas=self.use_precomputed_msas)
+          use_precomputed_msas=self.use_precomputed_msas,
+          max_sto_sequences=self.bfd_max_hits)
       bfd_msa = parsers.parse_stockholm(jackhmmer_small_bfd_result['sto'])
     else:
       bfd_out_path = os.path.join(msa_output_dir, 'bfd_uniref_hits.a3m')
@@ -217,7 +229,8 @@ class DataPipeline:
           input_fasta_path=input_fasta_path,
           msa_out_path=bfd_out_path,
           msa_format='a3m',
-          use_precomputed_msas=self.use_precomputed_msas)
+          use_precomputed_msas=self.use_precomputed_msas,
+          max_sto_sequences=self.bfd_max_hits)
       bfd_msa = parsers.parse_a3m(hhblits_bfd_uniref_result['a3m'])
 
     templates_result = self.template_featurizer.get_templates(

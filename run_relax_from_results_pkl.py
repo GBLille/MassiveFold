@@ -65,8 +65,8 @@ def main():
     tolerance=RELAX_ENERGY_TOLERANCE,
     stiffness=RELAX_STIFFNESS,
     exclude_residues=RELAX_EXCLUDE_RESIDUES,
-    max_outer_iterations=RELAX_MAX_OUTER_ITERATIONS)
-
+    max_outer_iterations=RELAX_MAX_OUTER_ITERATIONS,
+    use_gpu=False)
 
     ranking_confidences={}
     unrelaxed_pdbs={}
@@ -80,7 +80,7 @@ def main():
     if os.path.exists(relaxed_output_path):
         print(f'{relaxed_output_path} exists, delete if you want to rerun.')
         sys.exit(0)
-    match=re.search('result_(model_[\d]*["_ptm]*["_multimer"]*["_v2"]*)_\d+\.pkl',result_pickle)
+    match=re.search('result_(model_[\d]*["_ptm"]*["_multimer"]*["_v1"]*["_v2"]*["_v3"]*)_pred_\d+\.pkl',result_pickle)
     if match:
         model_name=match.group(1)
     else:
@@ -90,7 +90,8 @@ def main():
     print(model_name)
     #sys.exit()
     print(os.path.dirname(os.path.realpath(__file__)))
-    data_dir=f'{os.path.dirname(os.path.realpath(__file__))}/alphafold_data/'
+    #data_dir=f'{os.path.dirname(os.path.realpath(__file__))}/alphafold_data/'
+    data_dir=f'{os.environ["ALPHAFOLDDB"]}/model_parameters/2.3.1/params'
     print(data_dir)
    
     #model should not be needed but the process_features is a method in the RunModel class

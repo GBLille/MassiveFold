@@ -94,7 +94,7 @@ class HHBlits:
     self.p = p
     self.z = z
 
-  def query(self, input_fasta_path: str) -> List[Mapping[str, Any]]:
+  def query(self, input_fasta_path: str, max_sequences: Optional[int] = None) -> List[Mapping[str, Any]]:
     """Queries the database using HHblits."""
     with utils.tmpdir_manager() as query_tmp_dir:
       a3m_path = os.path.join(query_tmp_dir, 'output.a3m')
@@ -145,7 +145,10 @@ class HHBlits:
 
       with open(a3m_path) as f:
         a3m = f.read()
-
+    
+      if max_sequences is not None:
+        a3m = "\n".join(a3m.split("\n")[:max_sequences*2])
+    
     raw_output = dict(
         a3m=a3m,
         output=stdout,
