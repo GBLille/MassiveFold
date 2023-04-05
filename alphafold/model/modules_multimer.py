@@ -508,11 +508,14 @@ class AlphaFold(hk.Module):
         num_recycles, _, prev, safe_key = recycle_body(
             (0, prev, prev, safe_key))
 
-      # else:
-      #   num_recycles, _, prev, safe_key = hk.while_loop(
-      #       recycle_cond,
-      #       recycle_body,
-      #       (0, prev, prev, safe_key))
+      else:
+        if True:
+            num_recycles = 0
+        else:
+            num_recycles, _, prev, safe_key = hk.while_loop(
+                recycle_cond,
+                recycle_body,
+                (0, prev, prev, safe_key))
     else:
       # No recycling.
       num_recycles = 0
