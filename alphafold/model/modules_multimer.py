@@ -544,18 +544,9 @@ class AlphaFold(hk.Module):
         if not return_representations:
             del intermediate_ret['representations']
         intermediate_ret['num_recycles'] = 0
-
-        def modified_block_until_ready(x):
-            if isinstance(x, jax.interpreters.xla.DeviceArray):
-                return x.block_until_ready()
-            elif isinstance(x, tuple) or isinstance(x, list):
-                return jax.tree_map(modified_block_until_ready, x)
-            else:
-                return x
-
-        jax.tree_map(modified_block_until_ready, intermediate_ret)
+        jax.tree_map(lambda x: x.block_until_ready(), intermediate_ret)
         intermediate_ret.update(
-            get_confidence_metrics(intermediate_ret, multimer_mode=self.multimer_mode))
+            get_confidence_metrics(intermediate_ret, multimer_mode=True))
         intermediate_scores = intermediate_ret['ranking_confidence']
         logging.info(f"Intermediate scores computing to set up a threshold {intermediate_scores}.")
         if True:
