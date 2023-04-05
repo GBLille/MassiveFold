@@ -554,7 +554,6 @@ class AlphaFold(hk.Module):
                 return x
 
         jax.tree_map(modified_block_until_ready, intermediate_ret)
-        jax.tree_map(lambda x: x.block_until_ready(), intermediate_ret)
         intermediate_ret.update(
             get_confidence_metrics(intermediate_ret, multimer_mode=self.multimer_mode))
         intermediate_scores = intermediate_ret['ranking_confidence']
