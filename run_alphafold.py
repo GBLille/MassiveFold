@@ -471,7 +471,7 @@ def main(argv):
     for i in range(FLAGS.start_prediction, num_predictions_per_model+1):
       model_runners[f'{model_name}_pred_{i}'] = model_runner
 
-  logging.info('Have %d models: %s', len(model_runners),
+  logging.info('Have %d predictions: %s', len(model_runners),
                list(model_runners.keys()))
 
   amber_relaxer = relax.AmberRelaxation(
