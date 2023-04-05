@@ -21,7 +21,7 @@ Lower-level modules up to EvoformerIteration are reused from modules.py.
 """
 
 import functools
-from typing import Sequence
+from typing import Sequence, Mapping, Any
 
 from alphafold.common import residue_constants
 from alphafold.model import all_atom_multimer
@@ -32,8 +32,8 @@ from alphafold.model import layer_stack
 from alphafold.model import modules
 from alphafold.model import prng
 from alphafold.model import utils
-from alphafold.model.model import get_confidence_metrics
 from absl import logging
+from alphafold.common import confidence
 
 import haiku as hk
 import jax
@@ -292,6 +292,37 @@ def make_msa_profile(batch):
   return utils.mask_mean(
       batch['msa_mask'][:, :, None], jax.nn.one_hot(batch['msa'], 22), axis=0)
 
+def get_confidence_metrics(
+    prediction_result: Mapping[str, Any],
+    multimer_mode: bool) -> Mapping[str, Any]:
+  """Post processes prediction_result to get confidence metrics."""
+  confidence_metrics = {}
+  confidence_metrics['plddt'] = confidence.compute_plddt(
+      prediction_result['predicted_lddt']['logits'])
+  if 'predicted_aligned_error' in prediction_result:
+    confidence_metrics.update(confidence.compute_predicted_aligned_error(
+        logits=prediction_result['predicted_aligned_error']['logits'],
+        breaks=prediction_result['predicted_aligned_error']['breaks']))
+    confidence_metrics['ptm'] = confidence.predicted_tm_score(
+        logits=prediction_result['predicted_aligned_error']['logits'],
+        breaks=prediction_result['predicted_aligned_error']['breaks'],
+        asym_id=None)
+    if multimer_mode:
+      # Compute the ipTM only for the multimer model.
+      confidence_metrics['iptm'] = confidence.predicted_tm_score(
+          logits=prediction_result['predicted_aligned_error']['logits'],
+          breaks=prediction_result['predicted_aligned_error']['breaks'],
+          asym_id=prediction_result['predicted_aligned_error']['asym_id'],
+          interface=True)
+      confidence_metrics['ranking_confidence'] = (
+          0.8 * confidence_metrics['iptm'] + 0.2 * confidence_metrics['ptm'])
+
+  if not multimer_mode:
+    # Monomer models use mean pLDDT for model ranking.
+    confidence_metrics['ranking_confidence'] = np.mean(
+        confidence_metrics['plddt'])
+
+  return confidence_metrics
 
 class AlphaFoldIteration(hk.Module):
   """A single recycling iteration of AlphaFold architecture.
