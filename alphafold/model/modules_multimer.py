@@ -32,7 +32,7 @@ from alphafold.model import layer_stack
 from alphafold.model import modules
 from alphafold.model import prng
 from alphafold.model import utils
-
+from alphafold.model.model import get_confidence_metrics
 from absl import logging
 
 import haiku as hk
@@ -509,6 +509,9 @@ class AlphaFold(hk.Module):
             (0, prev, prev, safe_key))
 
       else:
+        intermediate_ret = apply_network(prev=prev, safe_key=safe_key)
+        intermediate_scores = get_confidence_metrics(intermediate_ret)
+        logging.info(f"Intermediate scores computing to set up a threshold {intermediate_scores}.")
         if True:
             num_recycles = 0
         else:
