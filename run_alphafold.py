@@ -117,14 +117,14 @@ flags.DEFINE_integer('random_seed', None, 'The random seed for the data '
                      'that even if this is set, Alphafold may still not be '
                      'deterministic, because processes like GPU inference are '
                      'nondeterministic.')
-flags.DEFINE_integer('num_multimer_predictions_per_model', 5, 'How many '
+flags.DEFINE_integer('num_predictions_per_model', 5, 'How many '
                      'predictions (each with a different random seed) will be '
                      'generated per model. E.g. if this is 2 and there are 5 '
                      'models then there will be 10 predictions per input. '
                      'Note: this FLAG only applies if model_preset=multimer')
-flags.DEFINE_integer('start_multimer_prediction', 0, 'model to start with, can be used to parallelize jobs, '
-                     'e.g --num_multimer_predictions_per_model 20 --start_multimer_prediction 20 will only make model _20'
-                     'e.g --num_multimer_predictions_per_model 21 --start_multimer_prediction 20 will make model _20 and _21 etc.')
+flags.DEFINE_integer('start_prediction', 0, 'model to start with, can be used to parallelize jobs, '
+                     'e.g --num_predictions_per_model 20 --start_multimer_prediction 20 will only make model _20'
+                     'e.g --num_predictions_per_model 21 --start_multimer_prediction 20 will make model _20 and _21 etc.')
 flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
                      'have been written to disk instead of running the MSA '
                      'tools. The MSA files are looked up in the output '
@@ -267,6 +267,8 @@ def predict_structure(
 
     # Remove jax dependency from results.
     np_prediction_result = _jnp_to_np(dict(prediction_result))
+    if "num_recycles" in np_prediction_result:
+      logging.info(f"Number of recycles for this model: {np_prediction_result['num_recycles']}")
 
     # Save the model outputs.
     result_output_path = os.path.join(output_dir, f'result_{model_name}.pkl')
@@ -423,8 +425,9 @@ def main(argv):
       uniref_max_hits=FLAGS.uniref_max_hits,
       bfd_max_hits=FLAGS.bfd_max_hits)
 
+  num_predictions_per_model = FLAGS.num_predictions_per_model
   if run_multimer_system:
-    num_predictions_per_model = FLAGS.num_multimer_predictions_per_model
+
     data_pipeline = pipeline_multimer.DataPipeline(
         monomer_data_pipeline=monomer_data_pipeline,
         jackhmmer_binary_path=FLAGS.jackhmmer_binary_path,
@@ -432,7 +435,6 @@ def main(argv):
         use_precomputed_msas=FLAGS.use_precomputed_msas,
         max_uniprot_hits=FLAGS.uniprot_max_hits)
   else:
-    num_predictions_per_model = 1
     data_pipeline = monomer_data_pipeline
 
   model_runners = {}
@@ -466,7 +468,7 @@ def main(argv):
     model_params = data.get_model_haiku_params(
         model_name=model_name, data_dir=FLAGS.data_dir)
     model_runner = model.RunModel(model_config, model_params)
-    for i in range(FLAGS.start_multimer_prediction, num_predictions_per_model+1):
+    for i in range(FLAGS.start_prediction, num_predictions_per_model+1):
       model_runners[f'{model_name}_pred_{i}'] = model_runner
 
   logging.info('Have %d models: %s', len(model_runners),

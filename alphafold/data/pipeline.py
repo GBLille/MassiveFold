@@ -90,7 +90,7 @@ def run_msa_tool(msa_runner, input_fasta_path: str, msa_out_path: str,
                  ) -> Mapping[str, Any]:
   """Runs an MSA tool, checking if output already exists first."""
   if not use_precomputed_msas or not os.path.exists(msa_out_path):
-    if msa_format == 'sto' and max_sto_sequences is not None:
+    if max_sto_sequences is not None:
       result = msa_runner.query(input_fasta_path, max_sto_sequences)[0]  # pytype: disable=wrong-arg-count
     else:
       result = msa_runner.query(input_fasta_path)[0]
@@ -103,9 +103,8 @@ def run_msa_tool(msa_runner, input_fasta_path: str, msa_out_path: str,
           msa_out_path, max_sto_sequences)
       result = {'sto': precomputed_msa}
     elif max_sto_sequences is not None:
-      precomputed_msa = parsers.truncate_stockholm_msa(
-          msa_out_path, max_sto_sequences)
-      result = {'a3m': precomputed_msa}
+      with open(msa_out_path, 'r') as f:
+        result = {msa_format: "\n".join(f.read().split("\n")[:max_sto_sequences*2])}
     else:
       with open(msa_out_path, 'r') as f:
         result = {msa_format: f.read()}
