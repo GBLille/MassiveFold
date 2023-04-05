@@ -541,6 +541,7 @@ class AlphaFold(hk.Module):
 
       else:
         intermediate_ret = apply_network(prev=prev, safe_key=safe_key)
+        intermediate_ret = get_prev(intermediate_ret)
         if not return_representations:
             del intermediate_ret['representations']
         intermediate_ret['num_recycles'] = 0
