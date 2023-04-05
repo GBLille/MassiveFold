@@ -540,10 +540,9 @@ class AlphaFold(hk.Module):
             (0, prev, prev, safe_key))
 
       else:
-        intermediate_ret = apply_network(prev=prev, safe_key=safe_key)
-        intermediate_ret = get_prev(intermediate_ret)
-        if not return_representations:
-            del intermediate_ret['representations']
+        intermediate_prev = get_prev(prev)
+        intermediate_ret = apply_network(prev=intermediate_prev, safe_key=safe_key)
+
         intermediate_ret['num_recycles'] = 0
         jax.tree_map(lambda x: x.block_until_ready(), intermediate_ret)
         intermediate_ret.update(
