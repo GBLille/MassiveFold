@@ -541,7 +541,10 @@ class AlphaFold(hk.Module):
 
       else:
         intermediate_ret = apply_network(prev=prev, safe_key=safe_key)
-        intermediate_scores = get_confidence_metrics(intermediate_ret, True)
+        jax.tree_map(lambda x: x.block_until_ready(), intermediate_ret)
+        intermediate_ret.update(
+            get_confidence_metrics(intermediate_ret, multimer_mode=self.multimer_mode))
+        intermediate_scores = intermediate_ret['ranking_confidence']
         logging.info(f"Intermediate scores computing to set up a threshold {intermediate_scores}.")
         if True:
             num_recycles = 0
