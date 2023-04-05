@@ -541,7 +541,7 @@ class AlphaFold(hk.Module):
 
       else:
         intermediate_ret = apply_network(prev=prev, safe_key=safe_key)
-        intermediate_scores = get_confidence_metrics(intermediate_ret)
+        intermediate_scores = get_confidence_metrics(intermediate_ret, True)
         logging.info(f"Intermediate scores computing to set up a threshold {intermediate_scores}.")
         if True:
             num_recycles = 0
