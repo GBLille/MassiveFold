@@ -519,6 +519,7 @@ class AlphaFold(hk.Module):
         ret = apply_network(prev=prev, safe_key=safe_key2)
         logging.info(f"ret inside of recycles : {ret}")
         logging.info(ret.keys())
+        logging.info(ret['predicted_aligned_error'])
         scores = get_confidence_metrics(ret, multimer_mode=True)
         logging.info(f"Scores ? {scores} ")
         logging.info(f'Recycling {i} done.')
