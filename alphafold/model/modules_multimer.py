@@ -22,6 +22,7 @@ Lower-level modules up to EvoformerIteration are reused from modules.py.
 
 import functools
 from typing import Sequence, Mapping, Any
+from alphafold.common import confidence
 
 from alphafold.common import residue_constants
 from alphafold.model import all_atom_multimer
@@ -32,14 +33,45 @@ from alphafold.model import layer_stack
 from alphafold.model import modules
 from alphafold.model import prng
 from alphafold.model import utils
+from alphafold.model.model import get_confidence_metrics
 from absl import logging
-from alphafold.common import confidence
 
 import haiku as hk
 import jax
 import jax.numpy as jnp
 import numpy as np
 
+def get_confidence_metrics(
+    prediction_result: Mapping[str, Any],
+    multimer_mode: bool) -> Mapping[str, Any]:
+  """Post processes prediction_result to get confidence metrics."""
+  confidence_metrics = {}
+  confidence_metrics['plddt'] = confidence.compute_plddt(
+      prediction_result['predicted_lddt']['logits'])
+  if 'predicted_aligned_error' in prediction_result:
+    confidence_metrics.update(confidence.compute_predicted_aligned_error(
+        logits=prediction_result['predicted_aligned_error']['logits'],
+        breaks=prediction_result['predicted_aligned_error']['breaks']))
+    confidence_metrics['ptm'] = confidence.predicted_tm_score(
+        logits=prediction_result['predicted_aligned_error']['logits'],
+        breaks=prediction_result['predicted_aligned_error']['breaks'],
+        asym_id=None)
+    if multimer_mode:
+      # Compute the ipTM only for the multimer model.
+      confidence_metrics['iptm'] = confidence.predicted_tm_score(
+          logits=prediction_result['predicted_aligned_error']['logits'],
+          breaks=prediction_result['predicted_aligned_error']['breaks'],
+          asym_id=prediction_result['predicted_aligned_error']['asym_id'],
+          interface=True)
+      confidence_metrics['ranking_confidence'] = (
+          0.8 * confidence_metrics['iptm'] + 0.2 * confidence_metrics['ptm'])
+
+  if not multimer_mode:
+    # Monomer models use mean pLDDT for model ranking.
+    confidence_metrics['ranking_confidence'] = np.mean(
+        confidence_metrics['plddt'])
+
+  return confidence_metrics
 
 def reduce_fn(x, mode):
   if mode == 'none' or mode is None:
@@ -292,37 +324,6 @@ def make_msa_profile(batch):
   return utils.mask_mean(
       batch['msa_mask'][:, :, None], jax.nn.one_hot(batch['msa'], 22), axis=0)
 
-def get_confidence_metrics(
-    prediction_result: Mapping[str, Any],
-    multimer_mode: bool) -> Mapping[str, Any]:
-  """Post processes prediction_result to get confidence metrics."""
-  confidence_metrics = {}
-  confidence_metrics['plddt'] = confidence.compute_plddt(
-      prediction_result['predicted_lddt']['logits'])
-  if 'predicted_aligned_error' in prediction_result:
-    confidence_metrics.update(confidence.compute_predicted_aligned_error(
-        logits=prediction_result['predicted_aligned_error']['logits'],
-        breaks=prediction_result['predicted_aligned_error']['breaks']))
-    confidence_metrics['ptm'] = confidence.predicted_tm_score(
-        logits=prediction_result['predicted_aligned_error']['logits'],
-        breaks=prediction_result['predicted_aligned_error']['breaks'],
-        asym_id=None)
-    if multimer_mode:
-      # Compute the ipTM only for the multimer model.
-      confidence_metrics['iptm'] = confidence.predicted_tm_score(
-          logits=prediction_result['predicted_aligned_error']['logits'],
-          breaks=prediction_result['predicted_aligned_error']['breaks'],
-          asym_id=prediction_result['predicted_aligned_error']['asym_id'],
-          interface=True)
-      confidence_metrics['ranking_confidence'] = (
-          0.8 * confidence_metrics['iptm'] + 0.2 * confidence_metrics['ptm'])
-
-  if not multimer_mode:
-    # Monomer models use mean pLDDT for model ranking.
-    confidence_metrics['ranking_confidence'] = np.mean(
-        confidence_metrics['plddt'])
-
-  return confidence_metrics
 
 class AlphaFoldIteration(hk.Module):
   """A single recycling iteration of AlphaFold architecture.
@@ -516,10 +517,11 @@ class AlphaFold(hk.Module):
       def recycle_body(x):
         i, _, prev, safe_key = x
         safe_key1, safe_key2 = safe_key.split() if c.resample_msa_in_recycling else safe_key.duplicate()  # pylint: disable=line-too-long
-        logging.info(f"Safe keys during recycle: {safe_key1, safe_key2}")
         ret = apply_network(prev=prev, safe_key=safe_key2)
+        logging.info(f"ret inside of recycles : {ret}")
+        scores = get_confidence_metrics(ret, multimer_mode=True)
+        logging.info(f"Scores ? {scores} ")
         logging.info(f'Recycling {i} done.')
-        logging.info(f"During recycle, representations: {ret['representations']}")
         return i+1, prev, get_prev(ret), safe_key1
 
       def recycle_cond(x):
@@ -542,42 +544,17 @@ class AlphaFold(hk.Module):
             (0, prev, prev, safe_key))
 
       else:
-        try:
-          sk = prng.SafeKey(hk.next_rng_key())
-          safe_key1, safe_key2 = sk.split() if c.resample_msa_in_recycling else sk.duplicate()  # pylint: disable=line-too-long
-          intermediate_ret = apply_network(prev=prev, safe_key=safe_key2)
-          # intermediate_prev = get_prev(prev)
-          # logging.ingo(f"Safe key for intermediate results {safe_key}")
-          # intermediate_ret = apply_network(prev=intermediate_prev, safe_key=safe_key)
-
-          intermediate_ret['num_recycles'] = 0
-          try:
-            jax.tree_map(lambda x: x.block_until_ready(), intermediate_ret)
-          except Exception as e:
-            logging.info(f"Block_until_read() failed du to {e}")
-          intermediate_ret.update(get_confidence_metrics(intermediate_ret, multimer_mode=True))
-          intermediate_scores = intermediate_ret['ranking_confidence']
-          worked = True
-          logging.info(f"Intermediate scores computing to set up a threshold {intermediate_scores}.")
-        except Exception as e:
-          logging.info(f"Intermediate scores computing failed due to:\n{e}.")
-          worked = False
-
-        if worked:
-            logging.info(f"The intermediate scores computation worked : {intermediate_scores['ranking_confidence']}.")
-            num_recycles = 0
-        else:
-            num_recycles, _, prev, safe_key = hk.while_loop(
-                recycle_cond,
-                recycle_body,
-                (0, prev, prev, safe_key))
+        num_recycles, _, prev, safe_key = hk.while_loop(
+            recycle_cond,
+            recycle_body,
+            (0, prev, prev, safe_key))
     else:
       # No recycling.
       num_recycles = 0
 
     # Run extra iteration.
     ret = apply_network(prev=prev, safe_key=safe_key)
-    logging.info(f"This is the representations: {ret['representations']}")
+
     if not return_representations:
       del ret['representations']
     ret['num_recycles'] = num_recycles
