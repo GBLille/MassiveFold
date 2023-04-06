@@ -543,7 +543,8 @@ class AlphaFold(hk.Module):
 
       else:
         try:
-          safe_key1, safe_key2 = safe_key.split() if c.resample_msa_in_recycling else safe_key.duplicate()  # pylint: disable=line-too-long
+          sk = prng.SafeKey(hk.next_rng_key())
+          safe_key1, safe_key2 = sk.split() if c.resample_msa_in_recycling else sk.duplicate()  # pylint: disable=line-too-long
           intermediate_ret = apply_network(prev=prev, safe_key=safe_key2)
           # intermediate_prev = get_prev(prev)
           # logging.ingo(f"Safe key for intermediate results {safe_key}")
