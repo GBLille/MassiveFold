@@ -540,16 +540,22 @@ class AlphaFold(hk.Module):
             (0, prev, prev, safe_key))
 
       else:
-        intermediate_prev = get_prev(prev)
-        intermediate_ret = apply_network(prev=intermediate_prev, safe_key=safe_key)
+        try:
+          intermediate_prev = get_prev(prev)
+          intermediate_ret = apply_network(prev=intermediate_prev, safe_key=safe_key)
 
-        intermediate_ret['num_recycles'] = 0
-        jax.tree_map(lambda x: x.block_until_ready(), intermediate_ret)
-        intermediate_ret.update(
-            get_confidence_metrics(intermediate_ret, multimer_mode=True))
-        intermediate_scores = intermediate_ret['ranking_confidence']
-        logging.info(f"Intermediate scores computing to set up a threshold {intermediate_scores}.")
-        if True:
+          intermediate_ret['num_recycles'] = 0
+          #jax.tree_map(lambda x: x.block_until_ready(), intermediate_ret)
+          intermediate_ret.update(get_confidence_metrics(intermediate_ret, multimer_mode=True))
+          intermediate_scores = intermediate_ret['ranking_confidence']
+          worked = True
+          logging.info(f"Intermediate scores computing to set up a threshold {intermediate_scores}.")
+        except:
+          logging.info(f"Intermediate scores computing to set up a threshold {intermediate_scores}.")
+          worked = False
+
+        if worked:
+            logging.info("The intermediate scores computation worked.")
             num_recycles = 0
         else:
             num_recycles, _, prev, safe_key = hk.while_loop(
@@ -562,7 +568,7 @@ class AlphaFold(hk.Module):
 
     # Run extra iteration.
     ret = apply_network(prev=prev, safe_key=safe_key)
-
+    logging.info(f"This is the representations: {ret['representations']}")
     if not return_representations:
       del ret['representations']
     ret['num_recycles'] = num_recycles
