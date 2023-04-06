@@ -516,8 +516,10 @@ class AlphaFold(hk.Module):
       def recycle_body(x):
         i, _, prev, safe_key = x
         safe_key1, safe_key2 = safe_key.split() if c.resample_msa_in_recycling else safe_key.duplicate()  # pylint: disable=line-too-long
+        logging.info(f"Safe keys during recycle: {safe_key1, safe_key2}")
         ret = apply_network(prev=prev, safe_key=safe_key2)
         logging.info(f'Recycling {i} done.')
+        logging.info(f"During recycle, representations: {ret['representations']}")
         return i+1, prev, get_prev(ret), safe_key1
 
       def recycle_cond(x):
@@ -541,11 +543,17 @@ class AlphaFold(hk.Module):
 
       else:
         try:
-          intermediate_prev = get_prev(prev)
-          intermediate_ret = apply_network(prev=intermediate_prev, safe_key=safe_key)
+          safe_key1, safe_key2 = safe_key.split() if c.resample_msa_in_recycling else safe_key.duplicate()  # pylint: disable=line-too-long
+          intermediate_ret = apply_network(prev=prev, safe_key=safe_key2)
+          # intermediate_prev = get_prev(prev)
+          # logging.ingo(f"Safe key for intermediate results {safe_key}")
+          # intermediate_ret = apply_network(prev=intermediate_prev, safe_key=safe_key)
 
           intermediate_ret['num_recycles'] = 0
-          #jax.tree_map(lambda x: x.block_until_ready(), intermediate_ret)
+          try:
+            jax.tree_map(lambda x: x.block_until_ready(), intermediate_ret)
+          except Exception as e:
+            logging.info(f"Block_until_read() failed du to {e}")
           intermediate_ret.update(get_confidence_metrics(intermediate_ret, multimer_mode=True))
           intermediate_scores = intermediate_ret['ranking_confidence']
           worked = True
@@ -555,7 +563,7 @@ class AlphaFold(hk.Module):
           worked = False
 
         if worked:
-            logging.info("The intermediate scores computation worked.")
+            logging.info(f"The intermediate scores computation worked : {intermediate_scores['ranking_confidence']}.")
             num_recycles = 0
         else:
             num_recycles, _, prev, safe_key = hk.while_loop(
