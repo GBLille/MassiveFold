@@ -34,7 +34,7 @@ from alphafold.model import modules
 from alphafold.model import prng
 from alphafold.model import utils
 from absl import logging
-
+from jax.experimental.host_callback import id_print
 import haiku as hk
 import jax
 import jax.numpy as jnp
@@ -519,7 +519,7 @@ class AlphaFold(hk.Module):
         ret = apply_network(prev=prev, safe_key=safe_key2)
         logging.info(f"ret inside of recycles : {ret}")
         logging.info(ret.keys())
-        logging.info(jax.experimental.host_callback.id_print(ret['predicted_aligned_error']['logits']))
+        logging.info(id_print(ret['predicted_aligned_error']['logits']))
         scores = get_confidence_metrics(ret, multimer_mode=True)
         logging.info(f"Scores ? {scores} ")
         logging.info(f'Recycling {i} done.')
