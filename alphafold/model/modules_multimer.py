@@ -518,6 +518,7 @@ class AlphaFold(hk.Module):
         safe_key1, safe_key2 = safe_key.split() if c.resample_msa_in_recycling else safe_key.duplicate()  # pylint: disable=line-too-long
         ret = apply_network(prev=prev, safe_key=safe_key2)
         logging.info(f"ret inside of recycles : {ret}")
+        logging.info(ret.keys())
         scores = get_confidence_metrics(ret, multimer_mode=True)
         logging.info(f"Scores ? {scores} ")
         logging.info(f'Recycling {i} done.')
@@ -541,7 +542,6 @@ class AlphaFold(hk.Module):
       if hk.running_init():
         num_recycles, _, prev, safe_key = recycle_body(
             (0, prev, prev, safe_key))
-
       else:
         num_recycles, _, prev, safe_key = hk.while_loop(
             recycle_cond,
