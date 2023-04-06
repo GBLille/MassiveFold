@@ -15,9 +15,9 @@ outbase=9999
 output=$(dirname $input)/$(basename $input .pdb).cif
 
 #cif-tools package needs to be installed
-echo "CRYST1    1.000    1.000    1.000  90.00  90.00  90.00 P 1           1 " > $input.2
-grep -v CRYST1 $input | grep -v "REMARK" | grep -v TER | grep "\S" >> $input.2
-mv $input.2 $input
+#echo "CRYST1    1.000    1.000    1.000  90.00  90.00  90.00 P 1           1 " > $input.2
+#grep -v CRYST1 $input | grep -v "REMARK" | grep -v TER | grep "\S" >> $input.2
+#mv $input.2 $input
 
 pdb2cif $input $output
 
