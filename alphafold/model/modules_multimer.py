@@ -550,8 +550,8 @@ class AlphaFold(hk.Module):
           intermediate_scores = intermediate_ret['ranking_confidence']
           worked = True
           logging.info(f"Intermediate scores computing to set up a threshold {intermediate_scores}.")
-        except:
-          logging.info(f"Intermediate scores computing to set up a threshold {intermediate_scores}.")
+        except Exception as e:
+          logging.info(f"Intermediate scores computing failed due to:\n{e}.")
           worked = False
 
         if worked:
