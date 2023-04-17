@@ -450,6 +450,9 @@ def main(argv):
     else:
       model_config.data.eval.num_ensemble = num_ensemble
     model_config.model.num_recycle = FLAGS.max_recycles
+    if FLAGS.model_preset != 'multimer':
+        model_config.data.common.num_recycle = FLAGS.max_recycles
+
     model_config.model.recycle_early_stop_tolerance=FLAGS.early_stop_tolerance
     model_config.model.global_config.eval_dropout = FLAGS.dropout
     logging.info(f'Setting max_recycles to {model_config.model.num_recycle}')
