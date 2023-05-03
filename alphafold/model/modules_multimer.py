@@ -34,7 +34,7 @@ from alphafold.model import modules
 from alphafold.model import prng
 from alphafold.model import utils
 from absl import logging
-from jax.experimental.host_callback import id_print, barrier_wait
+from jax.experimental.host_callback import id_print
 import haiku as hk
 import jax
 import jax.numpy as jnp
@@ -517,15 +517,14 @@ class AlphaFold(hk.Module):
         i, _, prev, safe_key = x
         safe_key1, safe_key2 = safe_key.split() if c.resample_msa_in_recycling else safe_key.duplicate()  # pylint: disable=line-too-long
         ret = apply_network(prev=prev, safe_key=safe_key2)
-        logging.info(f"ret inside of recycles : {ret}")
-        logging.info(ret.keys())
-        logging.info(id_print(ret['predicted_aligned_error']['logits']))
-        logging.info(id_print(confidence.predicted_tm_score(
-            logits=ret['predicted_aligned_error']['logits'],
-            breaks=ret['predicted_aligned_error']['breaks'])))
-        barrier_wait()
-        #scores = get_confidence_metrics(ret, multimer_mode=True)
-        #logging.info(f"Scores ? {scores} ")
+        iptm = jax.pure_callback(confidence.predicted_tm_score,
+                                 jax.ShapeDtypeStruct(jnp.ones(()).shape, jnp.dtype("float32")),
+                                 logits=ret['predicted_aligned_error']['logits'],
+                                 breaks=ret['predicted_aligned_error']['breaks'],
+                                 asym_id=ret['predicted_aligned_error']['asym_id'],
+                                 interface=True)
+        exposed_iptm = id_print(iptm)
+        logging.info(f"iptm inside of recycle body : {exposed_iptm}")
         logging.info(f'Recycling {i} done.')
         return i+1, prev, get_prev(ret), safe_key1
 
@@ -558,7 +557,6 @@ class AlphaFold(hk.Module):
 
     # Run extra iteration.
     ret = apply_network(prev=prev, safe_key=safe_key)
-
     if not return_representations:
       del ret['representations']
     ret['num_recycles'] = num_recycles
