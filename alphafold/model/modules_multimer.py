@@ -535,12 +535,13 @@ class AlphaFold(hk.Module):
         safe_key1, safe_key2 = safe_key.split() if c.resample_msa_in_recycling else safe_key.duplicate()
         ret = apply_network(prev=prev, safe_key=safe_key2)
 
-        iptm = jax.pure_callback(confidence.predicted_tm_score2,
+        iptm = id_print(jax.pure_callback(confidence.predicted_tm_score2,
                                  jax.ShapeDtypeStruct(jnp.ones(()).shape, jnp.dtype("float32")),
                                  ret['predicted_aligned_error']['logits'], ret['predicted_aligned_error']['breaks'],
-                                 ret['predicted_aligned_error']['asym_id'], True)
+                                 ret['predicted_aligned_error']['asym_id'], True))
         logging.info('iptms are here')
-        logging.info(f'This is the iptms {id_print(iptm)}')
+        logging.info(f'First iptms {iptm}')
+        logging.info(f'Second iptms {id_print(iptm)}')
         logging.info('iptms passed')
         return i + 1, prev, get_prev(ret), safe_key1
 
