@@ -513,20 +513,34 @@ class AlphaFold(hk.Module):
         return jnp.sqrt(jnp.sum((points[:, None] - points[None, :])**2,
                                 axis=-1))
 
+      # def recycle_body(x):
+      #   i, _, prev, safe_key = x
+      #   safe_key1, safe_key2 = safe_key.split() if c.resample_msa_in_recycling else safe_key.duplicate()  # pylint: disable=line-too-long
+      #   ret = apply_network(prev=prev, safe_key=safe_key2)
+      #   iptm = jax.pure_callback(confidence.predicted_tm_score,
+      #                            jax.ShapeDtypeStruct(jnp.ones(()).shape, jnp.dtype("float32")),
+      #                            logits=ret['predicted_aligned_error']['logits'],
+      #                            breaks=ret['predicted_aligned_error']['breaks'],
+      #                            asym_id=ret['predicted_aligned_error']['asym_id'],
+      #                            interface=True)
+      #   exposed_iptm = id_print(iptm)
+      #   logging.info(f"iptm inside of recycle body : {exposed_iptm}")
+      #   #if exposed_iptm < c.iptm_threshold:
+      #   #    return # should return the stop_gradient to stop the while loop
+      #   logging.info(f'Recycling {i} done.')
+      #   return i+1, prev, get_prev(ret), safe_key1
+
       def recycle_body(x):
         i, _, prev, safe_key = x
-        safe_key1, safe_key2 = safe_key.split() if c.resample_msa_in_recycling else safe_key.duplicate()  # pylint: disable=line-too-long
+        safe_key1, safe_key2 = safe_key.split() if c.resample_msa_in_recycling else safe_key.duplicate()
         ret = apply_network(prev=prev, safe_key=safe_key2)
-        iptm = jax.pure_callback(confidence.predicted_tm_score,
+
+        iptm = jax.pure_callback(confidence.predicted_tm_score2,
                                  jax.ShapeDtypeStruct(jnp.ones(()).shape, jnp.dtype("float32")),
-                                 logits=ret['predicted_aligned_error']['logits'],
-                                 breaks=ret['predicted_aligned_error']['breaks'],
-                                 asym_id=ret['predicted_aligned_error']['asym_id'],
-                                 interface=True)
-        exposed_iptm = id_print(iptm)
-        logging.info(f"iptm inside of recycle body : {exposed_iptm}")
-        logging.info(f'Recycling {i} done.')
-        return i+1, prev, get_prev(ret), safe_key1
+                                 ret['predicted_aligned_error']['logits'], ret['predicted_aligned_error']['breaks'],
+                                 ret['predicted_aligned_error']['asym_id'], True)
+        id_print(iptm)
+        return i + 1, prev, get_prev(ret), safe_key1
 
       def recycle_cond(x):
         i, prev, next_in, _ = x

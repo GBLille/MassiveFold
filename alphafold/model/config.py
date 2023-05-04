@@ -805,6 +805,7 @@ CONFIG_MULTIMER = ml_collections.ConfigDict({
         # difference in pairwise distances is less than the tolerance between
         # recycling steps.
         'recycle_early_stop_tolerance': 0.5,
-        'resample_msa_in_recycling': True
+        'resample_msa_in_recycling': True,
+        'iptm_threshold': 0
     }
 })
