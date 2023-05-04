@@ -540,7 +540,7 @@ class AlphaFold(hk.Module):
                                  ret['predicted_aligned_error']['logits'], ret['predicted_aligned_error']['breaks'],
                                  ret['predicted_aligned_error']['asym_id'], True)
         logging.info('iptms are here')
-        id_print(iptm)
+        logging.info(f'This is the iptms {id_print(iptm)}')
         logging.info('iptms passed')
         return i + 1, prev, get_prev(ret), safe_key1
 
