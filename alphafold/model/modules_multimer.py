@@ -539,7 +539,9 @@ class AlphaFold(hk.Module):
                                  jax.ShapeDtypeStruct(jnp.ones(()).shape, jnp.dtype("float32")),
                                  ret['predicted_aligned_error']['logits'], ret['predicted_aligned_error']['breaks'],
                                  ret['predicted_aligned_error']['asym_id'], True)
+        logging.info('iptms are here')
         id_print(iptm)
+        logging.info('iptms passed')
         return i + 1, prev, get_prev(ret), safe_key1
 
       def recycle_cond(x):
