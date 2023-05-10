@@ -90,7 +90,8 @@ def main():
     print(model_name)
     #sys.exit()
     print(os.path.dirname(os.path.realpath(__file__)))
-    data_dir=f'{os.path.dirname(os.path.realpath(__file__))}/alphafold_data/'
+    #data_dir=f'{os.path.dirname(os.path.realpath(__file__))}/alphafold_data/'
+    data_dir=f'{os.environ["ALPHAFOLDDB"]}/model_parameters/2.3.1/params'
     print(data_dir)
    
     #model should not be needed but the process_features is a method in the RunModel class
