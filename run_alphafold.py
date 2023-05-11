@@ -107,7 +107,7 @@ flags.DEFINE_enum('model_preset', 'monomer',
                   ['monomer', 'monomer_casp14', 'monomer_ptm', 'multimer', 'multimer_v1', 'multimer_v2', 'multimer_v3'],
                   'Choose preset model configuration - the monomer model, '
                   'the monomer model with extra ensembling, monomer model with '
-                  'pTM head, or multimer model')
+                  'pTM head, or multimer model; "multimer" computes the 3 versions of multimer models')
 flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
                      'to obtain a timing that excludes the compilation time, '
                      'which should be more indicative of the time required for '
@@ -123,8 +123,8 @@ flags.DEFINE_integer('num_predictions_per_model', 5, 'How many '
                      'models then there will be 10 predictions per input. '
                      'Note: this FLAG only applies if model_preset=multimer')
 flags.DEFINE_integer('start_prediction', 1, 'model to start with, can be used to parallelize jobs, '
-                     'e.g --num_predictions_per_model 20 --start_multimer_prediction 20 will only make model _20'
-                     'e.g --num_predictions_per_model 21 --start_multimer_prediction 20 will make model _20 and _21 etc.')
+                     'e.g --num_predictions_per_model 20 --start_prediction 20 will only make model _20'
+                     'e.g --num_predictions_per_model 21 --start_prediction 20 will make model _20 and _21 etc.')
 flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
                      'have been written to disk instead of running the MSA '
                      'tools. The MSA files are looked up in the output '
@@ -132,12 +132,12 @@ flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
                      'runs that are to reuse the MSAs. WARNING: This will not '
                      'check if the sequence, database or configuration have '
                      'changed.')
-flags.DEFINE_integer('max_recycles', 20,'Max recycles')
+flags.DEFINE_integer('max_recycles', 20,'Maximum number of recycles to run')
 flags.DEFINE_integer('uniprot_max_hits', 50000, 'Max hits in uniprot MSA')
 flags.DEFINE_integer('mgnify_max_hits', 500, 'Max hits in mgnify MSA')
 flags.DEFINE_integer('uniref_max_hits', 10000, 'Max hits in uniref MSA')
 flags.DEFINE_integer('bfd_max_hits', 10000, 'Max hits in BFD/uniref MSA')
-flags.DEFINE_float('early_stop_tolerance', 0.5,'early stopping threshold')
+flags.DEFINE_float('early_stop_tolerance', 0.5,'Early stopping threshold for recycling')
 flags.DEFINE_enum_class('models_to_relax', ModelsToRelax.BEST, ModelsToRelax,
                         'The models to run the final relaxation step on. '
                         'If `all`, all models are relaxed, which may be time '
