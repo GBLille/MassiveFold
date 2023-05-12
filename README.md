@@ -10,7 +10,8 @@ These optimizations are described below with the flags that were added to the ge
 It was started with a fork of the DeepMind's AlphaFold v2.3.1 - 10/03/2023: https://github.com/deepmind/alphafold
 
 # Setup
-The setup is the same as the one for AlphaFold v2.3.1. However, v1 and v2 neural network (NN) model parameters have to be present in the
+The setup is the same as the one for AlphaFold v2.3.1 except that this repository had to be used instead of the DeepMind's
+one. However, v1 and v2 neural network (NN) model parameters have to be present in the
 *param* folder and should contain the version number in the name. Therefore, the list of NN 
 model parameters in the folder should be as follows:
 
@@ -48,7 +49,7 @@ option.
     (default: 'false')  
   **--dropout**: Turn on drop out during inference to get more diversity
     (default: 'false')  
-  **--dropout_rates_filename**: Provide dropout rates for inference from a json file.
+  **--dropout_rates_filename**: Provide dropout rates at inference from a json file.
   If None, default rates are used, if "dropout" is True.  
   **--max_recycles**: Maximum number of recycles to run
     (default: '20')
@@ -68,19 +69,87 @@ option.
   **--uniref_max_hits**: Max hits in uniref MSA
     (default: '10000')
     (an integer)  
-  **--model_preset**: <monomer|monomer_casp14|monomer_ptm|multimer|multimer_v1|multimer_v2|multimer_v3>: Choose preset model configuration - the monomer model, the monomer model with extra ensembling, monomer model with pTM head, or
-    multimer model; "multimer" computes the 3 versions of multimer models
-    (default: 'monomer')  
-  **--models_to_use**: specify which models in model_preset that should be run (cf list in "Setup" section)
-    (a comma separated list)  
+  **--model_preset**: <monomer|monomer_casp14|monomer_ptm|multimer|multimer_v1|multimer_v2|multimer_v3>:  
+  &nbsp;&nbsp;&nbsp;&nbsp; Choose preset model configuration - the monomer model,  
+  &nbsp;&nbsp;&nbsp;&nbsp; the monomer model with extra ensembling, monomer model with pTM head, or  
+  &nbsp;&nbsp;&nbsp;&nbsp; multimer model; "multimer" computes the 3 versions of multimer models  
+  &nbsp;&nbsp;&nbsp;&nbsp; (default: 'monomer')  
+  **--models_to_use**: specify which models in model_preset that should be run, each model should be formated,  
+  &nbsp;&nbsp;&nbsp;&nbsp; for monomer and monomer_casp14 as model_X_, with X the number of the model,  
+  &nbsp;&nbsp;&nbsp;&nbsp; for monomer_ptm as model_X _ptm, with X the number of the model,  
+  &nbsp;&nbsp;&nbsp;&nbsp; for multimer as model_X_multimer_vY with X the number of the model and Y  
+  &nbsp;&nbsp;&nbsp;&nbsp; the version of the model.')  
+  &nbsp;&nbsp;&nbsp;&nbsp; (a comma separated list)  
   **--start_prediction**: model to start with, can be used to parallelize jobs,  
-  e.g --num_predictions_per_model 20 --start_prediction 20 will only make model _20  
-  e.g --num_predictions_per_model 21 --start_prediction 20 will make model _20 and _21 etc.
-    (default: '1')
-    (an integer)  
+  &nbsp;&nbsp;&nbsp;&nbsp; e.g --num_predictions_per_model 20 --start_prediction 20 will only make model _20  
+  &nbsp;&nbsp;&nbsp;&nbsp; e.g --num_predictions_per_model 21 --start_prediction 20 will make model _20 and _21 etc.  
+  &nbsp;&nbsp;&nbsp;&nbsp; (default: '1') (an integer)  
   **--no_templates**: will not use any template, will be faster than filter by date
     (default: 'false')  
   **--template_mmcif_dir**: Path to a directory with template mmCIF structures, each named <pdb_id>.cif  
+
+# Dropout
+The dropout at inference can be activated with the **--dropout** flag set to true. 
+In this case, the same dropout rates as those used by DeepMind at training are used. Here is DeepMind's architectural details (Jumper J et al, Nature, 2021 - Fig 3.a),
+annotated by Björn Wallner for CASP15 (https://predictioncenter.org/), that shows the various dropout rates:  
+
+![Dropout](imgs/dropout_arch.png)
+
+However, the **--dropout_rates_filename** flag allows to modify these rates, providing them in a json file. Here is an example of the content of
+such a json file:
+```json
+{  
+    "dropout_rate_msa_row_attention_with_pair_bias": 0.15,  
+    "dropout_rate_msa_column_attention": 0.0,  
+    "dropout_rate_msa_transition": 0.0,  
+    "dropout_rate_outer_product_mean": 0.0,  
+    "dropout_rate_triangle_attention_starting_node": 0.25,  
+    "dropout_rate_triangle_attention_ending_node": 0.25,  
+    "dropout_rate_triangle_multiplication_outgoing": 0.25,  
+    "dropout_rate_triangle_multiplication_incoming": 0.25,  
+    "dropout_rate_pair_transition": 0.0,  
+    "dropout_rate_structure_module": 0.1  
+}  
+```
+
+# Example
+Here is an example how to run a multimer prediction precising with v1 and v3 model parameters, without templates,
+activating dropout at inference, with 100 recycles max and early stop tolerance set at 0.2 Angströms. The flags can be set in a separated 
+text file called for instance *flags.flg* and called by the command line:
+
+python3 ./run_alphafold.py --flagfile=./flags.flg
+
+the *flags.flg* flag file containing:
+--fasta_paths=./seq.fasta  
+--output_dir=./output  
+--data_dir=*path*  
+--uniref90_database_path=*path*  
+--mgnify_database_path=*path*  
+--template_mmcif_dir=*path*  
+--obsolete_pdbs_path=*path*  
+--bfd_database_path=*path*  
+--pdb_seqres_database_path=*path*  
+--uniref30_database_path=*path*  
+--uniprot_database_path=*path*  
+--max_template_date=2023-05-01  
+--use_precomputed_msas=true  
+--num_predictions_per_model=5  
+--models_to_relax=best  
+--use_gpu_relax=true  
+--alignments_only=false  
+--dropout=true  
+--dropout_rates_filename  
+--max_recycles=100  
+--early_stop_tolerance=0.2  
+--bfd_max_hits=10000  
+--mgnify_max_hits=500  
+--uniprot_max_hits=50000  
+--uniref_max_hits=10000  
+--model_preset=multimer  
+--models_to_use=model_1_multimer_v1,model_2_multimer_v1,model_3_multimer_v1,model_4_multimer_v1,model_5_multimer_v1,
+model_1_multimer_v3,model_2_multimer_v3,model_3_multimer_v3,model_4_multimer_v3,model_5_multimer_v3  
+--start_prediction=1  
+--no_templates=true  
 
 # Authors
 Guillaume Brysbaert (UGSF - UMR 8576, France)  
