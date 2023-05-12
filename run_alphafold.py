@@ -104,10 +104,11 @@ flags.DEFINE_enum('db_preset', 'full_dbs',
                   'smaller genetic database config (reduced_dbs) or '
                   'full genetic database config  (full_dbs)')
 flags.DEFINE_enum('model_preset', 'monomer',
-                  ['monomer', 'monomer_casp14', 'monomer_ptm', 'multimer', 'multimer_v1', 'multimer_v2', 'multimer_v3'],
+                  ['monomer', 'monomer_casp14', 'monomer_ptm', 'multimer'],
                   'Choose preset model configuration - the monomer model, '
                   'the monomer model with extra ensembling, monomer model with '
-                  'pTM head, or multimer model; "multimer" computes the 3 versions of multimer models')
+                  'pTM head, or multimer model; "multimer" computes the 3 versions of multimer models by default, if models are not specified'
+                  'in --models_to_use')
 flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
                      'to obtain a timing that excludes the compilation time, '
                      'which should be more indicative of the time required for '
