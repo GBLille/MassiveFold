@@ -1,4 +1,4 @@
-#![header](imgs/header.jpg)
+![header](imgs/header.png)
 
 # MassiveFold
 
