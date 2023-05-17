@@ -1,4 +1,4 @@
-![header](imgs/header.jpg)
+#![header](imgs/header.jpg)
 
 # MassiveFold
 
@@ -122,15 +122,15 @@ python3 ./run_alphafold.py --flagfile=./flags.flg
 the *flags.flg* flag file containing:
 --fasta_paths=./seq.fasta  
 --output_dir=./output  
---data_dir=*path*  
---uniref90_database_path=*path*  
---mgnify_database_path=*path*  
---template_mmcif_dir=*path*  
---obsolete_pdbs_path=*path*  
---bfd_database_path=*path*  
---pdb_seqres_database_path=*path*  
---uniref30_database_path=*path*  
---uniprot_database_path=*path*  
+--data_dir=*path_to_set*  
+--uniref90_database_path=*path_to_set*  
+--mgnify_database_path=*path_to_set*  
+--template_mmcif_dir=*path_to_set*  
+--obsolete_pdbs_path=*path_to_set*  
+--bfd_database_path=*path_to_set*  
+--pdb_seqres_database_path=*path_to_set*  
+--uniref30_database_path=*path_to_set*  
+--uniprot_database_path=*path_to_set*  
 --max_template_date=2023-05-01  
 --use_precomputed_msas=true  
 --num_predictions_per_model=5  
