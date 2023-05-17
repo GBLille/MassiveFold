@@ -69,7 +69,7 @@ option.
   **--uniref_max_hits**: Max hits in uniref MSA
     (default: '10000')
     (an integer)  
-  **--model_preset**: <monomer|monomer_casp14|monomer_ptm|multimer|multimer_v1|multimer_v2|multimer_v3>:  
+  **--model_preset**: <monomer|monomer_casp14|monomer_ptm|multimer>:  
   &nbsp;&nbsp;&nbsp;&nbsp; Choose preset model configuration - the monomer model,  
   &nbsp;&nbsp;&nbsp;&nbsp; the monomer model with extra ensembling, monomer model with pTM head, or  
   &nbsp;&nbsp;&nbsp;&nbsp; multimer model; "multimer" computes the 3 versions of multimer models  
