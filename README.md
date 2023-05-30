@@ -58,10 +58,10 @@ option.
     (default: '0.5')
     (a number)  
   **--bfd_max_hits**: Max hits in BFD/uniref MSA
-    (default: '10000')
+    (default: '100000')
     (an integer)  
   **--mgnify_max_hits**: Max hits in mgnify MSA
-    (default: '500')
+    (default: '501')
     (an integer)  
  **--uniprot_max_hits**: Max hits in uniprot MSA
     (default: '50000')
@@ -72,7 +72,7 @@ option.
   **--model_preset**: <monomer|monomer_casp14|monomer_ptm|multimer>:  
   &nbsp;&nbsp;&nbsp;&nbsp; Choose preset model configuration - the monomer model,  
   &nbsp;&nbsp;&nbsp;&nbsp; the monomer model with extra ensembling, monomer model with pTM head, or  
-  &nbsp;&nbsp;&nbsp;&nbsp; multimer model; "multimer" computes the 3 versions of multimer models  
+  &nbsp;&nbsp;&nbsp;&nbsp; multimer model; "multimer" computes the 3 versions of multimer models by default if models are not specified  
   &nbsp;&nbsp;&nbsp;&nbsp; (default: 'monomer')  
   **--models_to_use**: specify which models in model_preset that should be run, each model should be formated,  
   &nbsp;&nbsp;&nbsp;&nbsp; for monomer and monomer_casp14 as model_X_, with X the number of the model,  
@@ -80,10 +80,15 @@ option.
   &nbsp;&nbsp;&nbsp;&nbsp; for multimer as model_X_multimer_vY with X the number of the model and Y  
   &nbsp;&nbsp;&nbsp;&nbsp; the version of the model.')  
   &nbsp;&nbsp;&nbsp;&nbsp; (a comma separated list)  
+  **--num_predictions_per_model**: How many predictions (each with a different random seed) will be  
+  &nbsp;&nbsp;&nbsp;&nbsp; generated per model. E.g. if this is 2 and there are 5  
+  &nbsp;&nbsp;&nbsp;&nbsp; models then there will be 10 predictions per input.  
+  &nbsp;&nbsp;&nbsp;&nbsp; Note: this FLAG works for monomer and multimer  
+  &nbsp;&nbsp;&nbsp;&nbsp; (default: '5')  
   **--start_prediction**: model to start with, can be used to parallelize jobs,  
   &nbsp;&nbsp;&nbsp;&nbsp; e.g --num_predictions_per_model 20 --start_prediction 20 will only make model _20  
   &nbsp;&nbsp;&nbsp;&nbsp; e.g --num_predictions_per_model 21 --start_prediction 20 will make model _20 and _21 etc.  
-  &nbsp;&nbsp;&nbsp;&nbsp; (default: '1') (an integer)  
+  &nbsp;&nbsp;&nbsp;&nbsp; (default: '1')  
   **--no_templates**: will not use any template, will be faster than filter by date
     (default: 'false')  
   **--template_mmcif_dir**: Path to a directory with template mmCIF structures, each named <pdb_id>.cif  
@@ -113,7 +118,7 @@ such a json file:
 ```
 
 # Example
-Here is an example how to run a multimer prediction precising with v1 and v3 model parameters, without templates,
+Here is an example how to run a multimer prediction with v1 and v3 model parameters, without templates,
 activating dropout at inference, with 100 recycles max and early stop tolerance set at 0.2 Angströms. The flags can be set in a separated 
 text file called for instance *flags.flg* and called by the command line:
 
@@ -138,18 +143,19 @@ the *flags.flg* flag file containing:
 --use_gpu_relax=true  
 --alignments_only=false  
 --dropout=true  
---dropout_rates_filename  
+--dropout_rates_filename=  
 --max_recycles=100  
 --early_stop_tolerance=0.2  
---bfd_max_hits=10000  
---mgnify_max_hits=500  
+--bfd_max_hits=100000  
+--mgnify_max_hits=501  
 --uniprot_max_hits=50000  
 --uniref_max_hits=10000  
 --model_preset=multimer  
---models_to_use=model_1_multimer_v1,model_2_multimer_v1,model_3_multimer_v1,model_4_multimer_v1,model_5_multimer_v1,
-model_1_multimer_v3,model_2_multimer_v3,model_3_multimer_v3,model_4_multimer_v3,model_5_multimer_v3  
+--models_to_use=  
 --start_prediction=1  
 --no_templates=true  
+
+To only use a selection of models, separate them with a comma in the models_to_use flag, *e.g.*: model_3_multimer_v1,model_3_multimer_v3  
 
 # Authors
 Guillaume Brysbaert (UGSF - UMR 8576, France)  
@@ -158,4 +164,4 @@ Christophe Blanchet (IFB, France)
 Claudio Mirabello (NBIS, Sweden)  
 Björn Wallner (Linköping University, Sweden)  
 
-This work was completed in part at the IDRIS Open Hackathon (http://www.idris.fr/annonces/idris-gpu-hackathon-2023.html), part of the Open Hackathons program. The authors would like to acknowledge OpenACC-Standard.org for their support.
+This work was partially completed at the IDRIS Open Hackathon (http://www.idris.fr/annonces/idris-gpu-hackathon-2023.html), part of the Open Hackathons program. The authors would like to acknowledge OpenACC-Standard.org for their support.

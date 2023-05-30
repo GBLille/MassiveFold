@@ -107,7 +107,7 @@ flags.DEFINE_enum('model_preset', 'monomer',
                   ['monomer', 'monomer_casp14', 'monomer_ptm', 'multimer'],
                   'Choose preset model configuration - the monomer model, '
                   'the monomer model with extra ensembling, monomer model with '
-                  'pTM head, or multimer model; "multimer" computes the 3 versions of multimer models by default, if models are not specified'
+                  'pTM head, or multimer model; "multimer" computes the 3 versions of multimer models by default if models are not specified'
                   'in --models_to_use')
 flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
                      'to obtain a timing that excludes the compilation time, '
@@ -122,7 +122,7 @@ flags.DEFINE_integer('num_predictions_per_model', 5, 'How many '
                      'predictions (each with a different random seed) will be '
                      'generated per model. E.g. if this is 2 and there are 5 '
                      'models then there will be 10 predictions per input. '
-                     'Note: this FLAG only applies if model_preset=multimer')
+                     'Note: this FLAG works for monomer and multimer')
 flags.DEFINE_integer('start_prediction', 1, 'model to start with, can be used to parallelize jobs, '
                      'e.g --num_predictions_per_model 20 --start_prediction 20 will only make model _20'
                      'e.g --num_predictions_per_model 21 --start_prediction 20 will make model _20 and _21 etc.')
@@ -135,9 +135,9 @@ flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
                      'changed.')
 flags.DEFINE_integer('max_recycles', 20,'Maximum number of recycles to run')
 flags.DEFINE_integer('uniprot_max_hits', 50000, 'Max hits in uniprot MSA')
-flags.DEFINE_integer('mgnify_max_hits', 500, 'Max hits in mgnify MSA')
+flags.DEFINE_integer('mgnify_max_hits', 501, 'Max hits in mgnify MSA')
 flags.DEFINE_integer('uniref_max_hits', 10000, 'Max hits in uniref MSA')
-flags.DEFINE_integer('bfd_max_hits', 10000, 'Max hits in BFD/uniref MSA')
+flags.DEFINE_integer('bfd_max_hits', 100000, 'Max hits in BFD/uniref MSA')
 flags.DEFINE_float('early_stop_tolerance', 0.5,'Early stopping threshold for recycling')
 flags.DEFINE_enum_class('models_to_relax', ModelsToRelax.BEST, ModelsToRelax,
                         'The models to run the final relaxation step on. '
