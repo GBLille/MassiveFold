@@ -249,9 +249,9 @@ class DataPipeline:
     logging.info('MGnify MSA size: %d sequences.', len(mgnify_msa))
     logging.info('Final (deduplicated) MSA size: %d sequences.',
                  msa_features['num_alignments'][0])
-    logging.info('Total number of templates (NB: this can include bad '
-                 'templates and is later filtered to top 4): %d.',
-                 templates_result.features['template_domain_names'].shape[0])
-    logging.info(f'Templates: {templates_result.features["template_domain_names"]}')
+    if not self.no_templates:
+        logging.info('Total number of templates (NB: this can include bad '
+                     'templates and is later filtered to top 4): %d.',
+                     templates_result.features['template_domain_names'].shape[0])
 
     return {**sequence_features, **msa_features, **templates_result.features}
