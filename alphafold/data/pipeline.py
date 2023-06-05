@@ -252,5 +252,6 @@ class DataPipeline:
     logging.info('Total number of templates (NB: this can include bad '
                  'templates and is later filtered to top 4): %d.',
                  templates_result.features['template_domain_names'].shape[0])
+    logging.info(f'Templates: {templates_result.features["template_domain_names"]}')
 
     return {**sequence_features, **msa_features, **templates_result.features}
