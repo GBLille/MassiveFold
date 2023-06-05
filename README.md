@@ -81,8 +81,7 @@ option.
   &nbsp;&nbsp;&nbsp;&nbsp; the version of the model.')  
   &nbsp;&nbsp;&nbsp;&nbsp; (a comma separated list)  
   **--num_predictions_per_model**: How many predictions (each with a different random seed) will be  
-  &nbsp;&nbsp;&nbsp;&nbsp; generated per model. E.g. if this is 2 and there are 5  
-  &nbsp;&nbsp;&nbsp;&nbsp; models then there will be 10 predictions per input.  
+  &nbsp;&nbsp;&nbsp;&nbsp; generated per model. E.g. if this is 2 and there are 5 models then there will be 10 predictions per input.  
   &nbsp;&nbsp;&nbsp;&nbsp; Note: this FLAG works for monomer and multimer  
   &nbsp;&nbsp;&nbsp;&nbsp; (default: '5')  
   **--start_prediction**: model to start with, can be used to parallelize jobs,  
@@ -155,7 +154,8 @@ the *flags.flg* flag file containing:
 --start_prediction=1  
 --no_templates=true  
 
-To only use a selection of models, separate them with a comma in the models_to_use flag, *e.g.*: model_3_multimer_v1,model_3_multimer_v3  
+To only use a selection of models, separate them with a comma in the models_to_use flag, *e.g.*:  
+--models_to_use=model_3_multimer_v1,model_3_multimer_v3  
 
 # Authors
 Guillaume Brysbaert (UGSF - UMR 8576, France)  
