@@ -12,6 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Adapted from https://github.com/bjornwallner/alphafoldv2.2.0/blob/main/run_relax_from_results_pkl.py
+#
 
 """Relax AlphaFold protein structure prediction script."""
 import json
@@ -49,8 +52,6 @@ logging.set_verbosity(logging.INFO)
 os.environ['OPENMM_CPU_THREADS']='16'
 
 
-
-
 MAX_TEMPLATE_HITS = 20
 RELAX_MAX_ITERATIONS = 0
 RELAX_ENERGY_TOLERANCE = 2.39
@@ -60,6 +61,12 @@ RELAX_MAX_OUTER_ITERATIONS = 3
 
 
 def main():
+
+    #check is ALPHAFOLDDB is defined
+    if not "ALPHAFOLDDB" in os.environ:
+        print("ALPHAFOLDDB environment variable has to be defined as the root of the databases folder.")
+        sys.exit()
+
     amber_relaxer = relax.AmberRelaxation(
     max_iterations=RELAX_MAX_ITERATIONS,
     tolerance=RELAX_ENERGY_TOLERANCE,
@@ -91,12 +98,12 @@ def main():
     #sys.exit()
     print(os.path.dirname(os.path.realpath(__file__)))
     #data_dir=f'{os.path.dirname(os.path.realpath(__file__))}/alphafold_data/'
-    data_dir=f'{os.environ["ALPHAFOLDDB"]}/model_parameters/2.3.1/params'
+    data_dir=f'{os.environ["ALPHAFOLDDB"]}'
     print(data_dir)
    
     #model should not be needed but the process_features is a method in the RunModel class
     #the processed_features are used to make a protein class.
-    #All of these dependencies could possible be removed, but I wanted the relax to be identical to what is in AF
+    #All of these dependencies could possibly be removed, but I wanted the relax to be identical to what is in AF
     #and this was the easiest way
     model_config = config.model_config(model_name)
     model_params = data.get_model_haiku_params(
@@ -108,13 +115,11 @@ def main():
         f=open(feature_pickle,'rb')
     except:
         print(f'Could not open {feature_pickle}')
-
-
-    try:
-        f=bz2.open(feature_pickle+'.bz2','rb')
-    except:
-        print(f'Could not open {feature_pickle}.bz2')
-        sys.exit()
+        try:
+            f=bz2.open(feature_pickle+'.bz2','rb')
+        except:
+            print(f'Could not open {feature_pickle}.bz2')
+            sys.exit()
 
     processed_feature_dict={}
     feature_dict=pickle.load(f)
