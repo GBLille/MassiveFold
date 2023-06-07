@@ -42,7 +42,7 @@ params_model_5.npz
 params_model_5_ptm.npz  
 
 Parameters for monomer and multimer v3 are available here: https://storage.googleapis.com/alphafold/alphafold_params_2022-12-06.tar  
-Parameters for monomer and multimer v2 are available here: https://storage.googleapis.com/alphafold/alphafold_params_2022-01-19.tar  
+Parameters for monomer and multimer v2 are available here: https://storage.googleapis.com/alphafold/alphafold_params_2022-03-02.tar  
 Parameters for monomer and multimer v1 are available here: https://storage.googleapis.com/alphafold/alphafold_params_2021-10-27.tar  
 
 # Added flags
