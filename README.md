@@ -176,5 +176,6 @@ Christophe Blanchet (IFB, France)
 Claudio Mirabello (NBIS, Sweden)  
 Björn Wallner (Linköping University, Sweden)  
 
-This work was partially completed at the IDRIS Open Hackathon (http://www.idris.fr/annonces/idris-gpu-hackathon-2023.html), 
+This work was carried out as part of the Work Package 4 of the [MUDIS4LS project](https://www.france-bioinformatique.fr/actualites/mudis4ls-le-projet-despaces-numeriques-mutualises-pour-les-sciences-du-vivant/) 
+lead by the French Bioinformatics Institute ([IFB](https://www.france-bioinformatique.fr/)). It was initiated at the [IDRIS Open Hackathon](http://www.idris.fr/annonces/idris-gpu-hackathon-2023.html), 
 part of the Open Hackathons program. The authors would like to acknowledge OpenACC-Standard.org for their support.
