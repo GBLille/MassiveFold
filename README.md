@@ -80,8 +80,8 @@ option.
   &nbsp;&nbsp;&nbsp;&nbsp; if models are not specified in the *--models_to_use* flag  
   &nbsp;&nbsp;&nbsp;&nbsp; (default: 'monomer')  
   **--models_to_use**: specify which models in *--model_preset* that should be run, each model should be formated,  
-  &nbsp;&nbsp;&nbsp;&nbsp; for monomer and monomer_casp14 as model_X_, with X the number of the model,  
-  &nbsp;&nbsp;&nbsp;&nbsp; for monomer_ptm as model_X _ptm, with X the number of the model,  
+  &nbsp;&nbsp;&nbsp;&nbsp; for monomer and monomer_casp14 as model_X, with X the number of the model,  
+  &nbsp;&nbsp;&nbsp;&nbsp; for monomer_ptm as model_X_ptm, with X the number of the model,  
   &nbsp;&nbsp;&nbsp;&nbsp; for multimer as model_X_multimer_vY with X the number of the model and Y  
   &nbsp;&nbsp;&nbsp;&nbsp; the version of the model.')  
   &nbsp;&nbsp;&nbsp;&nbsp; (a comma separated list)  
