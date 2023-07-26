@@ -180,7 +180,7 @@ if __name__ == "__main__":
     -> individual plots for each of the top 5 predictions
   python MF_plots.py --input_path ./jobname --plot_type for_each --top_n_prediction 5 --chosen_plots CF_PAEs
     -> mix plot_type by adding group PAE plot to the "for_each" individual ones
-  python MF_plots.py --input_path ./jobname --chosen_plots coverage, CF_PAEs
+  python MF_plots.py --input_path ./jobname --chosen_plots coverage,CF_PAEs
     -> regardless of the plot type, plot alignment coverage and group PAE for top 10 predictions
   """
   app.run(main)
