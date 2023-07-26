@@ -176,9 +176,9 @@ if __name__ == "__main__":
   Here are some basic commands:
   python MF_plots.py --input_path ./jobname --plot_type one_for_all
     -> group plots with values from all the top 10 predictions (default value of top_n_prediction parameter)
-  python MF_plots.py --input_path ./jobname --plot_type for_each --top_n_prediction 5
+  python MF_plots.py --input_path ./jobname --plot_type for_each --top_n_predictions 5
     -> individual plots for each of the top 5 predictions
-  python MF_plots.py --input_path ./jobname --plot_type for_each --top_n_prediction 5 --chosen_plots CF_PAEs
+  python MF_plots.py --input_path ./jobname --plot_type for_each --top_n_predictions 5 --chosen_plots CF_PAEs
     -> mix plot_type by adding group PAE plot to the "for_each" individual ones
   python MF_plots.py --input_path ./jobname --chosen_plots coverage,CF_PAEs
     -> regardless of the plot type, plot alignment coverage and group PAE for top 10 predictions
