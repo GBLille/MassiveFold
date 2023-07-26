@@ -10,13 +10,19 @@ from colabfold_plots import plot_msa_v2, plot_plddts, plot_confidence, plot_paes
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('input_path', None, 'Path to directory were the alphafold output to be plotted lies.')
+flags.DEFINE_string('input_path', None, 
+                    'Path to directory were the alphafold output to be plotted lies.')
 flags.DEFINE_enum('plot_type', "", ['one_for_all', 'for_each', ""],
                   'Select either a global plot for all specified predictions or one plot for each of them.')
-flags.DEFINE_integer('top_n_predictions', 10, 'Specify the number of predictions taken into account for plotting, it will be the n best predictions.')
-flags.DEFINE_list('chosen_plots', [], 'Specify the plots you want to get.')
+flags.DEFINE_integer('top_n_predictions', 10, 
+                     'Specify the number of predictions taken into account for plotting, it will be the n best predictions.')
+flags.DEFINE_list('chosen_plots', [], 
+                  'Specify the plots you want to get.'
+                  'CF_plddt for plddt of each predictions, DM_plddt_PAE for plddt and PAE on the same plot for each prediction,'
+                  'CF_PAEs for all predictions PAEs on the plot and CF_plddts for all predictions plddt on the same plot.')
 flags.DEFINE_enum('action', "save", ["save", "show"], "Chose to save the plot or show them.")
-flags.DEFINE_string('output_path', None, 'Path to directory that will be store the plot, same as the input dir by default.')
+flags.DEFINE_string('output_path', None, 
+                    'Path to directory that will be store the plot, same as the input dir by default.')
 
 PLOT_TYPES = {
   "for_each": ["DM_plddt_PAE", "CF_plddt"],
@@ -148,7 +154,7 @@ def main(argv):
   FLAGS.input_path = os.path.realpath(FLAGS.input_path)
   if not FLAGS.chosen_plots and not FLAGS.plot_type:
     raise ValueError(f"Chose either a plot type to have the default plots associated or\
-      directly chose the plots you want")
+directly chose the plots you want.")
   if not FLAGS.output_path:
     FLAGS.output_path = FLAGS.input_path
 
@@ -166,6 +172,16 @@ if __name__ == "__main__":
   https://github.com/sokrypton/ColabFold/blob/main/colabfold/plot.py
   https://github.com/sokrypton/ColabFold/blob/main/colabfold/colabfold.py
   https://colab.research.google.com/github/deepmind/alphafold/blob/main/notebooks/AlphaFold.ipynb
+  
+  Here are some basic commands:
+  python MF_plots.py --input_path ./jobname --plot_type one_for_all
+    -> group plots with values from all the top 10 predictions (default value of top_n_prediction parameter)
+  python MF_plots.py --input_path ./jobname --plot_type for_each --top_n_prediction 5
+    -> individual plots for each of the top 5 predictions
+  python MF_plots.py --input_path ./jobname --plot_type for_each --top_n_prediction 5 --chosen_plots CF_PAEs
+    -> mix plot_type by adding group PAE plot to the "for_each" individual ones
+  python MF_plots.py --input_path ./jobname --chosen_plots coverage, CF_PAEs
+    -> regardless of the plot type, plot alignment coverage and group PAE for top 10 predictions
   """
   app.run(main)
   
