@@ -68,7 +68,7 @@ def CF_plddts():
   if FLAGS.action == "show":
     plt.show()
 
-def MF_DM_dual_plddt_PAE(prediction):
+def MF_DM_dual_plddt_PAE(prediction, rank):
   jobname = FLAGS.input_path
   with open(f'{jobname}/result_{prediction}.pkl', "rb") as results_file:
     results = pickle.load(results_file)
@@ -80,39 +80,42 @@ def MF_DM_dual_plddt_PAE(prediction):
   
   plt.subplot(1, 2, 1)
   plt.plot(results['plddt'])
-  plt.title('Predicted LDDT')
+  plt.title(f'Predicted LDDT')
+  plt.suptitle(f'rank_{rank}_{prediction}')
   plt.xlabel('Residue')
   plt.ylabel('pLDDT')
 
   plt.subplot(1, 2, 2)
   plt.imshow(pae, vmin=0., vmax=max_pae, cmap='Greens_r')
   plt.colorbar(fraction=0.046, pad=0.04)
-  plt.title('Predicted Aligned Error')
+  plt.title('Predicted Aligned Error (Ångströms)')
+  plt.suptitle(f'rank_{rank}_{prediction}')
   plt.xlabel('Scored residue')
   plt.ylabel('Aligned residue')
   
   if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/{prediction}_plddt_PAE.png")
-    print(f"Saved as {prediction}_plddt_PAE.png")
+    plt.savefig(f"{FLAGS.output_path}/rank_{rank}_{prediction}_plddt_PAE.png")
+    print(f"Saved as rank_{rank}_{prediction}_plddt_PAE.png")
     plt.close()
   if FLAGS.action == "show":
     plt.show()
 
 def call_dual():
   preds_to_plot = extract_top_predictions()
-  for pred in preds_to_plot:
-    MF_DM_dual_plddt_PAE(pred)
+  for i, pred in enumerate(preds_to_plot):
+    MF_DM_dual_plddt_PAE(pred, i)
   
 def MF_indiv_plddt():
   jobname = FLAGS.input_path
   preds_to_plot = extract_top_predictions()
-  for pred in preds_to_plot:
+  for i, pred in enumerate(preds_to_plot):
     with open(f'{jobname}/result_{pred}.pkl', "rb") as pkl_file:
       data = pickle.load(pkl_file)
     plot_confidence(data['plddt'])
+    plt.title(f'rank_{i}_{pred} predicted lDDT')
     if FLAGS.action == "save":
-      plt.savefig(f"{FLAGS.output_path}/{pred}_plddt.png")
-      print(f"Saved as {pred}_plddt.png")
+      plt.savefig(f"{FLAGS.output_path}/rank_{i}_{pred}_plddt.png")
+      print(f"Saved as rank_{i}_{pred}_plddt.png")
       plt.close()
     if FLAGS.action == "show":
       plt.show()
