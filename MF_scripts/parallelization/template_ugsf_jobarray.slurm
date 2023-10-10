@@ -53,7 +53,7 @@ echo Model used is $$batch_model, batch computed between prediction $$batch_star
 output_dir="../output_array/$${name}/batch_$${SLURM_ARRAY_TASK_ID}_$${name}"
 echo output_dir is $$output_dir
 mkdir -p $${output_dir}/$${name}
-ln -s /home/"$USER"/massivefold_runs/output_array:/$${name}/msas $${output_dir}/$${name}
+ln -s /home/"$$USER"/massivefold_runs/output_array:/$${name}/msas $${output_dir}/$${name}
 
 data
 
