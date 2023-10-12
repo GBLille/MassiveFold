@@ -5,6 +5,14 @@ prediction_number_per_model=3
 batch_size=2
 models_to_use=
 
+source /ugsf/software/miniconda3/etc/profile.d/conda.sh
+while test "$CONDA_PREFIX"
+do
+    conda deactivate
+done
+
+conda activate massivefold-1.0.0
+
 ./group_templates.py
 #split the predictions in batches and store in json
 ./batching.py --predictions_per_model ${prediction_number_per_model} --batch_size ${batch_size}
