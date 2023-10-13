@@ -6,6 +6,7 @@ from absl import app, flags
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum("job_type", 'all', ['all', 'alignment', 'jobarray', 'post_treatment'], 'Type of the jobfile to create')
+flags.DEFINE_enum("cluster_name", 'ugsf', ['ugsf', 'jeanzay'], 'Specify the name of the cluster where the job is run.')
 flags.DEFINE_string("jobname", '', 'name of the job and fasta file as the input sequence')
 flags.DEFINE_bool("create_files", True, '')
 
@@ -21,13 +22,30 @@ def create_all_jobfile(templates:dict, params:dict):
     create_single_jobfile(jobtype, templates, params)
     
 def main(argv):
+  params = {}
+
   with open('batches.json', 'r') as json_batches:
     batches = json.load(json_batches)
-  params = {
-    'substitute_batch_number': list(batches.keys())[-1],
-    'jobname': FLAGS.jobname
-    }
-  with open('./templates/templates.json', 'r') as templates:
+    params.update({
+      'jobname': FLAGS.jobname,
+      'substitute_batch_number': list(batches.keys())[-1]
+    })
+
+  if FLAGS.cluster_name == 'jeanzay':
+    # to do: replace this by a json option file
+    params.update({
+      'jeanzay_gpu': 'v100',
+      'jeanzay_gpu_memory': '16g',
+      'jeanzay_project': 'fvp',
+      })
+    params['jeanzay_account'] = f"{params['jeanzay_project']}@{params['jeanzay_gpu']}"
+    params['jeanzay_full_gpu'] = f"{params['jeanzay_gpu']}-{params['jeanzay_gpu_memory']}"
+  
+  with open('batches.json', 'r') as json_batches:
+    batches = json.load(json_batches)
+    params['substitute_batch_number'] = list(batches.keys())[-1]
+  
+  with open(f'./templates/templates_{FLAGS.cluster_name}.json', 'r') as templates:
     all_templates = json.load(templates)
     
   if FLAGS.job_type != 'all':
