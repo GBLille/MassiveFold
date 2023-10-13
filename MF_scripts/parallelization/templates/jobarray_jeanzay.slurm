@@ -31,8 +31,6 @@ jobname=$jobname
 name=$$(basename -s .slurm $$jobname)
 fafile=../input/$${name}.fasta
 
-models_to_use=$$batch_model
-echo Model used is $$batch_model, batch computed between prediction $$batch_start and $$batch_end
 
 output_dir="../output_array/$${name}/batch_$${SLURM_ARRAY_TASK_ID}_$${name}"
 echo output_dir is $$output_dir
@@ -63,6 +61,9 @@ models_json=batches.json
 batch_model=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --element model)
 batch_start=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --element start)
 batch_end=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --element end)
+
+models_to_use=$$batch_model
+echo Model used is $$batch_model, batch computed between prediction $$batch_start and $$batch_end
 
 date
 

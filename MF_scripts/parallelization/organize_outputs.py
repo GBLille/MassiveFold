@@ -23,7 +23,7 @@ def create_global_ranking(all_batches_path, jobname, return_map=False):
   iptm_ptm = dict(sorted_predictions)
   order = sorted(whole_ranking, reverse=True, key=whole_ranking.get)
   global_ranking = {'iptm+ptm': iptm_ptm, 'order': order}
-  with open(f"{FLAGS.batches_path}/global_ranking.json", 'w') as fileout:
+  with open(f"{FLAGS.batches_path}/ranking_debug.json", 'w') as fileout:
     fileout.write(json.dumps(global_ranking, indent=4)) 
   return map_pred_batch
 
@@ -31,6 +31,11 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
   with open(os.path.join(all_batches_path, 'ranking_debug.json'), 'r') as rank_file:
     global_rank_order = json.load(rank_file)['order']
   for i, prediction in enumerate(global_rank_order):
+    # copy the features
+    if i == 0:
+      shutil.copy(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, "features.pkl"), os.path.join(all_batches_path, "features.pkl"))
+    
+    # copy the predictions
     if os.path.exists(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, f"relaxed_{prediction}.pdb")):
       pred_new_name = f"relaxed_{prediction}.pdb"
     else:

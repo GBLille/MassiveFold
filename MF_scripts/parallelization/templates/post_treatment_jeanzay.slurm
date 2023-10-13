@@ -10,7 +10,7 @@
 #SBATCH --output=../log/%x.o%j      # Output file %x is the jobname, %j the jobid
 #SBATCH --error=../log/%x.o%j       # Error file
 #SBATCH --time=10:00:00      # Expected runtime HH:MM:SS (max 100h)
-#SBATCH --account=$jeanzay_account #
+#SBATCH --account=fvp@cpu #
 ##
 ## Please, refer to comments below for
 ## more information about these 4 last options.
@@ -38,8 +38,8 @@ rm -r $$output/$$sequence_name/batch_*
 # plots
 echo "Generating plots"
 
-echo "python3 /gpfswork/rech/fvp/commun/plots/MF_plots.py --input_path $${output}/$${sequence_name} --plot_type for_each --top_n_predictions 5 --chosen_plots DM_plddt_PAE"
-time python3 /gpfswork/rech/fvp/commun/plots/MF_plots.py --input_path $${output}/$${sequence_name} --plot_type for_each --top_n_predictions 5 --chosen_plots DM_plddt_PAE
+echo "python3 /gpfswork/rech/fvp/commun/plots/MF_plots.py --input_path $${output}/$${sequence_name} --plot_type for_each --top_n_predictions 5 --chosen_plots coverage,DM_plddt_PAE"
+time python3 /gpfswork/rech/fvp/commun/plots/MF_plots.py --input_path $${output}/$${sequence_name} --plot_type for_each --top_n_predictions 5 --chosen_plots coverage,DM_plddt_PAE
 
 echo "python3 /gpfswork/rech/fvp/commun/plots/MF_plots.py --input_path $${output}/$${sequence_name} --top_n_predictions 5 --chosen_plots CF_PAEs"
 time python3 /gpfswork/rech/fvp/commun/plots/MF_plots.py --input_path $${output}/$${sequence_name} --top_n_predictions 5 --chosen_plots CF_PAEs
