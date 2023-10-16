@@ -1,18 +1,12 @@
 #!/bin/bash
 
-JOBNAME=$1
+JOBNAME=test_multimer
 prediction_number_per_model=3
 batch_size=2
 models_to_use=
-cluster="ugsf"
+cluster="jeanzay"
 
-source /ugsf/software/miniconda3/etc/profile.d/conda.sh
-while test "$CONDA_PREFIX"
-do
-    conda deactivate
-done
-
-conda activate massivefold-1.0.0
+module load massivefold/1.0.0
 
 ./group_templates.py --cluster_name $cluster
 #split the predictions in batches and store in json

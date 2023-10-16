@@ -2,8 +2,8 @@
 ##SBATCH --job-name=MF_inference
 #SBATCH --account=$jeanzay_account
 
-#SBATCH --error=../log_array/%x.%j
-#SBATCH --output=../log_array/%x.%j
+#SBATCH --error=../log_urh/%x.%j
+#SBATCH --output=../log_urh/%x.%j
 
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
