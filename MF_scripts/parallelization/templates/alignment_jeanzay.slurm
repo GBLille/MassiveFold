@@ -7,8 +7,8 @@
 ##SBATCH -C a100              # Use A100 partition
 #SBATCH --hint=nomultithread # Disable hyperthreading
 ##SBATCH --job-name=MF_alignment # Jobname
-#SBATCH --output=../log/%x.o%j      # Output file %x is the jobname, %j the jobid
-#SBATCH --error=../log/%x.o%j       # Error file
+#SBATCH --output=../log_parallel/%x.%j.log
+#SBATCH --error=../log_parallel/%x.%j.log
 #SBATCH --time=10:00:00      # Expected runtime HH:MM:SS (max 100h)
 #SBATCH --account=fvp@cpu #
 ##

@@ -33,11 +33,13 @@ def main(argv):
 
   if FLAGS.cluster_name == 'jeanzay':
     # to do: replace this by a json option file
-    params.update({
-      'jeanzay_gpu': 'v100',
+    custom_params = {               
+      'jeanzay_gpu': 'v100',      
       'jeanzay_gpu_memory': '16g',
-      'jeanzay_project': 'fvp',
-      })
+      'jeanzay_project': 'fvp',   
+      }                      
+    params.update(custom_params)
+
     params['jeanzay_account'] = f"{params['jeanzay_project']}@{params['jeanzay_gpu']}"
     params['jeanzay_full_gpu'] = f"{params['jeanzay_gpu']}-{params['jeanzay_gpu_memory']}"
   

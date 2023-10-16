@@ -9,8 +9,11 @@ cluster="jeanzay"
 module load massivefold/1.0.0
 
 ./group_templates.py --cluster_name $cluster
+
 #split the predictions in batches and store in json
-./batching.py --predictions_per_model ${prediction_number_per_model} --batch_size ${batch_size}
+./batching.py --predictions_per_model=${prediction_number_per_model} \
+  --batch_size=${batch_size} \
+  --models_to_use=${models_to_use}
 
 #create the alignment job
 ./create_jobfile.py --job_type alignment --jobname $JOBNAME --cluster_name $cluster
