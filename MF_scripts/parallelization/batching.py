@@ -7,29 +7,15 @@ from copy import deepcopy
 from absl import app, flags
 
 
-FLAGS = flags.FLAGS
 
 flags.DEFINE_integer('predictions_per_model', 25, 
                      'Choose the number of predictions inferred by each neural network model.')
 flags.DEFINE_integer('batch_size', 25, 
                      'Standard size of a prediction batch, if the number of prediction per model\
                        is not a multiple of it, the last batch will be smaller .')
-flags.DEFINE_list('models_to_use', ['model_1_multimer_v1',
-                                    'model_2_multimer_v1',
-                                    'model_3_multimer_v1',
-                                    'model_4_multimer_v1',
-                                    'model_5_multimer_v1',
-                                    'model_1_multimer_v2',
-                                    'model_2_multimer_v2',
-                                    'model_3_multimer_v2',
-                                    'model_4_multimer_v2',
-                                    'model_5_multimer_v2', 
-                                    'model_1_multimer_v3',
-                                    'model_2_multimer_v3',
-                                    'model_3_multimer_v3',
-                                    'model_4_multimer_v3',
-                                    'model_5_multimer_v3'], 
-                    'Select the models used for prediction among the five models of each AlphaFold2 version (15 in total).')
+flags.DEFINE_list('models_to_use', None, 'Select the models used for prediction among the five models of each AlphaFold2 version (15 in total).')
+
+FLAGS = flags.FLAGS
 
 def batches_per_model(pred_nb_per_model:int):
   opt_batch_nb = math.ceil(pred_nb_per_model/FLAGS.batch_size)
@@ -59,10 +45,28 @@ def batches_all_models(batches_unit, all_models):
   return batches
       
 def main(argv):
-  if not set(FLAGS.models_to_use).issubset(flags.FLAGS['models_to_use'].default):
-    raise ValueError(f"\n--models_to_use arguments must be choosed from this list:\
-      \n{flags.FLAGS['models_to_use'].default}\n\nIf you want to use all previous models don't specify the --models_to_use option.")
+  model_names = [
+  'model_1_multimer_v1',
+  'model_2_multimer_v1',
+  'model_3_multimer_v1',
+  'model_4_multimer_v1',
+  'model_5_multimer_v1',
+  'model_1_multimer_v2',
+  'model_2_multimer_v2',
+  'model_3_multimer_v2',
+  'model_4_multimer_v2',
+  'model_5_multimer_v2',
+  'model_1_multimer_v3',
+  'model_2_multimer_v3',
+  'model_3_multimer_v3',
+  'model_4_multimer_v3',
+  'model_5_multimer_v3'
+  ]
 
+  FLAGS.models_to_use = [model for model in model_names if model in FLAGS.models_to_use]
+  if not FLAGS.models_to_use:
+    FLAGS.models_to_use = model_names
+    
   per_model_batches = batches_per_model(pred_nb_per_model=FLAGS.predictions_per_model)
   all_model_batches = batches_all_models(per_model_batches, FLAGS.models_to_use)
   
