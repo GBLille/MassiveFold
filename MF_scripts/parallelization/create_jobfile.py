@@ -6,7 +6,7 @@ from absl import app, flags
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum("job_type", 'all', ['all', 'alignment', 'jobarray', 'post_treatment'], 'Type of the jobfile to create')
-flags.DEFINE_enum("cluster_name", 'ugsf', ['ugsf', 'jeanzay'], 'Specify the name of the cluster where the job is run.')
+flags.DEFINE_enum("cluster_name", 'ugsf', ['ugsf', 'jeanzay', 'generic'], 'Specify the name of the cluster where the job is run.')
 flags.DEFINE_string("jobname", '', 'name of the job and fasta file as the input sequence')
 flags.DEFINE_bool("create_files", True, '')
 flags.DEFINE_string("path_to_parameters", "", "Path to a json file were the jobfile parameters can be specified.")
@@ -37,14 +37,24 @@ def main(argv):
       for i in custom_params:
         print(f"{i}: {custom_params[i]}")
   else:
-    custom_params = {
-      'jeanzay_gpu': 'v100',
-      'jeanzay_gpu_memory': '16g',
-      'jeanzay_project': 'fvp',
-      'substitute_dropout': 'true',
-      'substitute_model_preset': 'multimer',
-      'substitute_no_templates': 'true',
-      }
+    custom_params = {                                           
+      "jeanzay_gpu": "v100",                  
+      "jeanzay_gpu_memory": "16g",            
+      "jeanzay_project": "fvp",               
+      "substitute_dropout": "true",           
+      "substitute_model_preset": "multimer",  
+      "substitute_dropout_rates_filename":"", 
+      "substitute_no_templates": "true",      
+      "substitute_db_preset":"full_dbs",      
+      "substitute_use_gpu_relax":"true",      
+      "substitute_models_to_relax":"best",    
+      "substitute_max_recycles":"21",         
+     "substitute_early_stop_tolerance":"0.5",
+     "substitute_bfd_max_hits":"100000",     
+     "substitute_mgnify_max_hits":"501",     
+     "substitute_uniprot_max_hits":"50000",  
+     "substitute_uniref_max_hits":"10000",
+    }                                           
   params.update(custom_params)
   
   if FLAGS.cluster_name == 'jeanzay':

@@ -30,8 +30,8 @@ max_recycles=$substitute_max_recycles
 early_stop_tolerance=$substitute_early_stop_tolerance
 bfd_max_hits=$substitute_bfd_max_hits
 mgnify_max_hits=$substitute_mgnify_max_hits
-uniprot_max_hits=$ubstitute_uniprot_max_hits
-uniref_max_hits=$substitute_uniref
+uniprot_max_hits=$substitute_uniprot_max_hits
+uniref_max_hits=$substitute_uniref_max_hits
 no_templates=$substitute_no_templates
 
 # parameters for each task in the job array
