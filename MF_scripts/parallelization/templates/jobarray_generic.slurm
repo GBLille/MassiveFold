@@ -1,46 +1,40 @@
 #!/bin/bash
 
-#SBATCH --partition=base
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=16
-#SBATCH --mem=200G
-#SBATCH --gpus-per-node=1
-#SBATCH --gres=gpu:1
-#SBATCH -o ../log/%x.o%j
-#SBATCH --array=0-$substitute_batch_number
+# slurm parameters depending on your config 
 
 date
 
-module purge
-module load massivefold/1.0.0
-
-#for memory
+# for memory
 export TF_FORCE_UNIFIED_MEMORY=1
 export XLA_PYTHON_CLIENT_MEM_FRACTION=4.0
 
-#variables to adapt
-data_dir=/shared/databases/2023-07-31
-model_preset=$substitute_model_preset
+# fixed variables
+run_alphafold_path= #e.g.:/gpfslocalsup/pub/anaconda-py3/2023.03/envs/MassiveFold-1.0.0/bin/run_alphafold.py on jean zay cluster
+data_dir= #e.g.:/shared/databases/2023-07-31
 max_template_date=2023-07-31
-db_preset=full_dbs
-use_gpu_relax=true
 use_precomputed_msas=true
-models_to_relax=best
 alignments_only=false
-dropout=$substitute_dropout
-dropout_rates_filename=
-max_recycles=20
-early_stop_tolerance=0.5
-bfd_max_hits=100000
-mgnify_max_hits=501
-uniprot_max_hits=50000
-uniref_max_hits=10000
-no_templates=$substitute_no_templates
 
+# variables to adapt
+current_dir=$$(realpath .)
 jobname=$jobname
 name=$$(basename -s .slurm $$jobname)
 fafile=../input/$${name}.fasta
+model_preset=$substitute_model_preset
+db_preset=$substitute_db_preset
+use_gpu_relax=$substitute_use_gpu_relax
+models_to_relax=$substitute_models_to_relax
+dropout=$substitute_dropout
+dropout_rates_filename=$substitute_dropout_rates_filename
+max_recycles=$substitute_max_recycles
+early_stop_tolerance=$substitute_early_stop_tolerance
+bfd_max_hits=$substitute_bfd_max_hits
+mgnify_max_hits=$substitute_mgnify_max_hits
+uniprot_max_hits=$ubstitute_uniprot_max_hits
+uniref_max_hits=$substitute_uniref
+no_templates=$substitute_no_templates
 
+# parameters for each task in the job array
 models_json=batches.json
 batch_model=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --element model)
 batch_start=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --element start)
@@ -54,11 +48,11 @@ output_dir="../output_array/$${name}/batch_$${SLURM_ARRAY_TASK_ID}_$${name}"
 echo output_dir is $$output_dir
 mkdir -vp $${output_dir}/$${name}
 echo
-ln -s /home/"$$USER"/massivefold_runs/output_array/$${name}/msas $${output_dir}/$${name}
+ln -s $$current_dir/../output_array/$${name}/msas $${output_dir}/$${name}
 
 date
 
-echo "massivefold-1.0.0
+echo "python3 $${run_alphafold_path}
     --fasta_paths=$${fafile}
     --output_dir=$${output_dir}
     --data_dir=$${data_dir}
@@ -90,7 +84,7 @@ echo "massivefold-1.0.0
     --uniref30_database_path=$${data_dir}/uniref30/UniRef30_2021_03
     --uniprot_database_path=$${data_dir}/uniprot/uniprot.fasta"
 
-time massivefold-1.0.0 \
+time python3 $${run_alphafold_path} \
     --fasta_paths=$${fafile} \
     --output_dir=$${output_dir} \
     --data_dir=$${data_dir} \

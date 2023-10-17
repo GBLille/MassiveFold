@@ -1,0 +1,8 @@
+{
+    "jeanzay_gpu": "v100",
+    "jeanzay_gpu_memory": "16g",
+    "jeanzay_project": "fvp",
+    "substitute_dropout": "true",
+    "substitute_model_preset": "multimer",
+    "substitute_no_templates": "true"
+}

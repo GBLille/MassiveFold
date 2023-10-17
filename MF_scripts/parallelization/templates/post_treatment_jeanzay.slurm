@@ -7,8 +7,8 @@
 ##SBATCH -C $jeanzay_full_gpu              # Use A100 partition
 #SBATCH --hint=nomultithread # Disable hyperthreading
 ##SBATCH --job-name=MF_post_treatment # Jobname
-#SBATCH --output=../log/%x.%j.log
-#SBATCH --error=../log/%x.%j.log
+#SBATCH --output=../log_parallel/%x.%j.log
+#SBATCH --error=../log_parallel/%x.%j.log
 #SBATCH --time=10:00:00      # Expected runtime HH:MM:SS (max 100h)
 #SBATCH --account=fvp@cpu #
 ##

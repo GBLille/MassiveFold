@@ -26,7 +26,6 @@ def batches_per_model(pred_nb_per_model:int):
       pred_nb_per_model -= FLAGS.batch_size
       batch_sizes.append(FLAGS.batch_size)
     else:
-      #print(f"Last batch size: {pred_nb_per_model}")
       batch_sizes.append(pred_nb_per_model)
   
   batch_edges = list(np.cumsum([0] + batch_sizes))
@@ -62,13 +61,14 @@ def main(argv):
   'model_4_multimer_v3',
   'model_5_multimer_v3'
   ]
-
-  FLAGS.models_to_use = [model for model in model_names if model in FLAGS.models_to_use]
-  if not FLAGS.models_to_use:
-    FLAGS.models_to_use = model_names
-    
+  
+  if FLAGS.models_to_use:
+    model_names = [model for model in model_names if model in FLAGS.models_to_use]
+  
+  # Divide the predictions in batches 
   per_model_batches = batches_per_model(pred_nb_per_model=FLAGS.predictions_per_model)
-  all_model_batches = batches_all_models(per_model_batches, FLAGS.models_to_use)
+  # Distribute the batches on all models
+  all_model_batches = batches_all_models(per_model_batches, model_names)
   
   with open("batches.json", "w") as json_output:
     json.dump(all_model_batches, json_output)

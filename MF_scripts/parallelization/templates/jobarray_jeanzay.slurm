@@ -40,14 +40,14 @@ current_dir=$$(realpath .)
 ln -s $$current_dir/../output_array/$${name}/msas $${output_dir}/$${name}
 
 data_dir=$${ALPHAFOLDDB}/model_parameters/2.3.1
-model_preset=multimer
+model_preset=$substitute_model_preset
 max_template_date=2023-07-31
 db_preset=full_dbs
 use_gpu_relax=true
 use_precomputed_msas=true
 models_to_relax=best
 alignments_only=false
-dropout=true
+dropout=$substitute_dropout
 dropout_rates_filename=
 max_recycles=21
 early_stop_tolerance=0.5
@@ -55,7 +55,7 @@ bfd_max_hits=100000
 mgnify_max_hits=501
 uniprot_max_hits=50000
 uniref_max_hits=10000
-no_templates=true
+no_templates=$substitute_no_templates
 
 models_json=batches.json
 batch_model=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --element model)
@@ -132,4 +132,3 @@ time python3 $$(which run_alphafold.py) \
     --uniprot_database_path=$${ALPHAFOLDDB}/uniprot/uniprot.fasta
 
 date
-
