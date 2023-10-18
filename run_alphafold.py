@@ -52,6 +52,8 @@ class ModelsToRelax(enum.Enum):
   ALL = 0
   BEST = 1
   NONE = 2
+  FIVE = 3
+  TEN = 4
 
 flags.DEFINE_list(
     'fasta_paths', None, 'Paths to FASTA files, each containing a prediction '
@@ -165,7 +167,7 @@ flags.DEFINE_boolean('alignments_only', False, 'Whether to generate only alignme
 flags.DEFINE_boolean('no_templates',False, 'will not use any template, will be faster than filter by date')
 flags.DEFINE_string('dropout_rates_filename', None, 'Provide dropout rates for inference from a json file. '
                      'If None, default rates are used, if "dropout" is True.')
-
+flags.DEFINE_float('score_threshold_pkl', 0, 'Only export pkl for predictions that are above this score threshold.')
 FLAGS = flags.FLAGS
 
 MAX_TEMPLATE_HITS = 20
@@ -275,11 +277,12 @@ def predict_structure(
     np_prediction_result = _jnp_to_np(dict(prediction_result))
     if "num_recycles" in np_prediction_result:
       logging.info(f"Number of recycles for this model: {np_prediction_result['num_recycles']}")
-
-    # Save the model outputs.
-    result_output_path = os.path.join(output_dir, f'result_{model_name}.pkl')
-    with open(result_output_path, 'wb') as f:
-      pickle.dump(np_prediction_result, f, protocol=4)
+    
+    if prediction_result['ranking_confidence'] >= FLAGS.keep_pkl_above_score:
+      # Save the model outputs.
+      result_output_path = os.path.join(output_dir, f'result_{model_name}.pkl')
+      with open(result_output_path, 'wb') as f:
+        pickle.dump(np_prediction_result, f, protocol=4)
 
     # Add the predicted LDDT in the b-factor column.
     # Note that higher predicted LDDT value means higher model confidence.
@@ -307,6 +310,10 @@ def predict_structure(
     to_relax = [ranked_order[0]]
   elif models_to_relax == ModelsToRelax.ALL:
     to_relax = ranked_order
+  elif models_to_relax == ModelsToRelax.FIVE:
+    to_relax = ranked_order[:5]
+  elif models_to_relax == ModelsToRelax.TEN:
+    to_relax = ranked_order[:10]
   elif models_to_relax == ModelsToRelax.NONE:
     to_relax = []
 
