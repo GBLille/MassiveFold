@@ -278,7 +278,7 @@ def predict_structure(
     if "num_recycles" in np_prediction_result:
       logging.info(f"Number of recycles for this model: {np_prediction_result['num_recycles']}")
     
-    if prediction_result['ranking_confidence'] >= FLAGS.keep_pkl_above_score:
+    if prediction_result['ranking_confidence'] >= FLAGS.score_threshold_pkl:
       # Save the model outputs.
       result_output_path = os.path.join(output_dir, f'result_{model_name}.pkl')
       with open(result_output_path, 'wb') as f:
