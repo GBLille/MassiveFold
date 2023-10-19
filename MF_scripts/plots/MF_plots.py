@@ -191,7 +191,7 @@ directly chose the plots you want.")
 
 if __name__ == "__main__":
   """ 
-  These functions are based on the following scripts from ColabFold repository and DeepMind colab notebook:
+  These functions are a combination of MassiveFold's team work and the following scripts from ColabFold repository and DeepMind colab notebook:
   https://github.com/sokrypton/ColabFold/blob/main/colabfold/plot.py
   https://github.com/sokrypton/ColabFold/blob/main/colabfold/colabfold.py
   https://colab.research.google.com/github/deepmind/alphafold/blob/main/notebooks/AlphaFold.ipynb
