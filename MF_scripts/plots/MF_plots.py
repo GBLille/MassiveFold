@@ -133,19 +133,20 @@ def MF_coverage():
   elif FLAGS.action == "show":
     plt.show()
 
-def MF_score_distribution():
-  jobname = FLAGS.input_path
-  with open(f'{jobname}/ranking_debug.json', 'r') as json_scores:
-    scores = json.load(json_scores)['iptm+ptm']
-  
-  # Global score distribution
+def MF_score_histogram(scores:dict):
+  # Global score distribution 
   all_scores = [scores[model] for model in scores]
   histogram, ax1 = plt.subplots()
   ax1.hist(all_scores, bins=50)
   ax1.set(title=f"Histogram of {os.path.basename(FLAGS.input_path)}'s \
 {len(all_scores)} predictions score distribution", xlabel='Ranking confidence',
 ylabel='Prediction number')
+  if FLAGS.action == "save":
+    histogram.savefig(f"{FLAGS.output_path}/score_distribution.png")
+    print("Saved as score_distribution.png")
+    plt.close(histogram)
 
+def MF_versions_density(scores:dict):
   # Score distribution by NN model version
   scores_per_version = pd.DataFrame(
     {
@@ -154,20 +155,50 @@ ylabel='Prediction number')
     'v3': [scores[model] for model in scores if "v3" in model],
     }
   )
-  kde, ax2 = plt.subplots()
+  kde_versions, ax2 = plt.subplots()
   scores_per_version.plot(kind="kde", ax=ax2, bw_method=0.3)
-  ax2.set(title="Ranked confidence density per NN model version")
-
+  ax2.set(
+    title="Ranked confidence density per NN model version",
+    xlabel="Ranked confidence",
+    ylabel="Density"
+  )
   if FLAGS.action == "save":
-    histogram.savefig(f"{FLAGS.output_path}/score_distribution.png")
-    print("Saved as score_distribution.png")
-    kde.savefig(f"{FLAGS.output_path}/versions_density.png")
+    kde_versions.savefig(f"{FLAGS.output_path}/versions_density.png")
     print("Saved as versions_density.png")
-    plt.close(histogram)
-    plt.close(kde)
-  elif FLAGS.action == "show":
-    histogram.show()
-    kde.show() 
+    plt.close(kde_versions)
+
+def MF_models_density(scores:dict):
+  # Score distribution by NN model
+  NN_models = {prediction.split('_pred')[0]: [] for prediction in scores}
+  for model in scores:
+    NN_models[model.split('_pred')[0]].append(scores[model])
+
+  scores_per_model = pd.DataFrame(NN_models)
+  kde_models, ax3 = plt.subplots()
+  scores_per_model.plot(kind="kde", ax=ax3)
+  ax3.set(
+    title="Ranked confidence density per NN model",
+    xlabel="Ranked confidence",
+    ylabel="Density"
+  )
+  if FLAGS.action == "save":
+    kde_models.savefig(f"{FLAGS.output_path}/models_density.png")
+    print("Saved as models_density.png")
+    plt.close(kde_models)
+
+def MF_score_distribution(distribution_types):
+  jobname = FLAGS.input_path
+  with open(f'{jobname}/ranking_debug.json', 'r') as json_scores:
+    scores = json.load(json_scores)['iptm+ptm']
+  
+  DISTRIBUTION_MAP = {
+    "scores": MF_score_histogram,
+    "versions_scores": MF_versions_density,
+    "models_scores":MF_models_density
+  }
+
+  for distrib in distribution_types:
+    DISTRIBUTION_MAP[distrib](scores)
 
 PLOT_MAP = {
   "DM_plddt_PAE": call_dual,
@@ -202,7 +233,8 @@ directly chose the plots you want.")
   if "coverage" in FLAGS.chosen_plots:
     MF_coverage()
   if "score_distribution" in FLAGS.chosen_plots:
-    MF_score_distribution()
+    types = ["scores", "versions_scores", "models_scores"]
+    MF_score_distribution(types)
   MF_plot()
 
 
