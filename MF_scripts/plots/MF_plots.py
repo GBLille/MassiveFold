@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import os
 import sys
 import pickle
@@ -136,19 +137,37 @@ def MF_score_distribution():
   jobname = FLAGS.input_path
   with open(f'{jobname}/ranking_debug.json', 'r') as json_scores:
     scores = json.load(json_scores)['iptm+ptm']
-  all_scores = [scores[model] for model in scores]
-  plt.hist(all_scores, bins=50)
-  plt.title(f"Histogram of {os.path.basename(FLAGS.input_path)}'s \
-{len(all_scores)} predictions score distribution")
-  plt.ylabel('Prediction number')
-  plt.xlabel('Ranking confidence')
-  if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/score_distribution.png")
-    print("Saved as score_distribution.png")
-    plt.close()
-  elif FLAGS.action == "show":
-    plt.show()
   
+  # Global score distribution
+  all_scores = [scores[model] for model in scores]
+  histogram, ax1 = plt.subplots()
+  ax1.hist(all_scores, bins=50)
+  ax1.set(title=f"Histogram of {os.path.basename(FLAGS.input_path)}'s \
+{len(all_scores)} predictions score distribution", xlabel='Ranking confidence',
+ylabel='Prediction number')
+
+  # Score distribution by NN model version
+  scores_per_version = pd.DataFrame(
+    {
+    'v1': [scores[model] for model in scores if "v1" in model],
+    'v2': [scores[model] for model in scores if "v2" in model],
+    'v3': [scores[model] for model in scores if "v3" in model],
+    }
+  )
+  kde, ax2 = plt.subplots()
+  scores_per_version.plot(kind="kde", ax=ax2, bw_method=0.3)
+  ax2.set(title="Ranked confidence density per NN model version")
+
+  if FLAGS.action == "save":
+    histogram.savefig(f"{FLAGS.output_path}/score_distribution.png")
+    print("Saved as score_distribution.png")
+    kde.savefig(f"{FLAGS.output_path}/versions_density.png")
+    print("Saved as versions_density.png")
+    plt.close(histogram)
+    plt.close(kde)
+  elif FLAGS.action == "show":
+    histogram.show()
+    kde.show() 
 
 PLOT_MAP = {
   "DM_plddt_PAE": call_dual,
