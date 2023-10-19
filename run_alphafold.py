@@ -167,7 +167,11 @@ flags.DEFINE_boolean('alignments_only', False, 'Whether to generate only alignme
 flags.DEFINE_boolean('no_templates',False, 'will not use any template, will be faster than filter by date')
 flags.DEFINE_string('dropout_rates_filename', None, 'Provide dropout rates for inference from a json file. '
                      'If None, default rates are used, if "dropout" is True.')
-flags.DEFINE_float('score_threshold_pkl', 0, 'Only export pkl for predictions that are above this score threshold.')
+flags.DEFINE_float('score_threshold_pkl', 0, 'Only export pkl for predictions that are above'
+                   'this score threshold.')
+flags.DEFINE_float('max_score_stop', 1, 'Terminates the computing process when a suitable'
+                   'prediction with a ranking confidence > max_score_stop has been obtained')
+
 FLAGS = flags.FLAGS
 
 MAX_TEMPLATE_HITS = 20
@@ -283,7 +287,7 @@ def predict_structure(
       result_output_path = os.path.join(output_dir, f'result_{model_name}.pkl')
       with open(result_output_path, 'wb') as f:
         pickle.dump(np_prediction_result, f, protocol=4)
-
+     
     # Add the predicted LDDT in the b-factor column.
     # Note that higher predicted LDDT value means higher model confidence.
     plddt_b_factors = np.repeat(
@@ -299,6 +303,11 @@ def predict_structure(
     unrelaxed_pdb_path = os.path.join(output_dir, f'unrelaxed_{model_name}.pdb')
     with open(unrelaxed_pdb_path, 'w') as f:
       f.write(unrelaxed_pdbs[model_name])
+
+    if prediction_result['ranking_confidence'] > FLAGS.max_score_stop:
+      print(f"The max score {FLAGS.max_score_stop} has been attainted by \
+prediction {model_name} with {prediction_result['ranking_confidence']}")
+      break
 
   # Rank by model confidence.
   ranked_order = [
