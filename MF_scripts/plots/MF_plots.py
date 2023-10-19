@@ -27,7 +27,7 @@ flags.DEFINE_string('output_path', None,
 PLOT_TYPES = {
   "for_each": ["DM_plddt_PAE", "CF_plddt"],
   "one_for_all": ["CF_PAEs", "CF_plddts"],
-  "specific": ["coverage"]
+  "specific": ["coverage", "score_distribution"]
 }
 
 def extract_top_predictions():
@@ -129,8 +129,26 @@ def MF_coverage():
     plt.savefig(f"{FLAGS.output_path}/alignment_coverage.png")
     print(f"Saved as alignment_coverage.png")
     plt.close()
-  if FLAGS.action == "show":
+  elif FLAGS.action == "show":
     plt.show()
+
+def MF_score_distribution():
+  jobname = FLAGS.input_path
+  with open(f'{jobname}/ranking_debug.json', 'r') as json_scores:
+    scores = json.load(json_scores)['iptm+ptm']
+  all_scores = [scores[model] for model in scores]
+  plt.hist(all_scores, bins=50)
+  plt.title(f"Histogram of {os.path.basename(FLAGS.input_path)}'s \
+{len(all_scores)} predictions score distribution")
+  plt.ylabel('Prediction number')
+  plt.xlabel('Ranking confidence')
+  if FLAGS.action == "save":
+    plt.savefig(f"{FLAGS.output_path}/score_distribution.png")
+    print("Saved as score_distribution.png")
+    plt.close()
+  elif FLAGS.action == "show":
+    plt.show()
+  
 
 PLOT_MAP = {
   "DM_plddt_PAE": call_dual,
@@ -164,6 +182,8 @@ directly chose the plots you want.")
   # Plot depending on the user specifications
   if "coverage" in FLAGS.chosen_plots:
     MF_coverage()
+  if "score_distribution" in FLAGS.chosen_plots:
+    MF_score_distribution()
   MF_plot()
 
 
