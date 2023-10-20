@@ -134,6 +134,11 @@ def MF_coverage():
     plt.show()
 
 def MF_score_histogram(scores:dict):
+  try:
+    scores = scores['iptm+ptm']
+  except KeyError:
+    scores = scores['plddts']
+
   # Global score distribution 
   all_scores = [scores[model] for model in scores]
   histogram, ax1 = plt.subplots()
@@ -147,7 +152,15 @@ ylabel='Prediction number')
     plt.close(histogram)
 
 def MF_versions_density(scores:dict):
+  try:
+    scores = scores['iptm+ptm']
+  except KeyError:
+    print('\nOnly one version of NN models, no versions density plot.\n')
+    return None
+
   # Score distribution by NN model version
+  available_version = {scores[model].split('multimer_')[1].split('_pred')[0]}
+  print(f"Versions: {avaible_version}")
   scores_per_version = pd.DataFrame(
     {
     'v1': [scores[model] for model in scores if "v1" in model],
@@ -168,6 +181,11 @@ def MF_versions_density(scores:dict):
     plt.close(kde_versions)
 
 def MF_models_density(scores:dict):
+  try:
+    scores = scores['iptm+ptm']
+  except KeyError:
+    scores = scores['plddts']
+
   # Score distribution by NN model
   NN_models = {prediction.split('_pred')[0]: [] for prediction in scores}
   for model in scores:
@@ -189,7 +207,7 @@ def MF_models_density(scores:dict):
 def MF_score_distribution(distribution_types):
   jobname = FLAGS.input_path
   with open(f'{jobname}/ranking_debug.json', 'r') as json_scores:
-    scores = json.load(json_scores)['iptm+ptm']
+    scores = json.load(json_scores)
   
   DISTRIBUTION_MAP = {
     "scores": MF_score_histogram,
