@@ -159,8 +159,7 @@ def MF_versions_density(scores:dict):
     return None
 
   # Score distribution by NN model version
-  available_version = {scores[model].split('multimer_')[1].split('_pred')[0]}
-  print(f"Versions: {avaible_version}")
+  available_version = {model.split('multimer_')[1].split('_pred')[0] for model in scores}
   scores_per_version = pd.DataFrame(
     {
     'v1': [scores[model] for model in scores if "v1" in model],
