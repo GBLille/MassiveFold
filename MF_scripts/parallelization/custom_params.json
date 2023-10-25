@@ -4,5 +4,15 @@
     "jeanzay_project": "fvp",
     "substitute_dropout": "true",
     "substitute_model_preset": "multimer",
-    "substitute_no_templates": "true"
+    "substitute_dropout_rates_filename":"",
+    "substitute_no_templates": "true",
+    "substitute_db_preset":"full_dbs",
+    "substitute_use_gpu_relax":"true",
+    "substitute_models_to_relax":"best",
+    "substitute_max_recycles":"21",
+    "substitute_early_stop_tolerance":"0.5",
+    "substitute_bfd_max_hits":"100000",
+    "substitute_mgnify_max_hits":"501",
+    "substitute_uniprot_max_hits":"50000",
+    "substitute_uniref_max_hits":"10000"
 }
