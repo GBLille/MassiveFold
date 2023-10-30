@@ -24,6 +24,7 @@ Usage: $USAGE\n\
 fi
 
 calibration=false
+predictions_per_model=67
 batch_size=25
 
 # argument parser
@@ -57,10 +58,6 @@ while true; do
       msas_precomputed=$2
       shift 2
       ;;
-    -i|--iteration)
-      iteration=$2
-      shift 2
-      ;;
     *)
       break
       ;;
@@ -71,7 +68,6 @@ done
 if
   [ -z "$sequence_name" ] ||
   [ -z "$run_name" ] ||
-  [ -z "$predictions_per_model" ] ||
   [ -z "$parameters_file" ]; then
   echo -e "Usage: $USAGE"
   exit 1
@@ -89,7 +85,6 @@ fi
 
 # Massivefold
 
-cluster="jeanzay"
 module load massivefold/1.0.0
 
 ./group_templates.py --parameters custom_params.json

@@ -2,6 +2,21 @@
 
 # MassiveFold
 
+Table of contents
+=================
+
+  * [Setup](#setup)
+  * [Added flags](#added-flags)
+  * [Dropout](#dropout)
+  * [Usage](#usage)
+    * [Examples](#example)
+    * [MassiveFold in parallel](#running-massivefold-in-parallel-on-clusters)
+       * [Inference workflow](#inference-workflow)
+       * [Run parameters](#run-parameters)
+       * [Build template](#build-templates)
+  * [Plots](#mf_plots-output-representation)
+
+
 This AlphaFold version aims at massively expand the sampling of structure predictions following Björn Wallner's AFsample 
 version of AlphaFold (https://github.com/bjornwallner/alphafoldv2.2.0/)
 and to provide some optimizations in the computing.
@@ -84,7 +99,8 @@ option.
   &nbsp;&nbsp;&nbsp;&nbsp; for monomer_ptm as model_X_ptm, with X the number of the model,  
   &nbsp;&nbsp;&nbsp;&nbsp; for multimer as model_X_multimer_vY with X the number of the model and Y  
   &nbsp;&nbsp;&nbsp;&nbsp; the version of the model.')  
-  &nbsp;&nbsp;&nbsp;&nbsp; (a comma separated list)  
+  &nbsp;&nbsp;&nbsp;&nbsp; (a comma separated list)
+ 
   **--num_predictions_per_model**: how many predictions (each with a different random seed) will be  
   &nbsp;&nbsp;&nbsp;&nbsp; generated per model. *e.g.* if this is 2 and there are 5 models then there will be 10 predictions per input.  
   &nbsp;&nbsp;&nbsp;&nbsp; Note: this FLAG works for monomer and multimer  
@@ -121,7 +137,9 @@ such a json file:
 }  
 ```
 
-# Example
+# Usage
+
+## Example
 Here is an example how to run a multimer prediction with all versions of model parameters, without templates,
 activating dropout at inference, with 100 recycles max and early stop tolerance set at 0.2 Angströms. The flags can be set in a separated 
 text file called for instance *flags.flg* and called by the command line:
@@ -168,6 +186,192 @@ A script is also provided to relax only one structure. The pkl file of the predi
 ```bash
 python3 run_relax_from_results_pkl.py result_model_4_multimer_v3_pred_0.pkl
 ```
+## Running MassiveFold in parallel on clusters
+
+To make the most out of MassiveFold's expanded sampling on clusters with slurm's job submitting system, you can use the parallelization module in the MF_scripts directory.
+
+Usage:
+```bash
+./MF_parallel.sh -s your_sequence -r run_name -p predictions_nb -f parameters_file 
+```
+There are other facultative arguments and options, consult them with:
+
+```bash
+./MF_parallel.sh -h
+```
+
+A run is composed of three steps:
+1. **alignment**: on CPU, the initiation step for sequence alignments (can be skipped if alignments are already computed)
+2. **jobarray**: on GPU, a slurm jobarray compute all predictions, one batch on one task of the array
+3. **post_treatment**: on CPU, finish the job by organizing the outputs and plots the results representation with the [MF_plots module](#mf_plots-output-representation)
+
+**Requirement**: to run MassiveFold in parallel on your cluster, a jobfile template of each step (see [build templates](#build-templates) section) has to be added in the MF_scripts/parallelization/templates/ directory following the {step}_generic.slurm template files.
+
+### Inference workflow
+
+It launches MassiveFold with the same parameters introduced above but instead of running run_alphafold.py script a single time, it will divide it in multiple batches.
+
+
+For the following examples, we assume that **--model_preset=multimer** as it is the most beneficial case to run MassiveFold in parallel.
+
+However, **--model_preset=monomer_ptm** functions too and need to be adapted accordingly, at least with the models to use.
+
+You can decide how the run will be divided by assigning **MF_parallel.sh** parameters *e.g.*:
+
+```bash
+./MF_paraellel.sh -s H1144 -r 1005_predictions -p 67 -b 25 -f run_params.json
+```
+
+The predictions are computed individually for each models,  **-p** or **--predictions_per_model** allows to specify the number of predictions desired on each of the models chosen.\
+These **--predictions_per_model** are then divided by batch with a fixed **-b** or **--batch_size** to optimize the run in parallel as each batch can be computed on a different node. The last batch of the cycle is generally smaller than the others to match the number of predictions fixed by **--predictions_per_model**.
+
+
+
+For example, with **-b 25** and **-p 67** the predictions will be divided in the following batches, this cycle repeats itself for each model:
+
+  1.  First batch: **--start_prediction=0** and **--num_predictions_per_model=24**
+  2.  Second batch: **--start_prediction=25** and **--num_predictions_per_model=49**
+  3.  Third batch: **--start_prediction=50** and **--num_predictions_per_model=67** 
+
+By default (if **models_to_use** is not assigned), all models are used (with **model_preset=multimer**, 15 models in total: 5 neural network models $\times$ 3 AlphaFold2 versions).
+
+The prediction number per model can be adjusted, here with 67 per model and 15 models, it amounts to **1005 predictions in total divided in 45 batches**.
+
+### Run parameters
+
+#### Parameters in MF_parallel.sh
+
+The following arguments and options of **MF_parallel.sh** program can be displayed with the **-h** option.
+
+```bash
+"""
+./MF_parallel.sh -h for more details 
+  Required arguments:
+    -s| --sequence: name of the sequence file without '.fasta'
+    -r| --run : name chosen for the run to store the outputs
+    -p| --predictions_per_model: number of predictions computed for each neural network model
+    -f| --parameters: path to the json file that contains the run parameters
+
+  Facultative arguments:
+    -b| --batch_size: number of predictions per batch, default: 25
+    -m| --msas_precomputed: path to an output directory with msas already computed for the sequence
+
+  Facultative options:
+    -c| --calibrate: Does not work yet. Run a preleminary job to calibrate the batches size depending on the highest time for one prediction inference
+"""
+```
+
+In addition to these arguments, you can set the parameters of the run with **-f** or **--parameters**.\
+This parameters file should be organized as **MF_scripts/parallelization/run_params.json**.
+
+#### Parameters in the json file
+
+Each section of **run_params.json** are used for a different purpose.
+
+The section **MF_parallel** designates the parameters relative to the whole run.\
+The section **custom_params** is relative to the personalized parameters for your own cluster, it substitutes the parameters as variables to bring flexibility to its values
+(see [How to add a parameter](#how-to-add-a-parameter)).\
+The section **MF_run** gathers all parameters used by MassiveFold in the run. (see [Example](#example) and [Added flags](#added-flags)).
+
+The **MF_parallel** and **MF_run sections** sections should be identic to **run_params.json**, only **custom_params** should be adapted according to your needs.
+
+### Template building
+
+The relative paths of each of the three templates in the MF_scripts/parallelization/templates/ directory must be added in **MF_parallel** section of **run_params.json** following this:
+
+```json
+{
+-----------------------------------------
+    "MF_parallel": 
+    {
+------------
+        "alignment_template": "templates/alignment_jeanzay.slurm",
+        "jobarray_template": "templates/jobarray_jeanzay.slurm",
+        "post_treatment_template": "templates/post_treatment_jeanzay.slurm",
+        "grouped_templates": "templates/templates_jeanzay.json"
+    }
+-----------------------------------------
+}
+```
+The templates work in hand with the parameters provided in **run_params.json** passed to the **MF_parallel.sh** script.\
+These parameters are substituted in the tempalate job files thanks to the python library [string.Template](https://docs.python.org/3.8/library/string.html#template-strings).
+
+On top of the following documentation, you can use the available templates for the Jean Zay on its corresponding cluster.
+
+#### How to add a parameter
+- Add **\$new_parameter** or **\$\{new_parameter\}** in the template were you want its value to be replaced and in the "custom_params" section of **run_params.json** were its value can be specified and changed for each run.
+
+- Example in the json parameters file adapted to Jean Zay cluster:
+```json
+{
+-----------------------------------------
+    "custom_params": 
+    {
+      "new_parameter": "its_value", (parameter added)
+      "jeanzay_gpu": "v100",
+      "jeanzay_gpu_memory": "32g",
+      "jeanzay_project": "fvp",
+      "jeanzay_alignment_time":"05:00:00",
+      "jeanzay_jobarray_time":"00:20:00"
+    },
+-----------------------------------------
+}
+
+```
+Make sure to never use single \$ symbol for other uses than parameter/value substitution from the json file. Instead, use $$ following [string.Template documentation](https://docs.python.org/3.8/library/string.html#template-strings).
+
+Add your slrum setup sbatch parameters after the first line, these are examples of the Jean Zay templates:
+
+#### Alignment template parameters
+
+```bash
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=10
+#SBATCH --hint=nomultithread
+#SBATCH --output=../log_parallel/%x.%j.log
+#SBATCH --error=../log_parallel/%x.%j.log
+#SBATCH --time=10:00:00
+#SBATCH --account=fvp@cpu
+##SBATCH --qos=qos_gpu-dev      # Uncomment for job requiring less than 2h
+##SBATCH --qos=qos_gpu-t4       # Uncomment for job requiring more than 20h 
+```
+
+#### Jobarray template
+
+```bash
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=8
+#SBATCH --hint=nomultithread
+#SBATCH --error=../log_parallel/%x-%a/id-%j.log
+#SBATCH --output=../log_parallel/%x-%a/id-%j.log
+#SBATCH --gpus-per-node=1
+#SBATCH --time=19:50:00
+#SBATCH -C $jeanzay_full_gpu             # Use gpu
+#SBATCH --account=$jeanzay_account
+#SBATCH --array=0-$substitute_batch_number
+##SBATCH --qos=qos_gpu-t4       # Uncomment for job requiring more than 20h (max 16 GPUs)
+```
+
+Here, **#SBATCH --array=0-\$substitute_batch_number** designates the indexes of the jobarray, \$substitute_batch_number parameter is the total number of batch computed, it is automatically computed before the jobfile creation and parameter substitution with the prediction number parameter and batch size.\
+Copy this setup.
+
+#### Post treatment template
+
+```bash
+#SBATCH --nodes=1            # Number of nodes
+#SBATCH --ntasks-per-node=1  # Number of tasks per node
+#SBATCH --cpus-per-task=10    # Number of OpenMP threads per task
+#SBATCH --hint=nomultithread # Disable hyperthreading
+#SBATCH --output=../log_parallel/%x.%j.log
+#SBATCH --error=../log_parallel/%x.%j.log
+#SBATCH --time=10:00:00      # Expected runtime HH:MM:SS (max 100h)
+#SBATCH --account=fvp@cpu #
+```
+
+# MF_plots: output representation
+
 
 # Authors
 Guillaume Brysbaert (UGSF - UMR 8576, France)  
