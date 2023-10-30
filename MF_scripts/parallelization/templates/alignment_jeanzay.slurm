@@ -1,27 +1,16 @@
 #!/usr/bin/env bash
 
-#SBATCH --nodes=1            # Number of nodes
-#SBATCH --ntasks-per-node=1  # Number of tasks per node
-#SBATCH --cpus-per-task=10    # Number of OpenMP threads per task
-##SBATCH --gpus-per-node=1    # Number of GPUs per node
-##SBATCH -C a100              # Use A100 partition
-#SBATCH --hint=nomultithread # Disable hyperthreading
-##SBATCH --job-name=MF_alignment # Jobname
-#SBATCH --output=../log_parallel/%x.%j.log
-#SBATCH --error=../log_parallel/%x.%j.log
-#SBATCH --time=10:00:00      # Expected runtime HH:MM:SS (max 100h)
-#SBATCH --account=fvp@cpu #
-##
-## Please, refer to comments below for
-## more information about these 4 last options.
-##SBATCH --account=<account>@a100      # To specify cpu accounting: <account> = echo $$IDRPROJ
-##SBATCH --partition=<partition>       # To specify partition (see IDRIS web site for more info)
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=8
+#SBATCH --hint=nomultithread
+#SBATCH --output=../log_parallel/${sequence_name}/${run_name}/alignment_%j.log
+#SBATCH --error=../log_parallel/${sequence_name}/${run_name}/alignment_%j.log
+#SBATCH --time=$jeanzay_alignment_time
+#SBATCH --account=fvp@cpu
 ##SBATCH --qos=qos_gpu-dev             # Uncomment for job requiring less than 2 hours
 ##SBATCH --qos=qos_gpu-t4              # Uncomment for job requiring more than 20h (max 16 GPUs)
 
-module purge
-module load cpuarch/amd
-#module load alphafold/2.3.1
 module purge
 module load massivefold/1.0.0
 
@@ -30,8 +19,9 @@ export TMPDIR=$$JOBSCRATCH
 export ALPHAFOLDDB=/gpfsdswork/dataset/AlphaFold-2.3.1
 
 
-jobname=$jobname
-fafile=../input/$${jobname}.fasta
+run_name=$run_name
+sequence_name=$sequence_name
+fafile=../input/$${sequence_name}.fasta
 output=../output_array/
 
 data_dir=$${ALPHAFOLDDB}/model_parameters/2.3.1

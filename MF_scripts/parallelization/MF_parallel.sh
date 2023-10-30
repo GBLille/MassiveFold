@@ -1,41 +1,152 @@
 #!/bin/bash
 
-JOBNAME=test_multimer
-prediction_number_per_model=3
-batch_size=2
-models_to_use=
-cluster="jeanzay"
+USAGE="\
+./MF_parallel.sh -s arg -r arg -p arg -f arg [-b arg] [-m arg] [-c]\n\
+./MF_parallel.sh -h for more details "
 
+# help message
+if [[ " ${@} " == *" -h "* ]] || [[ " ${@} " == *" --help "* ]]; then
+  echo -e "\
+Usage: $USAGE\n\
+  Required arguments:\n\
+    -s| --sequence: name of the sequence file without '.fasta'\n\
+    -r| --run : name chosen for the run to store the outputs\n\
+    -p| --predictions_per_model: number of predictions computed for each neural network model\n\
+    -f| --parameters: path to the json file that contains the run's parameters\n\
+\n\
+  Facultative arguments:\n\
+    -b| --batch_size: number of predictions per batch, default: 25\n\
+    -m| --msas_precomputed: path to an output directory with msas already computed for the sequence
+\n\
+  Facultative options:\n\
+    -c| --calibrate: Does not work yet. Run a preleminary job to calibrate the batches size depending on the highest time for one prediction inference"
+  exit 1
+fi
+
+calibration=false
+batch_size=25
+
+# argument parser
+while true; do
+  case "$1" in
+    -s|--sequence)
+      sequence_name=$2
+      shift 2
+      ;;
+    -r|--run)
+      run_name=$2
+      shift 2
+      ;;
+    -p|--predictions_per_model)
+      predictions_per_model=$2
+      shift 2
+      ;;
+    -f|--parameters)
+      parameters_file=$2
+      shift 2
+      ;;
+    -b|--batch_size)
+      batch_size=$2
+      shift 2
+      ;;
+    -c|--calibrate)
+      calibration=true
+      shift
+      ;;
+    -m|--msas_precomputed)
+      msas_precomputed=$2
+      shift 2
+      ;;
+    -i|--iteration)
+      iteration=$2
+      shift 2
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+# check mandatory args
+if
+  [ -z "$sequence_name" ] ||
+  [ -z "$run_name" ] ||
+  [ -z "$predictions_per_model" ] ||
+  [ -z "$parameters_file" ]; then
+  echo -e "Usage: $USAGE"
+  exit 1
+fi
+
+echo "Run $run_name on sequence $sequence_name with $predictions_per_model predictions per model"
+
+if $calibration ; then
+  echo -e "Running a priliminary job to calibrate the batches size.\n"
+  echo "Calibration not available yet, exiting."
+  exit 1
+else
+  echo "No calibration for the batch size."
+fi
+
+# Massivefold
+
+cluster="jeanzay"
 module load massivefold/1.0.0
 
-./group_templates.py --cluster_name $cluster
+./group_templates.py --parameters custom_params.json
 
 # split the predictions in batches and store in json
 ./batching.py \
-  --predictions_per_model=${prediction_number_per_model} \
+  --predictions_per_model=${predictions_per_model} \
   --batch_size=${batch_size} \
-  --models_to_use=${models_to_use}
+  --models_to_use=${models_to_use} \
+  --sequence_name=${sequence_name} \
+  --run_name=${run_name}
 
-# Alignment job
+
+if [ -z ${msas_precomputed} ]; then
+  # Create and start alignment job
+  ./create_jobfile.py \
+    --job_type=alignment \
+    --sequence_name=${sequence_name} \
+    --run_name=${run_name} \
+    --path_to_parameters=${parameters_file}
+
+  ALIGNMENT_ID=$(sbatch --parsable ${sequence_name}_${run_name}_alignment.slurm)
+elif [ -d  $msas_precomputed/msas ]; then
+  echo "Using precomputed msas at $msas_precomputed"
+  mkdir -p ../output_array/${sequence_name}/
+  ln -s $(realpath $msas_precomputed/msas) ../output_array/${sequence_name}/
+else
+  echo "Directory $msas_precomputed does not exit or does not contain msas."
+  exit 1
+fi
+
+# Create and launch inference jobarray 
 ./create_jobfile.py \
-  --job_type alignment \
-  --jobname $JOBNAME \
-  --cluster_name $cluster
+  --job_type=jobarray \
+  --sequence_name=${sequence_name} \
+  --run_name=${run_name} \
+  --path_to_parameters=${parameters_file} 
 
-ALIGNMENT_ID=$(sbatch --parsable ${JOBNAME}_alignment.slurm)
+# Only wait for alignment if not precomputed
+if ! [ -d $msas_precomputed/msas ]; then
+  ARRAY_ID=$(sbatch --parsable --dependency=afterok:$ALIGNMENT_ID ${sequence_name}_${run_name}_jobarray.slurm)
+else
+  ARRAY_ID=$(sbatch --parsable ${sequence_name}_${run_name}_jobarray.slurm)
+fi
 
-# Inference by jobarray, waiting for alignment to end
+#  Create and start post treatment (output organization and plots)
 ./create_jobfile.py \
-  --job_type jobarray \
-  --jobname $JOBNAME \
-  --cluster_name $cluster
+  --job_type=post_treatment \
+  --sequence_name=${sequence_name} \
+  --run_name=${run_name} \
+  --path_to_parameters=${parameters_file}
 
-ARRAY_ID=$(sbatch --parsable --dependency=afterok:$ALIGNMENT_ID ${JOBNAME}_jobarray.slurm)
+# Waiting for inference to end
+sbatch --dependency=afterok:$ARRAY_ID ${sequence_name}_${run_name}_post_treatment.slurm
 
-#  Output organization and plots, waiting for inference to end
-./create_jobfile.py \
-  --job_type post_treatment \
-  --jobname $JOBNAME \
-  --cluster_name $cluster
+# Store jobiles and batches elements in logs
 
-sbatch --dependency=afterok:$ARRAY_ID ${JOBNAME}_post_treatment.slurm
+mkdir -p ../log_parallel/${sequence_name}/${run_name}/
+mv ${sequence_name}_${run_name}_* ../log_parallel/${sequence_name}/${run_name}/
+

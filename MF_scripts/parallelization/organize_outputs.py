@@ -3,7 +3,7 @@
 from absl import app, flags
 import os
 import json
-import shutil
+from shutil import copy as cp, rmtree as rm, move as mv
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string('batches_path', '', "Path of all batches containing the ranking files to add in the global ranking.")
@@ -33,7 +33,7 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
   for i, prediction in enumerate(global_rank_order):
     # copy the features
     if i == 0:
-      shutil.copy(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, "features.pkl"), os.path.join(all_batches_path, "features.pkl"))
+      cp(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, "features.pkl"), os.path.join(all_batches_path, "features.pkl"))
     
     # copy the predictions
     if os.path.exists(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, f"relaxed_{prediction}.pdb")):
@@ -44,21 +44,30 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
     # Move pdb files and rename with rank
     old_pdb_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pred_new_name) 
     new_pdb_path = os.path.join(all_batches_path, f"ranked_{i}_{pred_new_name}")
-    shutil.copy(old_pdb_path, new_pdb_path)
+    cp(old_pdb_path, new_pdb_path)
     
     # Move pkl files
     pkl_name = f"result_{prediction}.pkl"
     old_pkl_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pkl_name)
     new_pkl_path = os.path.join(all_batches_path, pkl_name)
-    shutil.move(old_pkl_path, new_pkl_path)
+    mv(old_pkl_path, new_pkl_path)
 
-
+def remove_batch_dirs(all_batches_path):
+  batch_dirs = [d for d in os.listdir(all_batches_path) if d.startswith('batch')]
+  for batch_dir in batch_dirs:
+    rm(os.path.join(all_batches_path, batch_dir))
+    
 def main(argv):
   FLAGS.batches_path = os.path.abspath(FLAGS.batches_path)
-  jobname = os.path.basename(FLAGS.batches_path)
+  sequence_name = os.path.basename(FLAGS.batches_path)
 
-  pred_batch_map = create_global_ranking(FLAGS.batches_path, jobname)
-  move_and_rename(FLAGS.batches_path, pred_batch_map, jobname)
+  # check if batches parent directory is run_name
+  if os.path.dirname(FLAGS.batches_path) != "output_array":
+    sequence_name = os.path.basename(os.path.dirname(FLAGS.batches_path))
+
+  pred_batch_map = create_global_ranking(FLAGS.batches_path, sequence_name)
+  move_and_rename(FLAGS.batches_path, pred_batch_map, sequence_name)
+  remove_batch_dirs(FLAGS.batches_path)
 
 if __name__ == "__main__":
   app.run(main)     

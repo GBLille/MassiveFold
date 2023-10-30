@@ -2,8 +2,8 @@
 ##SBATCH --job-name=MF_inference
 #SBATCH --account=$jeanzay_account
 
-#SBATCH --error=../log_parallel/%x-%a/id-%j.log
-#SBATCH --output=../log_parallel/%x-%a/id-%j.log
+#SBATCH --error=../log_parallel/${sequence_name}/${run_name}/jobarray_%a.log
+#SBATCH --output=../log_parallel/${sequence_name}/${run_name}/jobarray_%a.log
 
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
@@ -11,7 +11,8 @@
 #SBATCH --hint=nomultithread
 #SBATCH --gpus-per-node=1
 #SBATCH --array=0-$substitute_batch_number
-#SBATCH --time=19:50:00
+#SBATCH --time=$jeanzay_jobarray_time
+##SBATCH --qos=qos_gpu-dev             # Uncomment for job requiring less than 2 hours
 ##SBATCH --qos=qos_gpu-t4         # Uncomment for job requiring more than 20h (max 16 GPUs)
 #SBATCH -C $jeanzay_full_gpu             # Use gpu
 
@@ -27,40 +28,41 @@ export TMPDIR=$$JOBSCRATCH
 export ALPHAFOLDDB=/gpfsdswork/dataset/AlphaFold-2.3.1
 
 #variables to adapt
-jobname=$jobname
-name=$$(basename -s .slurm $$jobname)
-fafile=../input/$${name}.fasta
+sequence_name=$sequence_name
+run_name=$run_name
 
+fafile=../input/$${sequence_name}.fasta
 
-output_dir="../output_array/$${name}/batch_$${SLURM_ARRAY_TASK_ID}_$${name}"
+output_dir="../output_array/$${sequence_name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID}"
 echo output_dir is $$output_dir
-mkdir -vp $${output_dir}/$${name}
+mkdir -vp $${output_dir}/$${sequence_name}
+
+use_precomputed_msas=true
+alignments_only=false
 
 current_dir=$$(realpath .)
-ln -s $$current_dir/../output_array/$${name}/msas $${output_dir}/$${name}
-
+ln -s $$current_dir/../output_array/$${sequence_name}/msas $${output_dir}/$${sequence_name}
 data_dir=$${ALPHAFOLDDB}/model_parameters/2.3.1
+
 model_preset=$substitute_model_preset
 max_template_date=2023-07-31
-db_preset=full_dbs
-use_gpu_relax=true
-use_precomputed_msas=true
-models_to_relax=best
-alignments_only=false
+db_preset=$substitute_db_preset
+use_gpu_relax=$substitute_use_gpu_relax
+models_to_relax=$substitute_models_to_relax
 dropout=$substitute_dropout
-dropout_rates_filename=
-max_recycles=21
-early_stop_tolerance=0.5
-bfd_max_hits=100000
-mgnify_max_hits=501
-uniprot_max_hits=50000
-uniref_max_hits=10000
+dropout_rates_filename=$substitute_dropout_rates_filename
+max_recycles=$substitute_max_recycles
+early_stop_tolerance=$substitute_early_stop_tolerance
+bfd_max_hits=$substitute_bfd_max_hits
+mgnify_max_hits=$substitute_mgnify_max_hits
+uniprot_max_hits=$substitute_uniprot_max_hits
+uniref_max_hits=$substitute_uniref_max_hits
 no_templates=$substitute_no_templates
 
-models_json=batches.json
-batch_model=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --element model)
-batch_start=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --element start)
-batch_end=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --element end)
+batches_path=../log_parallel/${sequence_name}/${run_name}/
+batch_model=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}./$${sequence_name}_$${run_name}_batches.json --element model)
+batch_start=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}./$${sequence_name}_$${run_name}_batches.json --element start)
+batch_end=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}./$${sequence_name}_$${run_name}_batches.json --element end)
 
 models_to_use=$$batch_model
 echo Model used is $$batch_model, batch computed between prediction $$batch_start and $$batch_end

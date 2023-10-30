@@ -14,6 +14,8 @@ flags.DEFINE_integer('batch_size', 25,
                      'Standard size of a prediction batch, if the number of prediction per model\
                        is not a multiple of it, the last batch will be smaller .')
 flags.DEFINE_list('models_to_use', None, 'Select the models used for prediction among the five models of each AlphaFold2 version (15 in total).')
+flags.DEFINE_string('sequence_name', '', 'Name of the sequence to predict.')
+flags.DEFINE_string('run_name', '', 'Name of the run.')
 
 FLAGS = flags.FLAGS
 
@@ -64,13 +66,13 @@ def main(argv):
   
   if FLAGS.models_to_use:
     model_names = [model for model in model_names if model in FLAGS.models_to_use]
-  
+    
   # Divide the predictions in batches 
   per_model_batches = batches_per_model(pred_nb_per_model=FLAGS.predictions_per_model)
   # Distribute the batches on all models
   all_model_batches = batches_all_models(per_model_batches, model_names)
   
-  with open("batches.json", "w") as json_output:
+  with open(f"{FLAGS.sequence_name}_{FLAGS.run_name}_batches.json", "w") as json_output:
     json.dump(all_model_batches, json_output)
       
 if __name__ == "__main__":
