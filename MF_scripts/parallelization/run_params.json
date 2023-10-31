@@ -10,20 +10,20 @@
     },
     "custom_params": {
         "jeanzay_gpu": "v100",
-        "jeanzay_gpu_memory": "16g",
+        "jeanzay_gpu_memory": "",
         "jeanzay_project": "fvp",
         "jeanzay_alignment_time":"05:00:00",
-        "jeanzay_jobarray_time":"00:20:00"
+        "jeanzay_jobarray_time":"19:59:00"
     },
     "MF_run": {
         "substitute_dropout": "false",
         "substitute_model_preset": "multimer",
         "substitute_dropout_rates_filename": "",
-        "substitute_no_templates": "false",
+        "substitute_no_templates": "true",
         "substitute_db_preset": "full_dbs",
         "substitute_use_gpu_relax": "true",
-        "substitute_models_to_relax": "none",
-        "substitute_max_recycles": "3",
+        "substitute_models_to_relax": "best",
+        "substitute_max_recycles": "21",
         "substitute_early_stop_tolerance": "0.5",
         "substitute_bfd_max_hits": "100000",
         "substitute_mgnify_max_hits": "501",

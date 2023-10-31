@@ -87,7 +87,7 @@ fi
 
 module load massivefold/1.0.0
 
-./group_templates.py --parameters custom_params.json
+./group_templates.py --parameters $parameters_file
 
 # split the predictions in batches and store in json
 ./batching.py \

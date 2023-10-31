@@ -42,9 +42,10 @@ def main(argv):
   run_params.update(all_params['MF_run'])
 
   if 'jeanzay_gpu_memory' in run_params:
-    run_params['jeanzay_gpu_memory'] = f"-{run_params['jeanzay_gpu_memory']}"
     run_params['jeanzay_account'] = f"{run_params['jeanzay_project']}@{run_params['jeanzay_gpu']}"
     run_params['jeanzay_full_gpu'] = f"{run_params['jeanzay_gpu']}{run_params['jeanzay_gpu_memory']}"
+    if run_params['jeanzay_gpu_memory']:
+      run_params['jeanzay_gpu_memory'] = f"-{run_params['jeanzay_gpu_memory']}"
   
   if FLAGS.job_type == "jobarray":  
     print("Parameters of the run:")
