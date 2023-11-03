@@ -17,7 +17,6 @@ Usage: $USAGE\n\
   Facultative arguments:\n\
     -b| --batch_size: number of predictions per batch, default: 25\n\
     -m| --msas_precomputed: path to an output directory with msas already computed for the sequence
-    -n| --select_model: Not available yet. Start a preliminary run, then select the top n models based on their ranking confidence median and launch another job exclusively with them.
 \n\
   Facultative options:\n\
     -c| --calibrate: Does not work yet. Run a preleminary job to calibrate the batches size depending on the highest time for one prediction inference"
@@ -59,10 +58,6 @@ while true; do
       msas_precomputed=$2
       shift 2
       ;;
-    -w|--wait_for_id)
-      WAIT_FOR_ID=$2
-      shift 2
-      ;;
     *)
       break
       ;;
@@ -80,43 +75,13 @@ fi
 
 echo "Run $run_name on sequence $sequence_name with $predictions_per_model predictions per model"
 
-# launch calibration job and run post calibration MF_parallel waiting for it to end
 if $calibration ; then
   echo -e "Running a priliminary job to calibrate the batches size.\n"
-  echo "Feature is not ready, exiting"
-  exit 1
-
-  ./group_templates.py --parameters $parameters_file
-  ./batching.py \
-    --batch_size=5 \
-    --predictions_per_model=5 \
-    --sequence_name=$sequence_name \
-    --run_name=calibration
-
-  ./create_jobfile.py \
-    --job_type=all \
-    --sequence_name=${sequence_name} \
-    --run_name=calibration \
-    --path_to_parameters=${parameters_file}
-
-  ALIGNMENT_ID=$(sbatch --parsable ${sequence_name}_calibration_alignment.slurm)
-  ARRAY_ID=$(sbatch --parsable --dependency=afterok:$ALIGNMENT_ID ${sequence_name}_calibration_jobarray.slurm)
-  END_CALIBRATION=$(sbatch --dependency=afterok:$ARRAY_ID ${sequence_name}_calibration_post_treatment.slurm)
-  mkdir -p ../log_parallel/${sequence_name}/calibration/
-  mv ${sequence_name}_calibration_* ../log_parallel/${sequence_name}/calibration/
-
   echo "Calibration not available yet, exiting."
-  ./MF_parallel.sh \
-    --sequence $sequence_name \
-    --run $run_name \
-    --predictions_per_model $predictions_per_model \
-    --batch_size $batch_size \
-    --parameters $parameters_file \
-    --wait_for_id $END_CALIBRATION \
+  exit 1
 else
   echo "No calibration for the batch size."
 fi
-
 
 # Massivefold
 
@@ -126,12 +91,16 @@ module load massivefold/1.0.0
 
 # split the predictions in batches and store in json
 ./batching.py \
+  --sequence_name=${sequence_name} \
+  --run_name=${run_name} \
   --predictions_per_model=${predictions_per_model} \
   --batch_size=${batch_size} \
   --models_to_use=${models_to_use} \
-  --sequence_name=${sequence_name} \
-  --run_name=${run_name}
+  --path_to_parameters=${parameters_file}
 
+# in case jobarrays start before the end of the script
+mkdir ../log_parallel/${sequence_name}/${run_name}/
+cp ${sequence_name}_${run_name}_batches.json ../log_parallel/${sequence_name}/${run_name}/
 
 if [ -z ${msas_precomputed} ]; then
   # Create and start alignment job
@@ -158,16 +127,9 @@ fi
   --run_name=${run_name} \
   --path_to_parameters=${parameters_file} 
 
-# Wait for alignment or calibration job, if neither needed, run
+# Only wait for alignment if not precomputed
 if ! [ -d $msas_precomputed/msas ]; then
   ARRAY_ID=$(sbatch --parsable --dependency=afterok:$ALIGNMENT_ID ${sequence_name}_${run_name}_jobarray.slurm)
-elif 
-  [ ! -z $WAIT_FOR_ID ] &&
-  [ $(squeue -j $WAIT_FOR_ID | wc -l) -gt 1 ]; then
-  ARRAY_ID=$(sbatch --parsable --dependency=afterok:$WAIT_FOR_ID ${sequence_name}_${run_name}_jobarray.slurm)
-elif [! -z $WAIT_FOR_ID ]; then
-  echo "Job $WAIT_FOR_ID didn't run properly or does not exist, exiting."
-  exit 1
 else
   ARRAY_ID=$(sbatch --parsable ${sequence_name}_${run_name}_jobarray.slurm)
 fi

@@ -5,7 +5,7 @@ from math import floor, ceil
 from absl import flags, app
 
 FLAGS = flags.FLAGS
-flags.DEFINE_integer('wall_time', 20, 'Inference time in hour to not exceed.')
+flags.DEFINE_float('wall_time', 20, 'Inference time in hour to not exceed.')
 flags.DEFINE_string('logs_dir', '', 'Log directory path of the run.')
 flags.DEFINE_float('add_excess', 0.1, 'Excess time proportion for the inference of a single prediction')
 
