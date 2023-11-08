@@ -11,6 +11,9 @@ flags.DEFINE_float('add_excess', 0.1, 'Excess time proportion for the inference 
 
 def extract_longer(jobarray_path):
   time_lines = os.popen(f"cat {jobarray_path}/jobarray_* | grep 'predict time'").read()
+  if not time_lines:
+    print(f'No prediction for {os.path.basename(FLAGS.logs_dir)} yet')
+    exit()
   i_thing = time_lines.split(' ')[0]
   time_lines_list = time_lines.split(i_thing)
 

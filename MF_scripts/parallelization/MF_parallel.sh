@@ -58,6 +58,10 @@ while true; do
       msas_precomputed=$2
       shift 2
       ;;
+    -n|--select_model_from_run)
+      path_to_run="$2"
+      shift 2
+      ;; 
     *)
       break
       ;;
@@ -76,12 +80,30 @@ fi
 echo "Run $run_name on sequence $sequence_name with $predictions_per_model predictions per model"
 
 if $calibration ; then
-  echo -e "Running a priliminary job to calibrate the batches size.\n"
+  echo -e "Running a preliminary job to calibrate the batches size.\n"
   echo "Calibration not available yet, exiting."
   exit 1
 else
   echo "No calibration for the batch size."
 fi
+
+: '
+if [ -n $path_to_run ]; then
+  echo "Running with the 5 best models of the $path_to_run run on $sequence_name"
+  exit 1
+  echo "verify ../output_array/$sequence_name/$path_to_run/ranking_debug.json"
+  if [ -f ../output_array/$sequence_name/$path_to_run/ranking_debug.json ]; then
+    echo entered
+    models_to_use=$(./analyze.py --log_dir ../log_parallel/$sequence_name/$path_to_run/ --get models)
+    echo $models_to_use
+    exit 1
+  else
+    echo "not entered"
+    echo "Either $path_to_run isn't finished or it doesn't exist, exiting."
+    exit 1
+  fi
+fi
+'
 
 # Massivefold
 
@@ -99,10 +121,13 @@ module load massivefold/1.0.0
   --path_to_parameters=${parameters_file}
 
 # in case jobarrays start before the end of the script
-mkdir ../log_parallel/${sequence_name}/${run_name}/
+mkdir -p ../log_parallel/${sequence_name}/${run_name}/
 cp ${sequence_name}_${run_name}_batches.json ../log_parallel/${sequence_name}/${run_name}/
 
-if [ -z ${msas_precomputed} ]; then
+# starts alignment only when not pre-existing
+if [ -d ../output_array/${sequence_name}/msas/ ]; then
+  echo "Detected msas for the same ${sequence_name} at ../output_array/${sequence_name}/msas/, using them."
+elif [ -z ${msas_precomputed} ]; then
   # Create and start alignment job
   ./create_jobfile.py \
     --job_type=alignment \

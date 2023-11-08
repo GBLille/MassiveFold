@@ -74,6 +74,9 @@ def main(argv):
     model_names = [model for model in model_names if model in FLAGS.models_to_use]
 
   print(f"Running inference on models: {(', ').join(model_names)}") 
+  print(f"Running {FLAGS.predictions_per_model} predictions on each of the {len(model_names)}")
+  print(f"Total prediction number: {FLAGS.predictions_per_model * len(model_names)}")
+
   # Divide the predictions in batches 
   per_model_batches = batches_per_model(pred_nb_per_model=FLAGS.predictions_per_model)
   # Distribute the batches on all models
