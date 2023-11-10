@@ -167,9 +167,11 @@ flags.DEFINE_boolean('alignments_only', False, 'Whether to generate only alignme
 flags.DEFINE_boolean('no_templates',False, 'will not use any template, will be faster than filter by date')
 flags.DEFINE_string('dropout_rates_filename', None, 'Provide dropout rates for inference from a json file. '
                      'If None, default rates are used, if "dropout" is True.')
-flags.DEFINE_float('score_threshold_pkl', 0, 'Only export pkl for predictions that are above'
-                   'this score threshold.')
-flags.DEFINE_float('max_score_stop', 1, 'Terminates the computing process when a suitable'
+flags.DEFINE_float('score_threshold_output', 0,
+                    'Only predictions with ranking confidence above this score '
+                    'will generate pdb and pkl files, predictions below this '
+                    'threshold will still be present in ranking_debug.json.' )
+flags.DEFINE_float('max_score_stop', 1, 'Terminates the computing process when a suitable '
                    'prediction with a ranking confidence > max_score_stop has been obtained')
 
 FLAGS = flags.FLAGS
@@ -275,38 +277,43 @@ def predict_structure(
           model_name, fasta_name, t_diff)
 
     plddt = prediction_result['plddt']
+    confidence = prediction_result['ranking_confidence']
     ranking_confidences[model_name] = prediction_result['ranking_confidence']
 
-    # Remove jax dependency from results.
-    np_prediction_result = _jnp_to_np(dict(prediction_result))
-    if "num_recycles" in np_prediction_result:
-      logging.info(f"Number of recycles for this model: {np_prediction_result['num_recycles']}")
-    
-    if prediction_result['ranking_confidence'] >= FLAGS.score_threshold_pkl:
+    if confidence >= FLAGS.score_threshold_output:
+
+      # Remove jax dependency from results.
+      np_prediction_result = _jnp_to_np(dict(prediction_result))
+      if "num_recycles" in np_prediction_result:
+        logging.info(f"Number of recycles for this model: {np_prediction_result['num_recycles']}")
+
       # Save the model outputs.
       result_output_path = os.path.join(output_dir, f'result_{model_name}.pkl')
       with open(result_output_path, 'wb') as f:
         pickle.dump(np_prediction_result, f, protocol=4)
-     
-    # Add the predicted LDDT in the b-factor column.
-    # Note that higher predicted LDDT value means higher model confidence.
-    plddt_b_factors = np.repeat(
-        plddt[:, None], residue_constants.atom_type_num, axis=-1)
-    unrelaxed_protein = protein.from_prediction(
-        features=processed_feature_dict,
-        result=prediction_result,
-        b_factors=plddt_b_factors,
-        remove_leading_feature_dimension=not model_runner.multimer_mode)
 
-    unrelaxed_proteins[model_name] = unrelaxed_protein
-    unrelaxed_pdbs[model_name] = protein.to_pdb(unrelaxed_protein)
-    unrelaxed_pdb_path = os.path.join(output_dir, f'unrelaxed_{model_name}.pdb')
-    with open(unrelaxed_pdb_path, 'w') as f:
-      f.write(unrelaxed_pdbs[model_name])
+      # Add the predicted LDDT in the b-factor column.
+      # Note that higher predicted LDDT value means higher model confidence.
+      plddt_b_factors = np.repeat(
+          plddt[:, None], residue_constants.atom_type_num, axis=-1)
+      unrelaxed_protein = protein.from_prediction(
+          features=processed_feature_dict,
+          result=prediction_result,
+          b_factors=plddt_b_factors,
+          remove_leading_feature_dimension=not model_runner.multimer_mode)
+
+      unrelaxed_proteins[model_name] = unrelaxed_protein
+      unrelaxed_pdbs[model_name] = protein.to_pdb(unrelaxed_protein)
+      unrelaxed_pdb_path = os.path.join(output_dir, f'unrelaxed_{model_name}.pdb')
+      with open(unrelaxed_pdb_path, 'w') as f:
+        f.write(unrelaxed_pdbs[model_name])
+    else:
+      print(f"Prediction {model_name} not saved, ranking confidence {confidence} \
+under threshold {FLAGS.score_threshold_output}")
 
     if prediction_result['ranking_confidence'] > FLAGS.max_score_stop:
-      print(f"The max score {FLAGS.max_score_stop} has been attainted by \
-prediction {model_name} with {prediction_result['ranking_confidence']}")
+      print(f"\nThe max score {FLAGS.max_score_stop} has been reached with \
+prediction {model_name}: {prediction_result['ranking_confidence']}\n")
       break
 
   # Rank by model confidence.
@@ -327,6 +334,9 @@ prediction {model_name} with {prediction_result['ranking_confidence']}")
     to_relax = []
 
   for model_name in to_relax:
+    if model_name not in unrelaxed_proteins:
+      print(f"Relax target {model_name}'s score < {FLAGS.score_threshold_output}, no output to relax.")
+      break
     t_0 = time.time()
     relaxed_pdb_str, _, violations = amber_relaxer.process(
         prot=unrelaxed_proteins[model_name])
@@ -346,6 +356,8 @@ prediction {model_name} with {prediction_result['ranking_confidence']}")
 
   # Write out relaxed PDBs in rank order.
   for idx, model_name in enumerate(ranked_order):
+    if model_name not in unrelaxed_proteins:
+      continue
     ranked_output_path = os.path.join(output_dir, f'ranked_{idx}.pdb')
     with open(ranked_output_path, 'w') as f:
       if model_name in relaxed_pdbs:
