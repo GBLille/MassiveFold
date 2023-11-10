@@ -127,7 +127,7 @@ class DataPipeline:
                use_small_bfd: bool,
                mgnify_max_hits: int = 501,
                uniref_max_hits: int = 10000,
-               no_templates: bool = False,
+               templates: bool = True,
                bfd_max_hits: int = 10000,
                use_precomputed_msas: bool = False):
     """Initializes the data pipeline."""
@@ -150,7 +150,7 @@ class DataPipeline:
     self.template_featurizer = template_featurizer
     self.mgnify_max_hits = mgnify_max_hits
     self.uniref_max_hits = uniref_max_hits
-    self.no_templates=no_templates
+    self.templates = templates
     self.bfd_max_hits = bfd_max_hits
     self.use_precomputed_msas = use_precomputed_msas
 
@@ -205,7 +205,7 @@ class DataPipeline:
     uniref90_msa = parsers.parse_stockholm(jackhmmer_uniref90_result['sto'])
     mgnify_msa = parsers.parse_stockholm(jackhmmer_mgnify_result['sto'])
 
-    if self.no_templates:
+    if not self.templates:
       logging.info('Using no template information at all')
       pdb_template_hits = []
     else:
@@ -249,7 +249,7 @@ class DataPipeline:
     logging.info('MGnify MSA size: %d sequences.', len(mgnify_msa))
     logging.info('Final (deduplicated) MSA size: %d sequences.',
                  msa_features['num_alignments'][0])
-    if not self.no_templates:
+    if self.templates:
         logging.info('Total number of templates (NB: this can include bad '
                      'templates and is later filtered to top 4): %d.',
                      templates_result.features['template_domain_names'].shape[0])
