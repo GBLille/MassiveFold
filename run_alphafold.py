@@ -244,7 +244,10 @@ def predict_structure(
   unrelaxed_proteins = {}
   relaxed_pdbs = {}
   relax_metrics = {}
+
   ranking_confidences = {}
+  iptms = {}
+  ptms = {}
 
   # Run the models.
   num_models = len(model_runners)
@@ -278,7 +281,11 @@ def predict_structure(
 
     plddt = prediction_result['plddt']
     confidence = prediction_result['ranking_confidence']
+
     ranking_confidences[model_name] = prediction_result['ranking_confidence']
+    iptms[model_name] = prediction_result['iptm'] * 1
+    ptms[model_name] = prediction_result['ptm'] * 1
+
 
     if confidence >= FLAGS.score_threshold_output:
 
@@ -321,6 +328,15 @@ prediction {model_name}: {prediction_result['ranking_confidence']}\n")
       model_name for model_name, confidence in
       sorted(ranking_confidences.items(), key=lambda x: x[1], reverse=True)]
 
+  # Rank predictions by iptms and ptms only for multimer
+  if FLAGS.model_preset == "multimer":
+    order_by_iptm = [
+      model_name for model_name, iptm in
+      sorted(iptms.items(), key=lambda x: x[1], reverse=True)]
+    order_by_ptm = [
+      model_name for model_name, ptm in
+      sorted(ptms.items(), key=lambda x: x[1], reverse=True)]
+
   # Relax predictions.
   if models_to_relax == ModelsToRelax.BEST:
     to_relax = [ranked_order[0]]
@@ -334,9 +350,11 @@ prediction {model_name}: {prediction_result['ranking_confidence']}\n")
     to_relax = []
 
   for model_name in to_relax:
+
     if model_name not in unrelaxed_proteins:
       print(f"Relax target {model_name}'s score < {FLAGS.score_threshold_output}, no output to relax.")
       break
+
     t_0 = time.time()
     relaxed_pdb_str, _, violations = amber_relaxer.process(
         prot=unrelaxed_proteins[model_name])
@@ -370,6 +388,20 @@ prediction {model_name}: {prediction_result['ranking_confidence']}\n")
     label = 'iptm+ptm' if 'iptm' in prediction_result else 'plddts'
     f.write(json.dumps(
         {label: ranking_confidences, 'order': ranked_order}, indent=4))
+
+  if FLAGS.model_preset == "multimer":
+    with open(os.path.join(output_dir, 'ranking_iptm.json'), 'w') as f:
+      f.write(json.dumps(
+          {
+          'iptm': iptms,
+          'order': order_by_iptm,
+          }, indent=4))
+    with open(os.path.join(output_dir, 'ranking_ptm.json'), 'w') as f:
+      f.write(json.dumps(
+          {
+          'ptm': ptms,
+          'order': order_by_ptm
+          }, indent=4))
 
   logging.info('Final timings for %s: %s', fasta_name, timings)
 
