@@ -40,6 +40,7 @@ def main(argv):
     all_params = json.load(parameters_json)
   run_params.update(all_params['custom_params'])
   run_params.update(all_params['MF_run'])
+  run_params.update(all_params['MF_plots'])
 
   if 'jeanzay_gpu_memory' in run_params:
     run_params['jeanzay_account'] = f"{run_params['jeanzay_project']}@{run_params['jeanzay_gpu']}"
@@ -47,12 +48,18 @@ def main(argv):
     if run_params['jeanzay_gpu_memory']:
       run_params['jeanzay_gpu_memory'] = f"-{run_params['jeanzay_gpu_memory']}"
   
+
   if FLAGS.job_type == "jobarray":  
     print("Parameters of the run:")
     for i in all_params['custom_params']:
       print(f"{i}: {all_params['custom_params'][i]}")
     for i in all_params['MF_run']:
       print(f"{i}: {all_params['MF_run'][i]}")
+    print()
+  if FLAGS.job_type == "post_treatment":
+    print("Parameters for plots:")
+    for i in all_params['MF_plots']:
+      print(f"{i}: {all_params['MF_plots'][i]}")
 
   # create jobfiles
   grouped_template = all_params['MF_parallel']['grouped_templates']

@@ -7,8 +7,7 @@
 #SBATCH --output=../log_parallel/${sequence_name}/${run_name}/alignment_%j.log
 #SBATCH --error=../log_parallel/${sequence_name}/${run_name}/alignment_%j.log
 #SBATCH --time=$jeanzay_alignment_time
-#SBATCH --account=fvp@cpu
-##SBATCH --qos=qos_gpu-dev             # Uncomment for job requiring less than 2 hours
+#SBATCH --account=$jeanzay_project@cpu
 ##SBATCH --qos=qos_gpu-t4              # Uncomment for job requiring more than 20h (max 16 GPUs)
 
 module purge

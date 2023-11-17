@@ -1,7 +1,8 @@
 #!/bin/bash
 
+
 USAGE="\
-./MF_parallel.sh -s arg -r arg -p arg -f arg [-b arg] [-m arg] [-c]\n\
+./MF_parallel.sh -s str -r str -p int -f str [-m str] [-n str] [[-b int] | [-C str] | [-c]]\n\
 ./MF_parallel.sh -h for more details "
 
 # help message
@@ -9,20 +10,26 @@ if [[ " ${@} " == *" -h "* ]] || [[ " ${@} " == *" --help "* ]]; then
   echo -e "\
 Usage: $USAGE\n\
   Required arguments:\n\
-    -s| --sequence: name of the sequence file without '.fasta'\n\
-    -r| --run : name chosen for the run to store the outputs\n\
-    -p| --predictions_per_model: number of predictions computed for each neural network model\n\
-    -f| --parameters: path to the json file that contains the run's parameters\n\
+    -s| --sequence: name of the sequence file without '.fasta'.\n\
+    -r| --run: name chosen for the run to store the outputs.\n\
+    -p| --predictions_per_model: number of predictions computed for each neural network model.\n\
+    -f| --parameters: path to the json file that contains the run's parameters.\n\
 \n\
   Facultative arguments:\n\
-    -b| --batch_size: number of predictions per batch, default: 25\n\
-    -m| --msas_precomputed: path to an output directory with msas already computed for the sequence
+    -b| --batch_size: number of predictions per batch, default: 25.\n\
+    -m| --msas_precomputed: path to output folder containing already computed msas.\n\
+    -n| --top_n_models: path of a completed run, use the 5 best models from the location.\n\
+    -C| --calibration_from: path of a previous run to calibrate the batch size.\n\
 \n\
   Facultative options:\n\
-    -c| --calibrate: Does not work yet. Run a preleminary job to calibrate the batches size depending on the highest time for one prediction inference"
+    -c| --calibrate_batch_size: set the --batch_size by computing the maximal number of prediction per batch.
+It searches for previous runs on the sequence and use the longest prediction time found."
   exit 1
 fi
 
+module load massivefold/1.0.0
+
+# default params
 calibration=false
 predictions_per_model=67
 batch_size=25
@@ -46,27 +53,47 @@ while true; do
       parameters_file=$2
       shift 2
       ;;
-    -b|--batch_size)
-      batch_size=$2
-      shift 2
-      ;;
-    -c|--calibrate)
-      calibration=true
-      shift
-      ;;
     -m|--msas_precomputed)
       msas_precomputed=$2
       shift 2
       ;;
-    -n|--select_model_from_run)
+    -b|--batch_size)
+      batch_size=$2
+      shift 2
+      ;;
+    -c|--calibrate_batch_size)
+      calibration=true
+      shift
+      ;;
+    -C|--calibration_from)
+      calibration_path=$2
+      shift 2
+      ;;
+    -n|--top_n_model)
       path_to_run="$2"
       shift 2
-      ;; 
+      ;;
     *)
       break
       ;;
   esac
 done
+
+# avoid overwriting run with a same name
+# add an indicator (iteration number) if the run already exists 
+if [ -d ../output_array/$sequence_name/$run_name ]; then
+  echo "Run $run_name for $sequence_name already exists at ../output_array/$sequence_name/$run_name."
+  echo "Starting new iteration of this run."
+  i=1
+  iteration=$run_name
+  while [ -d ../output_array/$sequence_name/$iteration ]; do
+    let i++
+    iteration=${run_name}_$i
+    echo "Trying $iteration"
+  done
+  run_name=$iteration
+  echo -e "Current run is ${run_name}.\n"
+fi
 
 # check mandatory args
 if
@@ -77,38 +104,99 @@ if
   exit 1
 fi
 
-echo "Run $run_name on sequence $sequence_name with $predictions_per_model predictions per model"
 
-if $calibration ; then
-  echo -e "Running a preliminary job to calibrate the batches size.\n"
-  echo "Calibration not available yet, exiting."
-  exit 1
-else
+# calibration: check time taken for a previous run
+number_of_runs=$(ls -l ../log_parallel/${sequence_name} | wc -l)
+wall_time=20
+if ! $calibration && [ -z $calibration_path ]; then
   echo "No calibration for the batch size."
+elif $calibration && [ ! -z $calibration_path ]; then
+  echo -e "Use either -c or -C, not both, exiting."
+  exit 1
+elif [ ! -z $calibration_path ] && [ ! -d $calibration_path ]; then
+  echo "$calibration_path does not exist, exiting."
+  exit 1
+elif $calibration; then
+  if [ ! -d ../log_parallel/${sequence_name} ] && [ $number_of_runs -eq 0 ]; then
+    echo "${sequence_name} has never been run, do try without calibration option, exiting."
+    exit 1
+  fi 
+  echo "Calibrating this run's batch size."
+  all_runs=$(find "../log_parallel/$sequence_name" -mindepth 1 -maxdepth 1 -type d)
+  echo "Searching for a completed preliminary run for $sequence_name"
+  # search for completed run
+  for run in $all_runs;
+  do
+    pred_nb=$(
+    ./run_examination.py \
+      --get=batch_calibration \
+      --input=${run} \
+      --wall_time=${wall_time}
+    )
+    if [[ $pred_nb =~ ^[0-9]+$ ]]; then
+      if [ -z $lowest_pred_nb ]; then
+        lowest_pred_nb=$pred_nb
+        echo "Found first batch size candidate: ${lowest_pred_nb} at ${run}"
+      elif [ $pred_nb -le $lowest_pred_nb ]; then
+        lowest_pred_nb=$pred_nb
+        echo "Found new batch size candidate: ${lowest_pred_nb} at ${run}"
+      fi
+    fi
+  done
+  batch_size=$lowest_pred_nb 
+  
+  if [ -z $lowest_pred_nb ]; then
+    echo "No preliminary run completed for $sequence_name, exiting."
+    exit 1
+  fi
+
+elif [ ! -z $calibration_path ]; then
+  if [ ! -d $calibration_path ]; then
+    echo "$calibration_path does not exist or not completed, exiting."
+    exit 1
+  fi
+
+  echo "Calibrating this run's batch size."
+  pred_nb=$(
+  ./run_examination.py \
+    --get=batch_calibration \
+    --input=${calibration_path} \
+    --wall_time=${wall_time}
+  )
+  if [[ $pred_nb =~ ^[0-9]+$ ]]; then
+    batch_size=$pred_nb
+  fi
 fi
 
-: '
-if [ -n $path_to_run ]; then
-  echo "Running with the 5 best models of the $path_to_run run on $sequence_name"
-  exit 1
-  echo "verify ../output_array/$sequence_name/$path_to_run/ranking_debug.json"
-  if [ -f ../output_array/$sequence_name/$path_to_run/ranking_debug.json ]; then
-    echo entered
-    models_to_use=$(./analyze.py --log_dir ../log_parallel/$sequence_name/$path_to_run/ --get models)
-    echo $models_to_use
-    exit 1
+if $calibration || [ ! -z $calibration_path ]; then
+  echo "Number of prediction under wall time: ${batch_size}"
+  if [ $batch_size -gt $predictions_per_model ]; then
+    batch_size=$predictions_per_model
+    echo "Adapting batch size according to -p ${predictions_per_model}"
+  fi
+  echo -e "Calibrated batch size: ${batch_size} \n"
+fi
+
+
+if [ ! -z $path_to_run ]; then
+  echo "Running with the 5 best models of the run located at path_to_run."
+  if [ -f ${path_to_run}/ranking_debug.json ]; then
+    echo "Using ${path_to_run} run to evaluate the 5 best models."
+    models_to_use=$(
+    ./run_examination.py \
+      --get=models \
+      --input=${path_to_run}
+    )
+    echo -e "Using following models: $models_to_use \n"
   else
-    echo "not entered"
-    echo "Either $path_to_run isn't finished or it doesn't exist, exiting."
+    echo "Either run $path_to_run is still running or does not exist, exiting."
     exit 1
   fi
 fi
-'
+
+echo "Run $run_name on sequence $sequence_name with $predictions_per_model predictions per model"
 
 # Massivefold
-
-module load massivefold/1.0.0
-
 ./group_templates.py --parameters $parameters_file
 
 # split the predictions in batches and store in json
@@ -126,7 +214,7 @@ cp ${sequence_name}_${run_name}_batches.json ../log_parallel/${sequence_name}/${
 
 # starts alignment only when not pre-existing
 if [ -d ../output_array/${sequence_name}/msas/ ]; then
-  echo "Detected msas for the same ${sequence_name} at ../output_array/${sequence_name}/msas/, using them."
+  echo -e "Detected msas for ${sequence_name} located ../output_array/${sequence_name}/msas/, using them.\n"
 elif [ -z ${msas_precomputed} ]; then
   # Create and start alignment job
   ./create_jobfile.py \
@@ -170,7 +258,5 @@ fi
 sbatch --dependency=afterok:$ARRAY_ID ${sequence_name}_${run_name}_post_treatment.slurm
 
 # Store jobiles and batches elements in logs
-
 mkdir -p ../log_parallel/${sequence_name}/${run_name}/
 mv ${sequence_name}_${run_name}_* ../log_parallel/${sequence_name}/${run_name}/
-

@@ -40,24 +40,30 @@ mkdir -vp $${output_dir}/$${sequence_name}
 use_precomputed_msas=true
 alignments_only=false
 
+path_run_AF2=$$(which run_alphafold.py)
+#path_run_AF2=/gpfs7kw/linkhome/rech/genasu01/urh88pc/git/MassiveFold_dev/run_alphafold.py
+
 current_dir=$$(realpath .)
 ln -s $$current_dir/../output_array/$${sequence_name}/msas $${output_dir}/$${sequence_name}
 data_dir=$${ALPHAFOLDDB}/model_parameters/2.3.1
 
-model_preset=$substitute_model_preset
+model_preset=$MF_run_model_preset
 max_template_date=2023-07-31
-db_preset=$substitute_db_preset
-use_gpu_relax=$substitute_use_gpu_relax
-models_to_relax=$substitute_models_to_relax
-dropout=$substitute_dropout
-dropout_rates_filename=$substitute_dropout_rates_filename
-max_recycles=$substitute_max_recycles
-early_stop_tolerance=$substitute_early_stop_tolerance
-bfd_max_hits=$substitute_bfd_max_hits
-mgnify_max_hits=$substitute_mgnify_max_hits
-uniprot_max_hits=$substitute_uniprot_max_hits
-uniref_max_hits=$substitute_uniref_max_hits
-no_templates=$substitute_no_templates
+db_preset=$MF_run_db_preset
+use_gpu_relax=$MF_run_use_gpu_relax
+models_to_relax=$MF_run_models_to_relax
+dropout=$MF_run_dropout
+dropout_structure_module=$MF_run_dropout_structure_module
+dropout_rates_filename=$MF_run_dropout_rates_filename
+max_recycles=$MF_run_max_recycles
+early_stop_tolerance=$MF_run_early_stop_tolerance
+bfd_max_hits=$MF_run_bfd_max_hits
+mgnify_max_hits=$MF_run_mgnify_max_hits
+uniprot_max_hits=$MF_run_uniprot_max_hits
+uniref_max_hits=$MF_run_uniref_max_hits
+templates=$MF_run_templates
+score_threshold_output=$MF_run_score_threshold_output
+max_score_stop=$MF_run_max_score_stop
 
 batches_path=../log_parallel/${sequence_name}/${run_name}/
 batch_model=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}./$${sequence_name}_$${run_name}_batches.json --element model)
@@ -69,7 +75,7 @@ echo Model used is $$batch_model, batch computed between prediction $$batch_star
 
 date
 
-echo "python3 $$(which run_alphafold.py)
+echo "python3 $${path_run_AF2}
     --fasta_paths=$${fafile}
     --output_dir=$${output_dir}
     --data_dir=$${data_dir}
@@ -79,7 +85,7 @@ echo "python3 $$(which run_alphafold.py)
     --use_gpu_relax=$${use_gpu_relax}
     --max_template_date=$${max_template_date}
     --use_precomputed_msas=$${use_precomputed_msas}
-    --num_predictions_per_model=$${batch_end}
+    --end_prediction=$${batch_end}
     --alignments_only=$${alignments_only}
     --dropout=$${dropout}
     --dropout_rates_filename=$${dropout_rates_filename}
@@ -91,7 +97,7 @@ echo "python3 $$(which run_alphafold.py)
     --uniref_max_hits=$${uniref_max_hits}
     --models_to_use=$${models_to_use}
     --start_prediction=$${batch_start}
-    --no_templates=$${no_templates}
+    --templates=$${templates}
     --uniref90_database_path=$${ALPHAFOLDDB}/uniref90/uniref90.fasta
     --mgnify_database_path=$${ALPHAFOLDDB}/mgnify/mgy_clusters_2022_05.fa
     --template_mmcif_dir=$${ALPHAFOLDDB}/pdb_mmcif
@@ -99,9 +105,12 @@ echo "python3 $$(which run_alphafold.py)
     --bfd_database_path=$${ALPHAFOLDDB}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt
     --pdb_seqres_database_path=$${ALPHAFOLDDB}/pdb_seqres/pdb_seqres.txt
     --uniref30_database_path=$${ALPHAFOLDDB}/uniref30/UniRef30_2021_03
-    --uniprot_database_path=$${ALPHAFOLDDB}/uniprot/uniprot.fasta"
+    --uniprot_database_path=$${ALPHAFOLDDB}/uniprot/uniprot.fasta
+    --score_threshold_output=$${score_threshold_output} 
+    --max_score_stop=$${max_score_stop}
+"
 
-time python3 $$(which run_alphafold.py) \
+time python3 $${path_run_AF2} \
     --fasta_paths=$${fafile} \
     --output_dir=$${output_dir} \
     --data_dir=$${data_dir} \
@@ -111,7 +120,7 @@ time python3 $$(which run_alphafold.py) \
     --use_gpu_relax=$${use_gpu_relax} \
     --max_template_date=$${max_template_date} \
     --use_precomputed_msas=$${use_precomputed_msas} \
-    --num_predictions_per_model=$${batch_end} \
+    --end_prediction=$${batch_end} \
     --alignments_only=$${alignments_only} \
     --dropout=$${dropout} \
     --dropout_rates_filename=$${dropout_rates_filename} \
@@ -123,7 +132,7 @@ time python3 $$(which run_alphafold.py) \
     --uniref_max_hits=$${uniref_max_hits} \
     --models_to_use=$${models_to_use} \
     --start_prediction=$${batch_start} \
-    --no_templates=$${no_templates} \
+    --templates=$${templates} \
     --uniref90_database_path=$${ALPHAFOLDDB}/uniref90/uniref90.fasta \
     --mgnify_database_path=$${ALPHAFOLDDB}/mgnify/mgy_clusters_2022_05.fa \
     --template_mmcif_dir=$${ALPHAFOLDDB}/pdb_mmcif \
@@ -131,6 +140,9 @@ time python3 $$(which run_alphafold.py) \
     --bfd_database_path=$${ALPHAFOLDDB}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt \
     --pdb_seqres_database_path=$${ALPHAFOLDDB}/pdb_seqres/pdb_seqres.txt \
     --uniref30_database_path=$${ALPHAFOLDDB}/uniref30/UniRef30_2021_03 \
-    --uniprot_database_path=$${ALPHAFOLDDB}/uniprot/uniprot.fasta
+    --uniprot_database_path=$${ALPHAFOLDDB}/uniprot/uniprot.fasta \
+    --score_threshold_output=$${score_threshold_output} \
+    --max_score_stop=$${max_score_stop}
+    
 
 date
