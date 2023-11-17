@@ -17,7 +17,7 @@ Table of contents
   * [Plots](#mf_plots-output-representation)
 
 
-This AlphaFold version aims at massively expand the sampling of structure predictions following Björn Wallner's AFsample 
+This AlphaFold version aims at massively expanding the sampling of structure predictions following Björn Wallner's AFsample 
 version of AlphaFold (https://github.com/bjornwallner/alphafoldv2.2.0/)
 and to provide some optimizations in the computing.
 These optimizations are described below with the flags that were added to the genuine DeepMind's AlphaFold.
@@ -219,7 +219,7 @@ However, **--model_preset=monomer_ptm** functions too and need to be adapted acc
 You can decide how the run will be divided by assigning **MF_parallel.sh** parameters *e.g.*:
 
 ```bash
-./MF_paraellel.sh -s H1144 -r 1005_predictions -p 67 -b 25 -f run_params.json
+./MF_parallel.sh -s H1144 -r 1005_predictions -p 67 -b 25 -f run_params.json
 ```
 
 The predictions are computed individually for each models,  **-p** or **--predictions_per_model** allows to specify the number of predictions desired on each of the models chosen.\
@@ -243,22 +243,24 @@ The prediction number per model can be adjusted, here with 67 per model and 15 m
 
 The following arguments and options of **MF_parallel.sh** program can be displayed with the **-h** option.
 
-```bash
-"""
+```txt
+Usage: ./MF_parallel.sh -s str -r str -p int -f str [-m str] [-n str] [[-b int] | [-C str] | [-c]]
 ./MF_parallel.sh -h for more details 
   Required arguments:
-    -s| --sequence: name of the sequence file without '.fasta'
-    -r| --run : name chosen for the run to store the outputs
-    -p| --predictions_per_model: number of predictions computed for each neural network model
-    -f| --parameters: path to the json file that contains the run parameters
+    -s| --sequence: name of the sequence file without '.fasta'.
+    -r| --run: name chosen for the run to store the outputs.
+    -p| --predictions_per_model: number of predictions computed for each neural network model.
+    -f| --parameters: path to the json file that contains the run's parameters.
 
   Facultative arguments:
-    -b| --batch_size: number of predictions per batch, default: 25
-    -m| --msas_precomputed: path to an output directory with msas already computed for the sequence
+    -b| --batch_size: number of predictions per batch, default: 25.
+    -m| --msas_precomputed: path to output folder containing already computed msas.
+    -n| --top_n_models: path of a completed run, use the 5 best models from the location.
+    -C| --calibration_from: path of a previous run to calibrate the batch size.
 
   Facultative options:
-    -c| --calibrate: Does not work yet. Run a preleminary job to calibrate the batches size depending on the highest time for one prediction inference
-"""
+    -c| --calibrate_batch_size: set the --batch_size by computing the maximal number of prediction per batch.
+It searches for previous runs on the sequence and use the longest prediction time found.
 ```
 
 In addition to these arguments, you can set the parameters of the run with **-f** or **--parameters**.\
@@ -281,16 +283,15 @@ The relative paths of each of the three templates in the MF_scripts/parallelizat
 
 ```json
 {
------------------------------------------
     "MF_parallel": 
     {
-------------
         "alignment_template": "templates/alignment_jeanzay.slurm",
         "jobarray_template": "templates/jobarray_jeanzay.slurm",
         "post_treatment_template": "templates/post_treatment_jeanzay.slurm",
         "grouped_templates": "templates/templates_jeanzay.json"
+        (...)
     }
------------------------------------------
+(...)
 }
 ```
 The templates work in hand with the parameters provided in **run_params.json** passed to the **MF_parallel.sh** script.\
@@ -304,7 +305,7 @@ On top of the following documentation, you can use the available templates for t
 - Example in the json parameters file adapted to Jean Zay cluster:
 ```json
 {
------------------------------------------
+(...)
     "custom_params": 
     {
       "new_parameter": "its_value", (parameter added)
@@ -314,7 +315,7 @@ On top of the following documentation, you can use the available templates for t
       "jeanzay_alignment_time":"05:00:00",
       "jeanzay_jobarray_time":"00:20:00"
     },
------------------------------------------
+(...)
 }
 
 ```
