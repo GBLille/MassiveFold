@@ -363,9 +363,10 @@ Lastly, section **MF_plots** is used for the MassiveFold plotting module.
 
 ### Template building
 
-The relative paths of each of the three templates (alignment, jobarray and post treatment) in the 
-MF_scripts/parallelization/templates/ directory must be set in **MF_parallel** section of 
-**run_params.json** following this:
+You can create new templates, starting from the generic ones located in the *MF_scripts/parallelization/templates/* subdirectory. 
+They have to be adapted in function of your computing infrastructure. 
+The relative paths of each of the three templates (alignment, jobarray and post treatment) in this directory must be set 
+in **MF_parallel** section of **run_params.json** following:
 
 ```json
   "MF_parallel": 
