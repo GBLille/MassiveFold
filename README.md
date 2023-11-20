@@ -374,7 +374,7 @@ MF_scripts/parallelization/templates/ directory must be set in **MF_parallel** s
       "jobarray_template": "templates/jobarray_jeanzay.slurm",
       "post_treatment_template": "templates/post_treatment_jeanzay.slurm",
       "grouped_templates": "templates/templates_jeanzay.json"
-      (...)
+      \(...\)
     }
 (...)
 ```
