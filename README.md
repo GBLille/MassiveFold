@@ -374,9 +374,9 @@ MF_scripts/parallelization/templates/ directory must be set in **MF_parallel** s
       "jobarray_template": "templates/jobarray_jeanzay.slurm",
       "post_treatment_template": "templates/post_treatment_jeanzay.slurm",
       "grouped_templates": "templates/templates_jeanzay.json"
-      //(...)
+      (...)
     }
-//(...)
+(...)
 ```
 The templates work with the parameters provided in **run_params.json** passed to the **MF_parallel.sh** script.\
 These parameters are substituted in the template job files thanks to the python library [string.Template](https://docs.python.org/3.8/library/string.html#template-strings).
