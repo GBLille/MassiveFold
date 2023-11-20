@@ -271,28 +271,91 @@ This parameters file should be organized as **MF_scripts/parallelization/run_par
 Each section of **run_params.json** are used for a different purpose.
 
 The section **MF_parallel** designates the parameters relative to the whole run.\
-The section **custom_params** is relative to the personalized parameters for your own cluster, it substitutes the parameters as variables to bring flexibility to its values
-(see [How to add a parameter](#how-to-add-a-parameter)).\
-The section **MF_run** gathers all parameters used by MassiveFold in the run. (see [Example](#example) and [Added flags](#added-flags)).
 
-The **MF_parallel** and **MF_run sections** sections should be identic to **run_params.json**, only **custom_params** should be adapted according to your needs.
+It is presented as:
+
+```json
+  "MF_parallel": 
+    {
+      "alignment_template": "templates/alignment_jeanzay.slurm",
+      "jobarray_template": "templates/jobarray_jeanzay.slurm",
+      "post_treatment_template": "templates/post_treatment_jeanzay.slurm",
+      "grouped_templates": "templates/templates_jeanzay.json",
+      "predictions_to_relax": "5",
+      "models_to_use":"",
+      "output_dir":"../output_array/"
+    }
+(..)
+
+```
+The templates path are specified here to setup the run. You have to build your templates according to the [Template building](#template-building) section.
+
+The section **custom_params** is relative to the personalized parameters that you want to add for your own cluster. 
+```json
+(...)
+  "custom_params": 
+    {
+      "jeanzay_gpu": "v100",
+      "jeanzay_gpu_memory": "",
+      "jeanzay_project": "nqf",
+      "jeanzay_alignment_time":"05:00:00",
+      "jeanzay_jobarray_time":"00:05:00"
+    }
+(...)
+```
+These variables will be substituted by their value when the jobfile are created.
+(see [How to add a parameter](#how-to-add-a-parameter)).\
+
+The section **MF_run** gathers all parameters used by MassiveFold in the run. (see [Example](#example) and [Added flags](#added-flags)). All flags that should be exposed are, if flags are missing (--models_to_relax, --use_precomputed_msas, --alignment_only) it is intended. You can change the values as you see fit.
+```json
+(...) 
+  "MF_run": 
+    {
+      "MF_run_model_preset": "multimer",
+      "MF_run_dropout": "false",
+      "MF_run_dropout_structure_module":"true",
+      "MF_run_dropout_rates_filename": "",
+      "MF_run_score_threshold_output": "0",
+      "MF_run_max_score_stop": "1",
+      "MF_run_templates": "true",
+      "MF_run_max_recycles": "21",
+      "MF_run_db_preset": "full_dbs",
+      "MF_run_use_gpu_relax": "true",
+      "MF_run_models_to_relax": "none",
+      "MF_run_early_stop_tolerance": "0.5",
+      "MF_run_bfd_max_hits": "100000",
+      "MF_run_mgnify_max_hits": "501",
+      "MF_run_uniprot_max_hits": "50000",
+      "MF_run_uniref_max_hits": "10000"
+    }
+(...)
+```
+Lastly, section **MF_plots** is used for the MassiveFold plotting module.
+
+```json
+(...)
+  "MF_plots": 
+    {
+      "MF_plots_top_n_predictions":"5",
+      "MF_plots_chosen_plots": "coverage,DM_plddt_PAE,CF_PAEs"
+    }
+```
+The **MF_parallel**, **MF_run** and **MF_plots** sections should be identic to **run_params.json**, only **custom_params** should be adapted according to your needs.
 
 ### Template building
 
 The relative paths of each of the three templates in the MF_scripts/parallelization/templates/ directory must be added in **MF_parallel** section of **run_params.json** following this:
 
 ```json
-{
-    "MF_parallel": 
+  "MF_parallel": 
     {
-        "alignment_template": "templates/alignment_jeanzay.slurm",
-        "jobarray_template": "templates/jobarray_jeanzay.slurm",
-        "post_treatment_template": "templates/post_treatment_jeanzay.slurm",
-        "grouped_templates": "templates/templates_jeanzay.json"
-        (...)
+      "alignment_template": "templates/alignment_jeanzay.slurm",
+      "jobarray_template": "templates/jobarray_jeanzay.slurm",
+      "post_treatment_template": "templates/post_treatment_jeanzay.slurm",
+      "grouped_templates": "templates/templates_jeanzay.json"
+      (...)
     }
 (...)
-}
 ```
 The templates work in hand with the parameters provided in **run_params.json** passed to the **MF_parallel.sh** script.\
 These parameters are substituted in the tempalate job files thanks to the python library [string.Template](https://docs.python.org/3.8/library/string.html#template-strings).
@@ -304,9 +367,8 @@ On top of the following documentation, you can use the available templates for t
 
 - Example in the json parameters file adapted to Jean Zay cluster:
 ```json
-{
 (...)
-    "custom_params": 
+  "custom_params": 
     {
       "new_parameter": "its_value", (parameter added)
       "jeanzay_gpu": "v100",
@@ -314,10 +376,8 @@ On top of the following documentation, you can use the available templates for t
       "jeanzay_project": "fvp",
       "jeanzay_alignment_time":"05:00:00",
       "jeanzay_jobarray_time":"00:20:00"
-    },
+    }
 (...)
-}
-
 ```
 Make sure to never use single \$ symbol for other uses than parameter/value substitution from the json file. Instead, use $$ following [string.Template documentation](https://docs.python.org/3.8/library/string.html#template-strings).
 
@@ -328,14 +388,12 @@ Add your slrum setup sbatch parameters after the first line, these are examples 
 ```bash
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=10
+#SBATCH --cpus-per-task=8
 #SBATCH --hint=nomultithread
-#SBATCH --output=../log_parallel/%x.%j.log
-#SBATCH --error=../log_parallel/%x.%j.log
-#SBATCH --time=10:00:00
-#SBATCH --account=fvp@cpu
-##SBATCH --qos=qos_gpu-dev      # Uncomment for job requiring less than 2h
-##SBATCH --qos=qos_gpu-t4       # Uncomment for job requiring more than 20h 
+#SBATCH --output=../log_parallel/${sequence_name}/${run_name}/alignment_%j.log
+#SBATCH --error=../log_parallel/${sequence_name}/${run_name}/alignment_%j.log
+#SBATCH --time=$jeanzay_alignment_time
+#SBATCH --account=$jeanzay_project@cpu
 ```
 
 #### Jobarray template
@@ -345,30 +403,29 @@ Add your slrum setup sbatch parameters after the first line, these are examples 
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --hint=nomultithread
-#SBATCH --error=../log_parallel/%x-%a/id-%j.log
-#SBATCH --output=../log_parallel/%x-%a/id-%j.log
-#SBATCH --gpus-per-node=1
-#SBATCH --time=19:50:00
-#SBATCH -C $jeanzay_full_gpu             # Use gpu
-#SBATCH --account=$jeanzay_account
+#SBATCH --error=../log_parallel/$${sequence_name}/$${run_name}/jobarray_%a.log
+#SBATCH --output=../log_parallel/$${sequence_name}/$${run_name}/jobarray_%a.log
 #SBATCH --array=0-$substitute_batch_number
-##SBATCH --qos=qos_gpu-t4       # Uncomment for job requiring more than 20h (max 16 GPUs)
+#SBATCH --time=$jeanzay_jobarray_time
+#SBATCH --gpus-per-node=1
+#SBATCH --account=$jeanzay_account
+#SBATCH -C $jeanzay_full_gpu
 ```
 
-Here, **#SBATCH --array=0-\$substitute_batch_number** designates the indexes of the jobarray, \$substitute_batch_number parameter is the total number of batch computed, it is automatically computed before the jobfile creation and parameter substitution with the prediction number parameter and batch size.\
-Copy this setup.
+Here, **#SBATCH --array=0-\$substitute_batch_number**, \$substitute_batch_number parameter is the total number of batch computed, it is automatically computed then used for the number of task in the jobarray.\
+Variables formated as $variable_name are substituted as explained in [How to add parameters](#how-to-add-a-parameter).
 
 #### Post treatment template
 
 ```bash
-#SBATCH --nodes=1            # Number of nodes
-#SBATCH --ntasks-per-node=1  # Number of tasks per node
-#SBATCH --cpus-per-task=10    # Number of OpenMP threads per task
-#SBATCH --hint=nomultithread # Disable hyperthreading
-#SBATCH --output=../log_parallel/%x.%j.log
-#SBATCH --error=../log_parallel/%x.%j.log
-#SBATCH --time=10:00:00      # Expected runtime HH:MM:SS (max 100h)
-#SBATCH --account=fvp@cpu #
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=10
+#SBATCH --hint=nomultithread
+#SBATCH --time=01:00:00
+#SBATCH --output=../log_parallel/${sequence_name}/${run_name}/post_treatment_%j.log
+#SBATCH --error=../log_parallel/${sequence_name}/${run_name}/post_treatment_%j.log
+#SBATCH --account=$jeanzay_project@cpu
 ```
 
 # MF_plots: output representation

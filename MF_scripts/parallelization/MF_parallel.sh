@@ -128,7 +128,7 @@ elif $calibration; then
   for run in $all_runs;
   do
     pred_nb=$(
-    ./run_examination.py \
+    ./examine_run.py \
       --get=batch_calibration \
       --input=${run} \
       --wall_time=${wall_time}
@@ -158,7 +158,7 @@ elif [ ! -z $calibration_path ]; then
 
   echo "Calibrating this run's batch size."
   pred_nb=$(
-  ./run_examination.py \
+  ./examine_run.py \
     --get=batch_calibration \
     --input=${calibration_path} \
     --wall_time=${wall_time}
@@ -183,7 +183,7 @@ if [ ! -z $path_to_run ]; then
   if [ -f ${path_to_run}/ranking_debug.json ]; then
     echo "Using ${path_to_run} run to evaluate the 5 best models."
     models_to_use=$(
-    ./run_examination.py \
+    ./examine_run.py \
       --get=models \
       --input=${path_to_run}
     )
@@ -215,6 +215,7 @@ cp ${sequence_name}_${run_name}_batches.json ../log_parallel/${sequence_name}/${
 # starts alignment only when not pre-existing
 if [ -d ../output_array/${sequence_name}/msas/ ]; then
   echo -e "Detected msas for ${sequence_name} located ../output_array/${sequence_name}/msas/, using them.\n"
+  msas_precomputed="../output_array/${sequence_name}"
 elif [ -z ${msas_precomputed} ]; then
   # Create and start alignment job
   ./create_jobfile.py \
@@ -247,7 +248,7 @@ else
   ARRAY_ID=$(sbatch --parsable ${sequence_name}_${run_name}_jobarray.slurm)
 fi
 
-#  Create and start post treatment (output organization and plots)
+#  Create and start post treatment (output organization axnd plots)
 ./create_jobfile.py \
   --job_type=post_treatment \
   --sequence_name=${sequence_name} \
