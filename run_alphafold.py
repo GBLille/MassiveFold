@@ -165,7 +165,7 @@ flags.DEFINE_boolean('alignments_only', False, 'Whether to generate only alignme
                      'the modelling will not be performed')
 flags.DEFINE_boolean('templates', True, 'Whether to use templates for the inference.')
 flags.DEFINE_boolean('dropout', False, 'Turn on drop out during inference to get more diversity')
-flags.DEFINE_boolean('dropout_structure_module',True, 'Dropout in structure module at inference')
+flags.DEFINE_boolean('dropout_structure_module',False, 'Dropout in structure module at inference')
 flags.DEFINE_string('dropout_rates_filename', None, 'Provide dropout rates for inference from a json file. '
                      'If None, default rates are used, if "dropout" is True.')
 flags.DEFINE_float('score_threshold_output', 0,
