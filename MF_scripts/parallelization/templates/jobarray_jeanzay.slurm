@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
+##SBATCH --job-name=MF_inference
+#SBATCH --account=$jeanzay_account
 
+#SBATCH --error=../log_parallel/${sequence_name}/${run_name}/jobarray_%a.log
+#SBATCH --output=../log_parallel/${sequence_name}/${run_name}/jobarray_%a.log
 
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --hint=nomultithread
-#SBATCH --error=../log_parallel/${sequence_name}/${run_name}/jobarray_%a.log
-#SBATCH --output=../log_parallel/${sequence_name}/${run_name}/jobarray_%a.log
+#SBATCH --gpus-per-node=1
 #SBATCH --array=0-$substitute_batch_number
 #SBATCH --time=$jeanzay_jobarray_time
-#SBATCH --gpus-per-node=1
-#SBATCH --account=$jeanzay_account
-#SBATCH -C $jeanzay_full_gpu             # Use gpu
+##SBATCH --qos=qos_gpu-dev             # Uncomment for job requiring less than 2 hours
 ##SBATCH --qos=qos_gpu-t4         # Uncomment for job requiring more than 20h (max 16 GPUs)
+#SBATCH -C $jeanzay_gpu_with_memory             # Use gpu
 
 module purge
 #module load cpuarch/amd
@@ -86,8 +88,8 @@ echo "python3 $${path_run_AF2}
     --end_prediction=$${batch_end}
     --alignments_only=$${alignments_only}
     --dropout=$${dropout}
-    --dropout_structure_module=$${dropout_structure_module}
     --dropout_rates_filename=$${dropout_rates_filename}
+    --dropout_structure_module=$${dropout_structure_module}
     --max_recycles=$${max_recycles}
     --early_stop_tolerance=$${early_stop_tolerance}
     --bfd_max_hits=$${bfd_max_hits}
@@ -122,8 +124,8 @@ time python3 $${path_run_AF2} \
     --end_prediction=$${batch_end} \
     --alignments_only=$${alignments_only} \
     --dropout=$${dropout} \
-    --dropout_structure_module=$${dropout_structure_module} \
     --dropout_rates_filename=$${dropout_rates_filename} \
+    --dropout_structure_module=$${dropout_structure_module} \
     --max_recycles=$${max_recycles} \
     --early_stop_tolerance=$${early_stop_tolerance} \
     --bfd_max_hits=$${bfd_max_hits} \

@@ -2,6 +2,9 @@
 
 # slurm parameters depending on your config 
 
+# conda env activation commands
+
+
 date
 
 # for memory

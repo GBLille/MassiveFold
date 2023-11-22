@@ -197,7 +197,6 @@ fi
 echo "Run $run_name on sequence $sequence_name with $predictions_per_model predictions per model"
 
 # Massivefold
-./group_templates.py --parameters $parameters_file
 
 # split the predictions in batches and store in json
 ./batching.py \

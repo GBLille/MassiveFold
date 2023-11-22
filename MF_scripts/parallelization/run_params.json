@@ -3,26 +3,28 @@
         "alignment_template": "templates/alignment_jeanzay.slurm",
         "jobarray_template": "templates/jobarray_jeanzay.slurm",
         "post_treatment_template": "templates/post_treatment_jeanzay.slurm",
-        "grouped_templates": "templates/templates_jeanzay.json",
         "predictions_to_relax": "5",
-        "models_to_use":"",
-        "output_dir":"../output_array/"
+        "models_to_use": "",
+        "output_dir": "../output_array/",
+        "logs_dir": "../log_parallel/",
+        "input_dir": "../input/"
     },
     "custom_params": {
         "jeanzay_gpu": "v100",
-        "jeanzay_gpu_memory": "",
         "jeanzay_project": "nqf",
-        "jeanzay_alignment_time":"05:00:00",
-        "jeanzay_jobarray_time":"00:05:00"
+        "jeanzay_account": "nqf@v100",
+        "jeanzay_gpu_with_memory": "v100-32g", 
+        "jeanzay_alignment_time": "10:00:00",
+        "jeanzay_jobarray_time": "03:00:00"
     },
     "MF_run": {
         "MF_run_model_preset": "multimer",
         "MF_run_dropout": "false",
-        "MF_run_dropout_structure_module":"true",
+        "MF_run_dropout_structure_module": "false",
         "MF_run_dropout_rates_filename": "",
+        "MF_run_templates": "true",
         "MF_run_score_threshold_output": "0",
         "MF_run_max_score_stop": "1",
-        "MF_run_templates": "true",
         "MF_run_max_recycles": "21",
         "MF_run_db_preset": "full_dbs",
         "MF_run_use_gpu_relax": "true",
@@ -34,7 +36,7 @@
         "MF_run_uniref_max_hits": "10000"
     },
     "MF_plots": {
-        "MF_plots_top_n_predictions":"5",
+        "MF_plots_top_n_predictions": "5",
         "MF_plots_chosen_plots": "coverage,DM_plddt_PAE,CF_PAEs"
     }
 }

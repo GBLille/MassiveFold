@@ -21,7 +21,16 @@ def create_single_jobfile(jobfile_type, templates:dict, params):
 def create_all_jobfile(templates:dict, params:dict):
   for jobtype in ['alignment', 'jobarray', 'post_treatment']:
     create_single_jobfile(jobtype, templates, params)
-    
+
+def group_templates(all_params, job_types:list):
+  templates_paths = all_params['MF_parallel']
+  grouped_templates = {}
+  for job_type in job_types:
+    with open(templates_paths[f'{job_type}_template'], 'r') as temp_file:
+      jobfile = temp_file.read() 
+    grouped_templates[job_type] = jobfile
+  return grouped_templates
+
 def main(argv):
   # extract the number of batch for the jobarray
   with open(f'{FLAGS.sequence_name}_{FLAGS.run_name}_batches.json', 'r') as json_batches:
@@ -42,13 +51,6 @@ def main(argv):
   run_params.update(all_params['MF_run'])
   run_params.update(all_params['MF_plots'])
 
-  if 'jeanzay_gpu_memory' in run_params:
-    run_params['jeanzay_account'] = f"{run_params['jeanzay_project']}@{run_params['jeanzay_gpu']}"
-    run_params['jeanzay_full_gpu'] = f"{run_params['jeanzay_gpu']}{run_params['jeanzay_gpu_memory']}"
-    if run_params['jeanzay_gpu_memory']:
-      run_params['jeanzay_gpu_memory'] = f"-{run_params['jeanzay_gpu_memory']}"
-  
-
   if FLAGS.job_type == "jobarray":  
     print("Parameters of the run:")
     for i in all_params['custom_params']:
@@ -61,14 +63,11 @@ def main(argv):
     for i in all_params['MF_plots']:
       print(f"{i}: {all_params['MF_plots'][i]}")
 
-  # create jobfiles
-  grouped_template = all_params['MF_parallel']['grouped_templates']
-  with open(grouped_template, 'r') as templates:
-    all_templates = json.load(templates)
-    
   if FLAGS.job_type != 'all':
+    all_templates = group_templates(all_params, ['alignment', 'jobarray', 'post_treatment'])
     create_single_jobfile(FLAGS.job_type, all_templates, run_params)
   else:
+    all_templates = group_templates(all_params, [FLAGS.job_type])
     create_all_jobfile(all_templates, run_params)
 
 if __name__ == "__main__":
