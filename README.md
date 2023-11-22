@@ -101,7 +101,7 @@ option.
   &nbsp;&nbsp;&nbsp;&nbsp; for monomer_ptm as model_X_ptm, with X the number of the model,  
   &nbsp;&nbsp;&nbsp;&nbsp; for multimer as model_X_multimer_vY with X the number of the model and Y  
   &nbsp;&nbsp;&nbsp;&nbsp; the version of the model.')  
-  &nbsp;&nbsp;&nbsp;&nbsp; (a comma separated list)
+  &nbsp;&nbsp;&nbsp;&nbsp; (a comma separated list)  
   **--start_prediction**: model to start with, can be used to parallelize jobs,  
   &nbsp;&nbsp;&nbsp;&nbsp; *e.g.* --num_predictions_per_model 20 --start_prediction 20 will only make model _20  
   &nbsp;&nbsp;&nbsp;&nbsp; *e.g.* --num_predictions_per_model 21 --start_prediction 20 will make model _20 and _21 *etc.*  
