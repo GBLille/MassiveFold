@@ -2,8 +2,8 @@
 ##SBATCH --job-name=MF_inference
 #SBATCH --account=$jeanzay_account
 
-#SBATCH --error=../log_parallel/${sequence_name}/${run_name}/jobarray_%a.log
-#SBATCH --output=../log_parallel/${sequence_name}/${run_name}/jobarray_%a.log
+#SBATCH --error=${logs_dir}/${sequence_name}/${run_name}/jobarray_%a.log
+#SBATCH --output=${logs_dir}/${sequence_name}/${run_name}/jobarray_%a.log
 
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
@@ -31,9 +31,9 @@ export ALPHAFOLDDB=/gpfsdswork/dataset/AlphaFold-2.3.1
 sequence_name=$sequence_name
 run_name=$run_name
 
-fafile=../input/$${sequence_name}.fasta
+fafile=${input_dir}/$${sequence_name}.fasta
 
-output_dir="../output_array/$${sequence_name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID}"
+output_dir="${output_dir}/$${sequence_name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID}"
 echo output_dir is $$output_dir
 mkdir -vp $${output_dir}/$${sequence_name}
 
@@ -41,10 +41,10 @@ use_precomputed_msas=true
 alignments_only=false
 
 path_run_AF2=$$(which run_alphafold.py)
-#path_run_AF2=/gpfs7kw/linkhome/rech/genasu01/urh88pc/git/MassiveFold_dev/run_alphafold.py
+path_run_AF2=/gpfs7kw/linkhome/rech/genasu01/urh88pc/git/MassiveFold_dev/run_alphafold.py
 
 current_dir=$$(realpath .)
-ln -s $$current_dir/../output_array/$${sequence_name}/msas $${output_dir}/$${sequence_name}
+ln -s $$current_dir/${output_dir}/$${sequence_name}/msas $${output_dir}/$${sequence_name}
 data_dir=$${ALPHAFOLDDB}/model_parameters/2.3.1
 
 model_preset=$MF_run_model_preset

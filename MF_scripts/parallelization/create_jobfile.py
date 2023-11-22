@@ -47,6 +47,10 @@ def main(argv):
 
   with open(FLAGS.path_to_parameters, 'r') as parameters_json:
     all_params = json.load(parameters_json)
+  run_params.update(
+  {param: all_params['MF_parallel'][param] \
+  for param in all_params['MF_parallel'] if param in ['output_dir', 'logs_dir', 'input_dir']}
+  )
   run_params.update(all_params['custom_params'])
   run_params.update(all_params['MF_run'])
   run_params.update(all_params['MF_plots'])
@@ -64,10 +68,10 @@ def main(argv):
       print(f"{i}: {all_params['MF_plots'][i]}")
 
   if FLAGS.job_type != 'all':
-    all_templates = group_templates(all_params, ['alignment', 'jobarray', 'post_treatment'])
+    all_templates = group_templates(all_params, [FLAGS.job_type])
     create_single_jobfile(FLAGS.job_type, all_templates, run_params)
   else:
-    all_templates = group_templates(all_params, [FLAGS.job_type])
+    all_templates = group_templates(all_params, ['alignment', 'jobarray', 'post_treatment'])
     create_all_jobfile(all_templates, run_params)
 
 if __name__ == "__main__":

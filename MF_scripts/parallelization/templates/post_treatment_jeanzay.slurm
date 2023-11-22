@@ -4,8 +4,8 @@
 #SBATCH --ntasks-per-node=1  # Number of tasks per node
 #SBATCH --cpus-per-task=10    # Number of OpenMP threads per task
 #SBATCH --hint=nomultithread # Disable hyperthreading
-#SBATCH --output=../log_parallel/${sequence_name}/${run_name}/post_treatment_%j.log
-#SBATCH --error=../log_parallel/${sequence_name}/${run_name}/post_treatment_%j.log
+#SBATCH --output=${logs_dir}/${sequence_name}/${run_name}/post_treatment_%j.log
+#SBATCH --error=${logs_dir}/${sequence_name}/${run_name}/post_treatment_%j.log
 #SBATCH --time=00:05:00      # Expected runtime HH:MM:SS (max 100h)
 #SBATCH --account=$jeanzay_project@cpu #
 
@@ -14,7 +14,7 @@ module load massivefold/1.0.0
 
 sequence_name=$sequence_name
 run_name=$run_name
-output=../output_array/$${sequence_name}/$${run_name}/
+output=${output_dir}/$${sequence_name}/$${run_name}/
 
 # rename and move files
 echo "time ./organize_outputs.py --batches_path $$output"

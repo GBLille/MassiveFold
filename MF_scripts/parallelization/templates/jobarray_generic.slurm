@@ -22,7 +22,7 @@ echo output_dir is $$output_dir
 mkdir -vp $${output_dir}/$${sequence_name}
 
 # fixed variables
-run_alphafold_path= #e.g.:/gpfslocalsup/pub/anaconda-py3/2023.03/envs/MassiveFold-1.0.0/bin/run_alphafold.py on jean zay cluster
+run_AF_path= #e.g.:/gpfslocalsup/pub/anaconda-py3/2023.03/envs/MassiveFold-1.0.0/bin/run_alphafold.py on jean zay cluster
 data_dir= #e.g.:/shared/databases/2023-07-31
 max_template_date=2023-07-31
 use_precomputed_msas=true
@@ -58,7 +58,7 @@ batch_end=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batc
 
 echo Model used is $$batch_model, batch computed between prediction $$batch_start and $$batch_end
 
-echo "python3 $${path_run_AF2}
+echo "python3 $${run_AF_path}
     --fasta_paths=$${fafile}
     --output_dir=$${output_dir}
     --data_dir=$${data_dir}
@@ -94,7 +94,7 @@ echo "python3 $${path_run_AF2}
     --max_score_stop=$${max_score_stop}
 "
 
-time python3 $${path_run_AF2} \
+time python3 $${run_AF_path} \
     --fasta_paths=$${fafile} \
     --output_dir=$${output_dir} \
     --data_dir=$${data_dir} \
