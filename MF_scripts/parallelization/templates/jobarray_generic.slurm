@@ -14,23 +14,21 @@ export XLA_PYTHON_CLIENT_MEM_FRACTION='4.0'
 #variables to adapt
 sequence_name=$sequence_name
 run_name=$run_name
+fafile=${input_dir}/$${sequence_name}.fasta
+run_AF_path=$run_massivefold
+data_dir=$data_dir
 
-fafile=../input/$${sequence_name}.fasta
-
-output_dir="../output_array/$${sequence_name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID}"
-echo output_dir is $$output_dir
-mkdir -vp $${output_dir}/$${sequence_name}
+output_dir=$$(realpath ${output_dir})
+output_path="$${output_dir}/$${sequence_name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID}"
+echo output_path is $$output_path
+mkdir -vp $${output_path}/$${sequence_name}
 
 # fixed variables
-run_AF_path= #e.g.:/gpfslocalsup/pub/anaconda-py3/2023.03/envs/MassiveFold-1.0.0/bin/run_alphafold.py on jean zay cluster
-data_dir= #e.g.:/shared/databases/2023-07-31
 max_template_date=2023-07-31
 use_precomputed_msas=true
 alignments_only=false
 
-current_dir=$$(realpath .)
-ln -s $$current_dir/../output_array/$${sequence_name}/msas $${output_dir}/$${sequence_name}
-data_dir=$${data_dir}/model_parameters/2.3.1
+ln -s $${output_dir}/$${sequence_name}/msas $${output_path}/$${sequence_name}
 
 # variable as MF_parallel parameters
 model_preset=$MF_run_model_preset
@@ -60,7 +58,7 @@ echo Model used is $$batch_model, batch computed between prediction $$batch_star
 
 echo "python3 $${run_AF_path}
     --fasta_paths=$${fafile}
-    --output_dir=$${output_dir}
+    --output_dir=$${output_path}
     --data_dir=$${data_dir}
     --db_preset=$${db_preset}
     --model_preset=$${model_preset}
@@ -84,7 +82,7 @@ echo "python3 $${run_AF_path}
     --templates=$${templates}
     --uniref90_database_path=$${data_dir}/uniref90/uniref90.fasta
     --mgnify_database_path=$${data_dir}/mgnify/mgy_clusters_2022_05.fa
-    --template_mmcif_dir=$${data_dir}/pdb_mmcif
+    --template_mmcif_dir=$${data_dir}/pdb_mmcif/mmcif_files
     --obsolete_pdbs_path=$${data_dir}/pdb_mmcif/obsolete.dat
     --bfd_database_path=$${data_dir}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt
     --pdb_seqres_database_path=$${data_dir}/pdb_seqres/pdb_seqres.txt
@@ -96,7 +94,7 @@ echo "python3 $${run_AF_path}
 
 time python3 $${run_AF_path} \
     --fasta_paths=$${fafile} \
-    --output_dir=$${output_dir} \
+    --output_dir=$${output_path} \
     --data_dir=$${data_dir} \
     --db_preset=$${db_preset} \
     --model_preset=$${model_preset} \
@@ -120,7 +118,7 @@ time python3 $${run_AF_path} \
     --templates=$${templates} \
     --uniref90_database_path=$${data_dir}/uniref90/uniref90.fasta \
     --mgnify_database_path=$${data_dir}/mgnify/mgy_clusters_2022_05.fa \
-    --template_mmcif_dir=$${data_dir}/pdb_mmcif \
+    --template_mmcif_dir=$${data_dir}/pdb_mmcif/mmcif_files \
     --obsolete_pdbs_path=$${data_dir}/pdb_mmcif/obsolete.dat \
     --bfd_database_path=$${data_dir}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt \
     --pdb_seqres_database_path=$${data_dir}/pdb_seqres/pdb_seqres.txt \

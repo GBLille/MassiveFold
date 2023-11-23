@@ -10,8 +10,8 @@ module load massivefold/1.0.0
 
 sequence_name=$sequence_name
 run_name=$run_name
-output=../output_array/$${sequence_name}/$${run_name}/
-mf_plots_path= #/gpfswork/rech/fvp/commun/plots/MF_plots.py
+output=${output_dir}/$${sequence_name}/$${run_name}/
+mf_plots_path=$run_massivefold_plots
 
 
 # rename and move files

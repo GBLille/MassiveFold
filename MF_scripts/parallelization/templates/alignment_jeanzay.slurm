@@ -10,22 +10,18 @@
 #SBATCH --account=$jeanzay_project@cpu
 ##SBATCH --qos=qos_gpu-t4              # Uncomment for job requiring more than 20h (max 16 GPUs)
 
-
 module purge
 module load massivefold/1.0.0
 
 export TMP=$$JOBSCRATCH
 export TMPDIR=$$JOBSCRATCH
-export ALPHAFOLDDB=/gpfsdswork/dataset/AlphaFold-2.3.1
-
+export ALPHAFOLDDB=$data_dir
 
 run_name=$run_name
 sequence_name=$sequence_name
-fafile=../input/$${sequence_name}.fasta
-output=../output_array/
-
-run_AF_path=$$(which run_alphafold.py) 
-run_AF_path=/gpfs7kw/linkhome/rech/genasu01/urh88pc/git/MassiveFold_dev/run_alphafold.py
+output=$output_dir
+fafile=${input_dir}/$${sequence_name}.fasta
+run_AF_path=$run_massivefold
 
 data_dir=$${ALPHAFOLDDB}/model_parameters/2.3.1
 database_dir=$${ALPHAFOLDDB}

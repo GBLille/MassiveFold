@@ -1,19 +1,22 @@
 {
     "MF_parallel": {
+        "run_massivefold": "/gpfs7kw/linkhome/rech/genasu01/urh88pc/git/MassiveFold_dev/run_alphafold.py",
+        "run_massivefold_plots": "/gpfswork/rech/fvp/commun/plots/MF_plots.py",
+        "data_dir": "/gpfsdswork/dataset/AlphaFold-2.3.1",
         "alignment_template": "templates/alignment_jeanzay.slurm",
         "jobarray_template": "templates/jobarray_jeanzay.slurm",
         "post_treatment_template": "templates/post_treatment_jeanzay.slurm",
+        "output_dir": "../output_array",
+        "logs_dir": "../log_parallel",
+        "input_dir": "../input",
         "predictions_to_relax": "5",
-        "models_to_use": "",
-        "output_dir": "../output_array/",
-        "logs_dir": "../log_parallel/",
-        "input_dir": "../input/"
+        "models_to_use": ""
     },
     "custom_params": {
         "jeanzay_gpu": "v100",
         "jeanzay_project": "nqf",
         "jeanzay_account": "nqf@v100",
-        "jeanzay_gpu_with_memory": "v100-32g", 
+        "jeanzay_gpu_with_memory": "v100", 
         "jeanzay_alignment_time": "10:00:00",
         "jeanzay_jobarray_time": "03:00:00"
     },

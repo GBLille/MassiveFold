@@ -17,7 +17,6 @@
 #SBATCH -C $jeanzay_gpu_with_memory             # Use gpu
 
 module purge
-#module load cpuarch/amd
 module load massivefold/1.0.0
 
 export TF_FORCE_UNIFIED_MEMORY='1'
@@ -25,14 +24,12 @@ export XLA_PYTHON_CLIENT_MEM_FRACTION='4.0'
 
 export TMP=$$JOBSCRATCH
 export TMPDIR=$$JOBSCRATCH
-export ALPHAFOLDDB=/gpfsdswork/dataset/AlphaFold-2.3.1
+export ALPHAFOLDDB=$data_dir
 
 #variables to adapt
 sequence_name=$sequence_name
 run_name=$run_name
-
 fafile=${input_dir}/$${sequence_name}.fasta
-
 output_dir="${output_dir}/$${sequence_name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID}"
 echo output_dir is $$output_dir
 mkdir -vp $${output_dir}/$${sequence_name}
@@ -40,8 +37,10 @@ mkdir -vp $${output_dir}/$${sequence_name}
 use_precomputed_msas=true
 alignments_only=false
 
-path_run_AF2=$$(which run_alphafold.py)
-path_run_AF2=/gpfs7kw/linkhome/rech/genasu01/urh88pc/git/MassiveFold_dev/run_alphafold.py
+#path_run_AF2=$$(which run_alphafold.py)
+#path_run_AF2=/gpfs7kw/linkhome/rech/genasu01/urh88pc/git/MassiveFold_dev/run_alphafold.py
+path_run_AF2=$run_massivefold
+
 
 current_dir=$$(realpath .)
 ln -s $$current_dir/${output_dir}/$${sequence_name}/msas $${output_dir}/$${sequence_name}

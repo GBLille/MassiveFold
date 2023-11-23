@@ -15,6 +15,7 @@ module load massivefold/1.0.0
 sequence_name=$sequence_name
 run_name=$run_name
 output=${output_dir}/$${sequence_name}/$${run_name}/
+run_massivefold_plots=$run_massivefold_plots
 
 # rename and move files
 echo "time ./organize_outputs.py --batches_path $$output"
@@ -23,12 +24,12 @@ time ./organize_outputs.py --batches_path $$output
 # plots
 echo "Generating plots"
 
-echo "python3 /gpfswork/rech/fvp/commun/plots/MF_plots.py
+echo "python3 $$run_massivefold_plots   
         --input_path=$${output} 
         --top_n_predictions=$MF_plots_top_n_predictions
         --chosen_plots=$MF_plots_chosen_plots"
 
-time python3 /gpfswork/rech/fvp/commun/plots/MF_plots.py \
+time python3 $$run_massivefold_plots \
         --input_path=$${output} \
         --top_n_predictions=$MF_plots_top_n_predictions \
         --chosen_plots=$MF_plots_chosen_plots \

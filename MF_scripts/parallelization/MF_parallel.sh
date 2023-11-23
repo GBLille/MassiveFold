@@ -20,6 +20,7 @@ Usage: $USAGE\n\
     -m| --msas_precomputed: path to output folder containing already computed msas.\n\
     -n| --top_n_models: path of a completed run, use the 5 best models from the location.\n\
     -C| --calibration_from: path of a previous run to calibrate the batch size.\n\
+    -
 \n\
   Facultative options:\n\
     -c| --calibrate_batch_size: set the --batch_size by computing the maximal number of prediction per batch.
@@ -33,6 +34,7 @@ module load massivefold/1.0.0
 calibration=false
 predictions_per_model=67
 batch_size=25
+wall_time=20
 
 # argument parser
 while true; do
@@ -73,6 +75,10 @@ while true; do
       path_to_run="$2"
       shift 2
       ;;
+    -w|--wall_time)
+      wall_time="$2"
+      shift 2
+      ;;
     *)
       break
       ;;
@@ -107,7 +113,6 @@ fi
 
 # calibration: check time taken for a previous run
 number_of_runs=$(ls -l ../log_parallel/${sequence_name} | wc -l)
-wall_time=20
 if ! $calibration && [ -z $calibration_path ]; then
   echo "No calibration for the batch size."
 elif $calibration && [ ! -z $calibration_path ]; then

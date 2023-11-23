@@ -5,16 +5,14 @@
 # activate AF/MF conda env
 # e.g: module load massivefold/1.0.0
 
-# fixed variables
-run_AF_path= #e.g.:'run_alphafold_path=/gpfslocalsup/pub/anaconda-py3/2023.03/envs/MassiveFold-1.0.0/bin/run_alphafold.py' for jean zay cluster
-data_dir= #e.g.:'data_dir=/shared/databases/2023-07-31'
-max_template_date=2023-07-31
 
 # variables to adapt: used for alignment
-run_name=$run_name
 sequence_name=$sequence_name
-fafile=../input/$${sequence_name}.fasta
-output=../output_array/
+run_name=$run_name
+run_AF_path= $run_massivefold
+output=$output_dir
+fafile=${input_dir}/$${sequence_name}.fasta
+data_dir=$data_dir
 
 model_preset=multimer
 max_template_date=2023-07-31

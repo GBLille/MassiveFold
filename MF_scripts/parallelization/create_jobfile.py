@@ -47,10 +47,8 @@ def main(argv):
 
   with open(FLAGS.path_to_parameters, 'r') as parameters_json:
     all_params = json.load(parameters_json)
-  run_params.update(
-  {param: all_params['MF_parallel'][param] \
-  for param in all_params['MF_parallel'] if param in ['output_dir', 'logs_dir', 'input_dir']}
-  )
+  
+  run_params.update(all_params['MF_parallel'])
   run_params.update(all_params['custom_params'])
   run_params.update(all_params['MF_run'])
   run_params.update(all_params['MF_plots'])
