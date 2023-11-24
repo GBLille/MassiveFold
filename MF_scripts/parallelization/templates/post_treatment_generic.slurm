@@ -1,13 +1,3 @@
-#!/bin/bash
-
-# slurm parameters to launch on cpu
-
-# activate AF/MF conda env
-# e.g: module load massivefold/1.0.0
-
-module purge
-module load massivefold/1.0.0
-
 sequence_name=$sequence_name
 run_name=$run_name
 output=${output_dir}/$${sequence_name}/$${run_name}/

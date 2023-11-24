@@ -3,6 +3,7 @@
 import json
 from string import Template
 from absl import app, flags
+import shutil
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum("job_type", 'all', ['all', 'alignment', 'jobarray', 'post_treatment'], 'Type of the jobfile to create')
@@ -24,12 +25,26 @@ def create_all_jobfile(templates:dict, params:dict):
 
 def group_templates(all_params, job_types:list):
   templates_paths = all_params['MF_parallel']
+  sequence = all_params['MF_parallel']['sequence_name']
+  run = all_params['MF_parallel']['run_name']
   grouped_templates = {}
+
   for job_type in job_types:
-    with open(templates_paths[f'{job_type}_template'], 'r') as temp_file:
+    header_path = templates_paths[f'{job_type}_header']
+    template_path = f"{templates_paths['jobfile_templates_dir']}/{job_type}_generic.slurm"
+    jobfile = f"{sequence}_{run}_{job_type}.slurm"
+
+    merge_header_and_template(header_path, template_path, jobfile)
+    with open(jobfile, 'r') as temp_file:
       jobfile = temp_file.read() 
     grouped_templates[job_type] = jobfile
   return grouped_templates
+
+def merge_header_and_template(header, template, jobfile_name):
+  with open(jobfile_name, 'wb') as outfile:
+    for filename in [header, template]:
+      with open(filename, 'rb') as infile:
+        shutil.copyfileobj(infile, outfile)
 
 def main(argv):
   # extract the number of batch for the jobarray
@@ -47,7 +62,10 @@ def main(argv):
 
   with open(FLAGS.path_to_parameters, 'r') as parameters_json:
     all_params = json.load(parameters_json)
-  
+
+  all_params['MF_parallel']['sequence_name'] = FLAGS.sequence_name
+  all_params['MF_parallel']['run_name'] = FLAGS.run_name
+
   run_params.update(all_params['MF_parallel'])
   run_params.update(all_params['custom_params'])
   run_params.update(all_params['MF_run'])

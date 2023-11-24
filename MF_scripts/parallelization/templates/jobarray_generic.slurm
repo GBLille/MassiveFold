@@ -1,12 +1,4 @@
-#!/bin/bash
-
-# slurm parameters depending on your config 
-
-# conda env activation commands
-
-
 date
-
 # for memory
 export TF_FORCE_UNIFIED_MEMORY='1'
 export XLA_PYTHON_CLIENT_MEM_FRACTION='4.0'
@@ -14,6 +6,7 @@ export XLA_PYTHON_CLIENT_MEM_FRACTION='4.0'
 #variables to adapt
 sequence_name=$sequence_name
 run_name=$run_name
+echo "&${run_massivefold}&"
 fafile=${input_dir}/$${sequence_name}.fasta
 run_AF_path=$run_massivefold
 data_dir=$data_dir
@@ -22,13 +15,13 @@ output_dir=$$(realpath ${output_dir})
 output_path="$${output_dir}/$${sequence_name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID}"
 echo output_path is $$output_path
 mkdir -vp $${output_path}/$${sequence_name}
+ln -s $${output_dir}/$${sequence_name}/msas $${output_path}/$${sequence_name}
 
 # fixed variables
 max_template_date=2023-07-31
 use_precomputed_msas=true
 alignments_only=false
 
-ln -s $${output_dir}/$${sequence_name}/msas $${output_path}/$${sequence_name}
 
 # variable as MF_parallel parameters
 model_preset=$MF_run_model_preset
@@ -49,10 +42,10 @@ score_threshold_output=$MF_run_score_threshold_output
 max_score_stop=$MF_run_max_score_stop
 
 # parameters for each task in the job array
-batches_path=../log_parallel/${sequence_name}/${run_name}/
-batch_model=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}./$${sequence_name}_$${run_name}_batches.json --element model)
-batch_start=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}./$${sequence_name}_$${run_name}_batches.json --element start)
-batch_end=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}./$${sequence_name}_$${run_name}_batches.json --element end)
+batches_path=${logs_dir}/${sequence_name}/${run_name}
+batch_model=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element model)
+batch_start=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element start)
+batch_end=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element end)
 
 echo Model used is $$batch_model, batch computed between prediction $$batch_start and $$batch_end
 
@@ -77,7 +70,7 @@ echo "python3 $${run_AF_path}
     --mgnify_max_hits=$${mgnify_max_hits}
     --uniprot_max_hits=$${uniprot_max_hits}
     --uniref_max_hits=$${uniref_max_hits}
-    --models_to_use=$${models_to_use}
+    --models_to_use=$${batch_model}
     --start_prediction=$${batch_start}
     --templates=$${templates}
     --uniref90_database_path=$${data_dir}/uniref90/uniref90.fasta
@@ -113,7 +106,7 @@ time python3 $${run_AF_path} \
     --mgnify_max_hits=$${mgnify_max_hits} \
     --uniprot_max_hits=$${uniprot_max_hits} \
     --uniref_max_hits=$${uniref_max_hits} \
-    --models_to_use=$${models_to_use} \
+    --models_to_use=$${batch_model} \
     --start_prediction=$${batch_start} \
     --templates=$${templates} \
     --uniref90_database_path=$${data_dir}/uniref90/uniref90.fasta \
@@ -127,5 +120,4 @@ time python3 $${run_AF_path} \
     --score_threshold_output=$${score_threshold_output} \
     --max_score_stop=$${max_score_stop}
     
-
 date

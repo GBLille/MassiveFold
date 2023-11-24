@@ -1,23 +1,15 @@
-#!/bin/bash
-
-# slurm parameters to launch on cpu
-
-# activate AF/MF conda env
-# e.g: module load massivefold/1.0.0
-
-
 # variables to adapt: used for alignment
 sequence_name=$sequence_name
 run_name=$run_name
-run_AF_path= $run_massivefold
+run_AF_path=$run_massivefold
 output=$output_dir
 fafile=${input_dir}/$${sequence_name}.fasta
 data_dir=$data_dir
 
 model_preset=multimer
+alignments_only=true
 max_template_date=2023-07-31
 db_preset=full_dbs
-alignments_only=true
 bfd_max_hits=100000
 mgnify_max_hits=501
 uniprot_max_hits=50000
