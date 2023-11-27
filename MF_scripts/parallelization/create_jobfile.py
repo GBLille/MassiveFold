@@ -30,11 +30,11 @@ def group_templates(all_params, job_types:list):
   grouped_templates = {}
 
   for job_type in job_types:
-    header_path = templates_paths[f'{job_type}_header']
+    header_path = f"{templates_paths['jobfile_headers_dir']}/header_{job_type}.slurm"
     template_path = f"{templates_paths['jobfile_templates_dir']}/{job_type}_generic.slurm"
     jobfile = f"{sequence}_{run}_{job_type}.slurm"
-
     merge_header_and_template(header_path, template_path, jobfile)
+
     with open(jobfile, 'r') as temp_file:
       jobfile = temp_file.read() 
     grouped_templates[job_type] = jobfile

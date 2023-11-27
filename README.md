@@ -10,10 +10,11 @@ Table of contents
   * [Dropout](#dropout)
   * [Usage](#usage)
     * [Examples](#example)
-    * [MassiveFold in parallel](#running-massivefold-in-parallel-on-clusters)
-       * [Inference workflow](#inference-workflow)
-       * [Run parameters](#run-parameters)
-       * [Build template](#build-templates)
+  * [MassiveFold in parallel](#running-massivefold-in-paralle)
+      * [Setup](#setup-1)
+      * [Usage](#usage-1)
+      * [Inference workflow](#inference-workflow)
+      * [Template Building](#template-building)
   * [Plots](#mf_plots-output-representation)
 
 
@@ -146,7 +147,6 @@ such a json file:
 ```
 
 # Usage
-
 ## Example
 By default, MassiveFold runs with the same parameters as AlphaFold2, however it uses all the versions 
 of neural network model parameters for complexes and not only the last version as AlphaFold2-multimer.  
@@ -202,34 +202,223 @@ A script is also provided to relax only one structure. The pkl file of the predi
 ```bash
 python3 run_relax_from_results_pkl.py result_model_4_multimer_v3_pred_0.pkl
 ```
-## Running MassiveFold in parallel
+# Running MassiveFold in paralle
+![header](imgs/mf_parallel.png)
 
-MassiveFold is designed for an optimized use on a GPU cluster or even a simple GPU server. All the developments were made 
-to be used with a **SLURM** workload manager, but can be adapted to any other resource managing system working with job arrays, 
-modifying the template files.  
+MassiveFold is designed for an optimized use on a GPU cluster or even a simple GPU server. All the developments were made to be used with a **SLURM** workload manager, but can be adapted to any other resource managing system working with job arrays, modifying the header files.  
 
-To make the most out of MassiveFold's expanded sampling on GPU clusters or servers, you can use the parallelization module 
-in the **MF_scripts** directory.
+To make the most out of MassiveFold's expanded sampling on GPU clusters or servers, you can use the parallelization module in the **MF_scripts** directory.
 
-Usage:
+A run is composed of three steps:  
+1. **alignment**: on CPU, sequence alignments is the initiation step (can be skipped if alignments are already computed)
+2. **structure prediction in parallel**: on GPU, structures prediction follows the massive sampling principle. The total number of prediction is divided into smaller batches and each of them is distributed on a single computed node.
+
+3. **post_treatment**: on CPU, it finishes the job by gathering all batches outputs and produces plots with the [MF_plots module](#mf_plots-output-representation) to represent the run's performances.
+
+## Setup
+
+1. Clone MassiveFold and install dependencies
+
 ```bash
-./MF_parallel.sh -s your_sequence -r run_name -p predictions_nb -f parameters_file 
+# clone repository
+git clone https://github.com/GBLille/MassiveFold.git
+cd MassiveFold/
+
+# install environment and massivefold dependencies
+conda env create -f environment.yml
+```
+
+2. Set up file architecture
+
+The file tree that the paths in the following step follow looks like this:
+```bash
+.
+├── MassiveFold
+└── massivefold_runs
+    ├── input
+        └── test_multimer.fasta
+    ├── log_parallel
+    │   └── test_multimer/basic
+    │       ├── jobarray_0.log
+    │       ...
+    │       └── post_treatment.log
+    ├── output
+    │   └── test_multimer
+    │       ├── basic
+    │       │   ├── ranked_0_unrelaxed_model_x_multimer_vi_pred_n.pdb
+    │       │   ...
+    │       │   └── ranking_debug.json
+    │       └── msas
+    └── pipeline
+        ├── headers/
+        ├── templates/
+        ├── MF_parallel.sh
+        ├── batching.py
+        ├── create_jobfile.py
+        ├── examine_run.py
+        ├── params.json
+        ├── get_batch.py
+        └── organize_outputs.py
+```
+To set up this file tree, follow these instructions:
+```bash
+# move to location where you want to setup MassiveFold
+cd ..
+mkdir massivefold_runs
+cd massivefold_runs/
+mkdir input
+mkdir output
+mkdir log_parallel
+mkdir pipeline
+cp -r ../MassiveFold/MF_scripts/parallelization/* pipeline/
+```
+3. Set paths in parameters
+
+Edit the json parameter located in MF_scripts/parallelization/params.json. In our example:
+
+```bash
+cd pipeline/
+```
+And modify params.json:
+```json
+ "MF_parallel": {
+    "run_massivefold": "../MassiveFold_dev/run_alphafold.py",
+    "run_massivefold_plots": "../MassiveFold_dev/MF_scripts/plots/MF_plots.py",
+    "jobfile_headers_dir": "./headers",
+    "jobfile_templates_dir": "./templates",
+    "output_dir": "../output_array",
+    "logs_dir": "../log_parallel",
+    "input_dir": "../input",
+    "data_dir": "AlphaFold2 <DOWNLOAD_DIR>"
+ },
+...
+```
+The *"data_dir"* parameter should be the path used in AlphaFold2 installation where the databases are downloaded.
+
+4. Create header files  
+
+To run MassiveFold in parallel on your cluster/server, it is **required** to build custom jobfile headers for each step. They have to be added in the path set in "jobfile_headers_dir". For slurm workload manager, headers for Jean Zay cluster are provided as examples to follow.  
+
+Refer to [Header building](#jobfiles-header-building) for this installation step.
+
+### Jobfile's header building
+
+The jobfile templates for each step are built by combining the jobfile header that you have to create in *MF_scripts/parallelization/headers* with the jobfile body in *MF_scripts/parallelization/templates/*.
+
+They have to be adapted in function of your computing infrastructure. 
+Each of the three headers (alignment, jobarray and post treatment) must be located in the "jobfile_header_dir" directory set in the "MF_parallel" section of params.json.
+
+Their names should be identic to:
+* **header_alignment.slurm**
+* **header_jobarray.slurm**
+* **header_post_treatment.slurm**
+
+The templates work with the parameters provided in **run_params.json** passed to the **MF_parallel.sh** script.\
+These parameters are substituted in the template job files thanks to the python library [string.Template](https://docs.python.org/3.8/library/string.html#template-strings).\
+Refer to [How to add a parameter](#how-to-add-a-parameter) for parameter substitution.
+
+- **Requirement:** In the jobarray header, state that it is a job array and the number of task in it has to be passed.\
+The task number argument is substituted with the *$substitute_batch_number* parameter.\
+For slurm, the expression should be:
+```bash
+#SBATCH --array=0-$substitute_batch_number
+```
+For example, if there is 45 batches, with one batch as a task of the job array, the substituted expression will be:
+```bash
+#SBATCH --array=0-44
+```
+
+- To store jobfile logs while following [Set up](#setup-1)'s file tree, add these lines in the headers:
+
+In **header_alignment.slurm**:
+```bash
+#SBATCH --error=${logs_dir}/${sequence_name}/${run_name}/alignment.log
+#SBATCH --output=${logs_dir}/${sequence_name}/${run_name}/alignment.log
+```
+In **header_jobarray.slurm**:
+
+```bash
+#SBATCH --error=${logs_dir}/${sequence_name}/${run_name}/jobarray_%a.log
+#SBATCH --output=${logs_dir}/${sequence_name}/${run_name}/jobarray_%a.log
+```
+In **header_post_treatment.slurm**:
+```bash
+#SBATCH --output=${logs_dir}/${sequence_name}/${run_name}/post_treatment.log
+#SBATCH --error=${logs_dir}/${sequence_name}/${run_name}/post_treatment.log
+```
+We provide here templates for the Jean Zay french CNRS national GPU cluster accessible at the [IDRIS](http://www.idris.fr/).
+
+#### How to add a parameter
+- Add **\$new_parameter** or **\$\{new_parameter\}** in the template were you want its value to be set and in the 
+"custom_params" section of **run_params.json** where its value can be specified and changed for each run.
+
+- Example in the json parameters file for Jean Zay headers:
+```json
+...
+  "custom_params": {
+      "jeanzay_account": "nqf@v100",
+      "jeanzay_gpu_with_memory": "v100-32g",
+      "jeanzay_jobarray_time": "03:00:00"
+  },
+...
+```
+Are substituted in the following lines of the header:
+
+```bash
+#SBATCH --account=$jeanzay_account
+
+#SBATCH --error=${logs_dir}/${sequence_name}/${run_name}/jobarray_%a.log
+#SBATCH --output=${logs_dir}/${sequence_name}/${run_name}/jobarray_%a.log
+
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=8
+#SBATCH --hint=nomultithread
+#SBATCH --gpus-per-node=1
+#SBATCH --array=0-$substitute_batch_number
+#SBATCH --time=$jeanzay_jobarray_time
+##SBATCH --qos=qos_gpu-dev             # Uncomment for job requiring less than 2 hours
+##SBATCH --qos=qos_gpu-t4         # Uncomment for job requiring more than 20h (max 16 GPUs)
+#SBATCH -C $jeanzay_gpu_with_memory             # Use gpu
+```
+- Never use single \$ symbol for other uses than parameter/value substitution from the json file.\
+To use $ inside the template files (bash variables or other uses), use instead $$ as an escape following 
+[string.Template](https://docs.python.org/3.8/library/string.html#template-strings) documentation.
+
+## Usage
+
+Usage:  
+```bash
+./MF_parallel.sh -s your_sequence -r run_name -p predictions_per_model -f parameters_file 
 ```
 Other facultative parameters can be set and can be consulted with:
 
 ```bash
 ./MF_parallel.sh -h
 ```
+This is the help message associated with this command:
 
-A run is composed of three steps:  
-1. **alignment**: on CPU, the initiation step for sequence alignments (can be skipped if alignments are already computed)
-2. **parallelization of structure prediction with jobarray**: on GPU, a slurm jobarray computes all predictions from the alignments, the number of predictions 
-per job (batch size) is set to 25 by defaults but can be set with the *--batch_size* parameter or calibrated automatically with 
-the calibration parameters (*--calibration_from* or *--calibrate_batch_size*).
-3. **post_treatment**: on CPU, finishes the job by organizing the outputs and plots the results with the [MF_plots module](#mf_plots-output-representation)
+```txt
+Usage: ./MF_parallel.sh -s str -r str -p int -f str [-m str] [-n str] [-b int | [[-C str | -c] [-w int]] ]
+./MF_parallel.sh -h for more details 
+  Required arguments:
+    -s| --sequence: name of the sequence to infer, same as input file without '.fasta'.
+    -r| --run: name chosen for the run to organize in outputs.
+    -p| --predictions_per_model: number of predictions computed for each neural network model.
+    -f| --parameters: json file's path containing the parameters used for this run.
 
-**Requirement**: to run MassiveFold in parallel on your cluster/server, a jobfile template of each step (see [build templates](#build-templates) section) has to be added in the MF_scripts/parallelization/templates/ directory following the {step}_generic.slurm template files.
+  Facultative arguments:
+    -b| --batch_size: number of predictions per batch, should not be higher than -p (default: 25).
+    -m| --msas_precomputed: path to directory that contains computed msas.
+    -n| --top_n_models: uses the 5 models with best ranking confidence from this run's path.
+    -w| --wall_time: total time available for calibration computations, unit is hours (default: 20).
+    -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).
 
+  Facultative options:
+    -c| --calibrate: calibrate --batch_size value. Searches for this sequence previous runs and uses
+        the longest prediction time found to compute the maximal number of prediction per batch.
+        This maximal number depends on the total time given by --wall_time.
+```
 ### Inference workflow
 
 It launches MassiveFold with the same parameters introduced above but instead of running **run_alphafold.py** script a single time, 
@@ -306,167 +495,75 @@ The section **MF_parallel** designates the parameters relative to the whole run.
 It is presented as:
 
 ```json
-  "MF_parallel": 
-    {
-      "alignment_template": "templates/alignment_jeanzay.slurm",
-      "jobarray_template": "templates/jobarray_jeanzay.slurm",
-      "post_treatment_template": "templates/post_treatment_jeanzay.slurm",
-      "grouped_templates": "templates/templates_jeanzay.json",
-      "predictions_to_relax": "5",
-      "models_to_use":"",
-      "output_dir":"../output_array/"
-    }
-(...)
-
+   "MF_parallel": {
+       "run_massivefold": "",
+       "run_massivefold_plots": "",
+       "data_dir": "",
+       "alignment_header": "",
+       "jobarray_header": "",
+       "post_treatment_header": "",
+       "jobfile_templates_dir": "",
+       "output_dir": "",
+       "logs_dir": "",
+       "input_dir": "",
+       "predictions_to_relax": "",
+       "models_to_use": ""
+   },
+...
 ```
-The templates path are specified here to setup the run. You have to build your templates according to the [Template building](#template-building) section.
+You have to fill the paths in this section. Templates are specified here to setup the run, build your owns according to the [Template building](#jobfiles-header-building) section.
 
 The **custom_params** section is relative to the personalized parameters that you want to add for your own cluster. 
 ```json
-(...)
+...
   "custom_params": 
     {
-      "jeanzay_gpu": "v100",
-      "jeanzay_gpu_memory": "",
       "jeanzay_project": "nqf",
-      "jeanzay_alignment_time":"05:00:00",
-      "jeanzay_jobarray_time":"00:05:00"
+      "jeanzay_account": "nqf@v100",
+      "jeanzay_gpu_with_memory": "v100-32g",
+      "jeanzay_alignment_time": "10:00:00",
+      "jeanzay_jobarray_time": "03:00:00"
     }
-(...)
+...
 ```
 These variables will be substituted by their value when the jobfiles are created.
-(see [How to add a parameter](#how-to-add-a-parameter)).\
+(see [How to add a parameter](#how-to-add-a-parameter)).
 
 The **MF_run** section gathers all parameters used by MassiveFold in the run. (see [Example](#example) and 
 [Added flags](#added-flags)). All flags  except *--models_to_relax*, *--use_precomputed_msas* and *--alignment_only* 
 are exposed. You can adapt these values in function of your needs.
 ```json
-(...) 
-  "MF_run": 
-    {
-      "MF_run_model_preset": "multimer",
-      "MF_run_dropout": "false",
-      "MF_run_dropout_structure_module":"true",
-      "MF_run_dropout_rates_filename": "",
-      "MF_run_score_threshold_output": "0",
-      "MF_run_max_score_stop": "1",
-      "MF_run_templates": "true",
-      "MF_run_max_recycles": "21",
-      "MF_run_db_preset": "full_dbs",
-      "MF_run_use_gpu_relax": "true",
-      "MF_run_models_to_relax": "none",
-      "MF_run_early_stop_tolerance": "0.5",
-      "MF_run_bfd_max_hits": "100000",
-      "MF_run_mgnify_max_hits": "501",
-      "MF_run_uniprot_max_hits": "50000",
-      "MF_run_uniref_max_hits": "10000"
-    }
-(...)
+... 
+ "MF_run": {
+    "MF_run_model_preset": "multimer",
+    "MF_run_dropout": "false",
+    "MF_run_dropout_structure_module": "false",
+    "MF_run_dropout_rates_filename": "",
+    "MF_run_templates": "true",
+    "MF_run_score_threshold_output": "0",
+    "MF_run_max_score_stop": "1",
+    "MF_run_max_recycles": "21",
+    "MF_run_db_preset": "full_dbs",
+    "MF_run_use_gpu_relax": "true",
+    "MF_run_models_to_relax": "none",
+    "MF_run_early_stop_tolerance": "0.5",
+    "MF_run_bfd_max_hits": "100000",
+    "MF_run_mgnify_max_hits": "501",
+    "MF_run_uniprot_max_hits": "50000",
+    "MF_run_uniref_max_hits": "10000"
+},
+...
 ```
 Lastly, section **MF_plots** is used for the MassiveFold plotting module.
 
 ```json
-(...)
+...
   "MF_plots": 
     {
       "MF_plots_top_n_predictions":"5",
       "MF_plots_chosen_plots": "coverage,DM_plddt_PAE,CF_PAEs"
     }
 ```
-
-### Template building
-
-You can create new templates, starting from the generic ones located in the *MF_scripts/parallelization/templates/* subdirectory. 
-They have to be adapted in function of your computing infrastructure. 
-The relative paths of each of the three templates (alignment, jobarray and post treatment) in this directory must be set 
-in **MF_parallel** section of **run_params.json** following:
-
-```json
-  "MF_parallel": 
-    {
-      "alignment_template": "templates/alignment_jeanzay.slurm",
-      "jobarray_template": "templates/jobarray_jeanzay.slurm",
-      "post_treatment_template": "templates/post_treatment_jeanzay.slurm",
-      "grouped_templates": "templates/templates_jeanzay.json"
-      (...)
-    }
-(...)
-```
-The templates work with the parameters provided in **run_params.json** passed to the **MF_parallel.sh** script.\
-These parameters are substituted in the template job files thanks to the python library [string.Template](https://docs.python.org/3.8/library/string.html#template-strings).
-
-We provide here templates for the Jean Zay french CNRS national GPU cluster accessible at the [IDRIS](http://www.idris.fr/).
-
-#### How to add a parameter
-- Add **\$new_parameter** or **\$\{new_parameter\}** in the template were you want its value to be set and in the 
-"custom_params" section of **run_params.json** where its value can be specified and changed for each run.
-
-- Example in the json parameters file adapted to Jean Zay cluster:
-```json
-(...)
-  "custom_params": 
-    {
-      "new_parameter": "its_value", (parameter added)
-      "jeanzay_gpu": "v100",
-      "jeanzay_gpu_memory": "32g",
-      "jeanzay_project": "fvp",
-      "jeanzay_alignment_time":"05:00:00",
-      "jeanzay_jobarray_time":"00:20:00"
-    }
-(...)
-```
-Make sure to never use single \$ symbol for other uses than parameter/value substitution from the json file.
-To use variables inside the template files, use instead $$ following 
-[string.Template](https://docs.python.org/3.8/library/string.html#template-strings) documentation.
-
-Add your SLURM setup sbatch parameters after the first line, these are examples of the Jean Zay templates:
-
-#### Alignment template parameters
-
-```bash
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=8
-#SBATCH --hint=nomultithread
-#SBATCH --output=../log_parallel/${sequence_name}/${run_name}/alignment_%j.log
-#SBATCH --error=../log_parallel/${sequence_name}/${run_name}/alignment_%j.log
-#SBATCH --time=$jeanzay_alignment_time
-#SBATCH --account=$jeanzay_project@cpu
-```
-
-#### Jobarray template
-
-```bash
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=8
-#SBATCH --hint=nomultithread
-#SBATCH --error=../log_parallel/$${sequence_name}/$${run_name}/jobarray_%a.log
-#SBATCH --output=../log_parallel/$${sequence_name}/$${run_name}/jobarray_%a.log
-#SBATCH --array=0-$substitute_batch_number
-#SBATCH --time=$jeanzay_jobarray_time
-#SBATCH --gpus-per-node=1
-#SBATCH --account=$jeanzay_account
-#SBATCH -C $jeanzay_full_gpu
-```
-
-Here, **#SBATCH --array=0-\$substitute_batch_number**, \$substitute_batch_number parameter is the total number of batches 
-computed, it is automatically computed then used for the number of tasks in the jobarray.\
-Variables formated as $variable_name are substituted as explained in [How to add parameters](#how-to-add-a-parameter).
-
-#### Post treatment template
-
-```bash
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=10
-#SBATCH --hint=nomultithread
-#SBATCH --time=01:00:00
-#SBATCH --output=../log_parallel/${sequence_name}/${run_name}/post_treatment_%j.log
-#SBATCH --error=../log_parallel/${sequence_name}/${run_name}/post_treatment_%j.log
-#SBATCH --account=$jeanzay_project@cpu
-```
-
 # MF_plots: output representation
 
 

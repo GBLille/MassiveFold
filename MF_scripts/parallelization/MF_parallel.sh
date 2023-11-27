@@ -2,7 +2,7 @@
 
 
 USAGE="\
-./MF_parallel.sh -s str -r str -p int -f str [-m str] [-n str] [[-b int] | [-C str] | [-c]]\n\
+./MF_parallel.sh -s str -r str -p int -f str [-m str] [-n str] [-b int | [[-C str | -c] [-w int]] ]\n\
 ./MF_parallel.sh -h for more details "
 
 # help message
@@ -10,21 +10,23 @@ if [[ " ${@} " == *" -h "* ]] || [[ " ${@} " == *" --help "* ]]; then
   echo -e "\
 Usage: $USAGE\n\
   Required arguments:\n\
-    -s| --sequence: name of the sequence file without '.fasta'.\n\
-    -r| --run: name chosen for the run to store the outputs.\n\
+    -s| --sequence: name of the sequence to infer, same as input file without '.fasta'.\n\
+    -r| --run: name chosen for the run to organize in outputs.\n\
     -p| --predictions_per_model: number of predictions computed for each neural network model.\n\
-    -f| --parameters: path to the json file that contains the run's parameters.\n\
+    -f| --parameters: json file's path containing the parameters used for this run.\n\
 \n\
   Facultative arguments:\n\
-    -b| --batch_size: number of predictions per batch, default: 25.\n\
-    -m| --msas_precomputed: path to output folder containing already computed msas.\n\
-    -n| --top_n_models: path of a completed run, use the 5 best models from the location.\n\
-    -C| --calibration_from: path of a previous run to calibrate the batch size.\n\
-    -
+    -b| --batch_size: number of predictions per batch, should not be higher than -p (default: 25).\n\
+    -m| --msas_precomputed: path to directory that contains computed msas.\n\
+    -n| --top_n_models: uses the 5 models with best ranking confidence from this run's path.\n\
+    -w| --wall_time: total time available for calibration computations, unit is hours (default: 20).\n\
+    -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).\n\
 \n\
   Facultative options:\n\
-    -c| --calibrate_batch_size: set the --batch_size by computing the maximal number of prediction per batch.
-It searches for previous runs on the sequence and use the longest prediction time found."
+    -c| --calibrate: calibrate --batch_size value. Searches for this sequence previous runs and uses\n\
+        the longest prediction time found to compute the maximal number of prediction per batch.\n\
+        This maximal number depends on the total time given by --wall_time."
+
   exit 1
 fi
 
@@ -72,11 +74,11 @@ while true; do
       shift 2
       ;;
     -n|--top_n_model)
-      path_to_run="$2"
+      path_to_run=$2
       shift 2
       ;;
     -w|--wall_time)
-      wall_time="$2"
+      wall_time=$2
       shift 2
       ;;
     *)
@@ -84,22 +86,6 @@ while true; do
       ;;
   esac
 done
-
-# avoid overwriting run with a same name
-# add an indicator (iteration number) if the run already exists 
-if [ -d ../output_array/$sequence_name/$run_name ]; then
-  echo "Run $run_name for $sequence_name already exists at ../output_array/$sequence_name/$run_name."
-  echo "Starting new iteration of this run."
-  i=1
-  iteration=$run_name
-  while [ -d ../output_array/$sequence_name/$iteration ]; do
-    let i++
-    iteration=${run_name}_$i
-    echo "Trying $iteration"
-  done
-  run_name=$iteration
-  echo -e "Current run is ${run_name}.\n"
-fi
 
 # check mandatory args
 if
@@ -110,9 +96,28 @@ if
   exit 1
 fi
 
+output_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['MF_parallel']['output_dir'])")
+logs_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['MF_parallel']['logs_dir'])")
+
+# avoid overwriting run with a same name
+# add an indicator (iteration number) if the run already exists 
+if [ -d ${output_dir}/$sequence_name/$run_name ]; then
+  echo "Run $run_name for $sequence_name already exists at ${output_dir}/$sequence_name/$run_name."
+  echo "Starting new iteration of this run."
+  i=1
+  iteration=$run_name
+  while [ -d ${output_dir}/$sequence_name/$iteration ]; do
+    let i++
+    iteration=${run_name}_$i
+    echo "Trying $iteration"
+  done
+  run_name=$iteration
+  echo -e "Current run is ${run_name}.\n"
+fi
 
 # calibration: check time taken for a previous run
-number_of_runs=$(ls -l ../log_parallel/${sequence_name} | wc -l)
+
+number_of_runs=$(ls -l ${logs_dir}/${sequence_name} | wc -l)
 if ! $calibration && [ -z $calibration_path ]; then
   echo "No calibration for the batch size."
 elif $calibration && [ ! -z $calibration_path ]; then
@@ -122,12 +127,12 @@ elif [ ! -z $calibration_path ] && [ ! -d $calibration_path ]; then
   echo "$calibration_path does not exist, exiting."
   exit 1
 elif $calibration; then
-  if [ ! -d ../log_parallel/${sequence_name} ] && [ $number_of_runs -eq 0 ]; then
+  if [ ! -d ${logs_dir}/${sequence_name} ] && [ $number_of_runs -eq 0 ]; then
     echo "${sequence_name} has never been run, do try without calibration option, exiting."
     exit 1
   fi 
   echo "Calibrating this run's batch size."
-  all_runs=$(find "../log_parallel/$sequence_name" -mindepth 1 -maxdepth 1 -type d)
+  all_runs=$(find "${logs_dir}/$sequence_name" -mindepth 1 -maxdepth 1 -type d)
   echo "Searching for a completed preliminary run for $sequence_name"
   # search for completed run
   for run in $all_runs;
@@ -148,8 +153,7 @@ elif $calibration; then
       fi
     fi
   done
-  batch_size=$lowest_pred_nb 
-  
+  batch_size=$lowest_pred_nb   
   if [ -z $lowest_pred_nb ]; then
     echo "No preliminary run completed for $sequence_name, exiting."
     exit 1
@@ -182,7 +186,6 @@ if $calibration || [ ! -z $calibration_path ]; then
   echo -e "Calibrated batch size: ${batch_size} \n"
 fi
 
-
 if [ ! -z $path_to_run ]; then
   echo "Running with the 5 best models of the run located at path_to_run."
   if [ -f ${path_to_run}/ranking_debug.json ]; then
@@ -201,7 +204,7 @@ fi
 
 echo "Run $run_name on sequence $sequence_name with $predictions_per_model predictions per model"
 
-# Massivefold
+# Massivefold 
 
 # split the predictions in batches and store in json
 ./batching.py \
@@ -213,13 +216,13 @@ echo "Run $run_name on sequence $sequence_name with $predictions_per_model predi
   --path_to_parameters=${parameters_file}
 
 # in case jobarrays start before the end of the script
-mkdir -p ../log_parallel/${sequence_name}/${run_name}/
-cp ${sequence_name}_${run_name}_batches.json ../log_parallel/${sequence_name}/${run_name}/
+mkdir -p ${logs_dir}/${sequence_name}/${run_name}/
+cp ${sequence_name}_${run_name}_batches.json ${logs_dir}/${sequence_name}/${run_name}/
 
 # starts alignment only when not pre-existing
-if [ -d ../output_array/${sequence_name}/msas/ ]; then
-  echo -e "Detected msas for ${sequence_name} located ../output_array/${sequence_name}/msas/, using them.\n"
-  msas_precomputed="../output_array/${sequence_name}"
+if [ -d ${output_dir}/${sequence_name}/msas/ ]; then
+  echo -e "Detected msas for ${sequence_name} located ${output_dir}/${sequence_name}/msas/, using them.\n"
+  msas_precomputed="${output_dir}/${sequence_name}"
 elif [ -z ${msas_precomputed} ]; then
   # Create and start alignment job
   ./create_jobfile.py \
@@ -231,8 +234,8 @@ elif [ -z ${msas_precomputed} ]; then
   ALIGNMENT_ID=$(sbatch --parsable ${sequence_name}_${run_name}_alignment.slurm)
 elif [ -d  $msas_precomputed/msas ]; then
   echo "Using precomputed msas at $msas_precomputed"
-  mkdir -p ../output_array/${sequence_name}/
-  ln -s $(realpath $msas_precomputed/msas) ../output_array/${sequence_name}/
+  mkdir -p ${output_dir}/${sequence_name}/
+  ln -s $(realpath $msas_precomputed/msas) ${output_dir}/${sequence_name}/
 else
   echo "Directory $msas_precomputed does not exit or does not contain msas."
   exit 1
@@ -252,16 +255,16 @@ else
   ARRAY_ID=$(sbatch --parsable ${sequence_name}_${run_name}_jobarray.slurm)
 fi
 
-#  Create and start post treatment (output organization axnd plots)
+# Create and start post treatment (output organization axnd plots)
+# Waiting for inference to end
 ./create_jobfile.py \
   --job_type=post_treatment \
   --sequence_name=${sequence_name} \
   --run_name=${run_name} \
   --path_to_parameters=${parameters_file}
 
-# Waiting for inference to end
 sbatch --dependency=afterok:$ARRAY_ID ${sequence_name}_${run_name}_post_treatment.slurm
 
 # Store jobiles and batches elements in logs
-mkdir -p ../log_parallel/${sequence_name}/${run_name}/
-mv ${sequence_name}_${run_name}_* ../log_parallel/${sequence_name}/${run_name}/
+mkdir -p ${logs_dir}/${sequence_name}/${run_name}/
+mv ${sequence_name}_${run_name}_* ${logs_dir}/${sequence_name}/${run_name}/
