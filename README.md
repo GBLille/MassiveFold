@@ -199,7 +199,7 @@ A script is also provided to relax only one structure. The pkl file of the predi
 python3 run_relax_from_results_pkl.py result_model_4_multimer_v3_pred_0.pkl
 ```
 # Running MassiveFold in paralle
-![header](imgs/massivefold_parallel.png)
+![header](imgs/parallel_module.svg)
 
 MassiveFold is designed for an optimized use on a GPU cluster or even a simple GPU server. All the developments were made to be used with a **SLURM** workload manager, but can be adapted to any other resource managing system working with job arrays, modifying the header files.  
 
