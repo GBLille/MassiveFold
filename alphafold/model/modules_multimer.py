@@ -24,6 +24,7 @@ import functools
 from typing import Sequence
 
 from alphafold.common import residue_constants
+from alphafold.common import confidence
 from alphafold.model import all_atom_multimer
 from alphafold.model import common_modules
 from alphafold.model import folding_multimer
@@ -38,6 +39,7 @@ from absl import logging
 import haiku as hk
 import jax
 import jax.numpy as jnp
+from jax.experimental import host_callback
 import numpy as np
 
 
@@ -446,6 +448,30 @@ class AlphaFold(hk.Module):
       }
       return jax.tree_map(jax.lax.stop_gradient, new_prev)
 
+    def get_iptm(ret):
+      iptm = jax.pure_callback(
+      confidence.predicted_tm_score_float32,
+      jax.ShapeDtypeStruct(jnp.ones(()).shape, jnp.dtype("float32")),
+      ret['predicted_aligned_error']['logits'],
+      ret['predicted_aligned_error']['breaks'],
+      None,
+      ret['predicted_aligned_error']['asym_id'],
+      True
+      )
+      return iptm
+    
+    def get_ptm(ret):
+      ptm = jax.pure_callback(
+      confidence.predicted_tm_score_float32,
+      jax.ShapeDtypeStruct(jnp.ones(()).shape, jnp.dtype("float32")),
+      ret['predicted_aligned_error']['logits'],
+      ret['predicted_aligned_error']['breaks'],
+      None,
+      None,
+      False
+      )
+      return ptm
+
     def apply_network(prev, safe_key):
       recycled_batch = {**batch, **prev}
       return impl(
@@ -483,14 +509,15 @@ class AlphaFold(hk.Module):
                                 axis=-1))
 
       def recycle_body(x):
-        i, _, prev, safe_key = x
+        i, _, prev, safe_key, score = x
         safe_key1, safe_key2 = safe_key.split() if c.resample_msa_in_recycling else safe_key.duplicate()  # pylint: disable=line-too-long
         ret = apply_network(prev=prev, safe_key=safe_key2)
-        logging.info(f'Recycling {i} done.')
-        return i+1, prev, get_prev(ret), safe_key1
-
+        score = get_iptm(ret)*0.8 + get_ptm(ret)*0.2
+        host_callback.id_print(score)
+        return i+1, prev, get_prev(ret), safe_key1, score
+      
       def recycle_cond(x):
-        i, prev, next_in, _ = x
+        i, prev, next_in, _, score = x
         ca_idx = residue_constants.atom_order['CA']
         sq_diff = jnp.square(distances(prev['prev_pos'][:, ca_idx, :]) -
                              distances(next_in['prev_pos'][:, ca_idx, :]))
@@ -499,26 +526,30 @@ class AlphaFold(hk.Module):
         # Early stopping criteria based on criteria used in
         # AF2Complex: https://www.nature.com/articles/s41467-022-29394-2
         diff = jnp.sqrt(sq_diff + 1e-8)  # avoid bad numerics giving negatives
+        # score check for recycle condition
+        confidence_above_threshold = (score > c.recycle_min_score)
         less_than_max_recycles = (i < num_iter)
         has_exceeded_tolerance = (
             (i == 0) | (diff > c.recycle_early_stop_tolerance))
-        return less_than_max_recycles & has_exceeded_tolerance
+        return less_than_max_recycles & has_exceeded_tolerance & confidence_above_threshold
 
+      score = 1
       if hk.running_init():
-        num_recycles, _, prev, safe_key = recycle_body(
-            (0, prev, prev, safe_key))
+        num_recycles, _, prev, safe_key, inter = recycle_body(
+            (0, prev, prev, safe_key, score))
       else:
-        num_recycles, _, prev, safe_key = hk.while_loop(
+        num_recycles, _, prev, safe_key, score = hk.while_loop(
             recycle_cond,
             recycle_body,
-            (0, prev, prev, safe_key))
+            (0, prev, prev, safe_key, score))
     else:
       # No recycling.
       num_recycles = 0
 
     # Run extra iteration.
     ret = apply_network(prev=prev, safe_key=safe_key)
-
+    host_callback.id_print(get_iptm(ret)*0.8 + get_ptm(ret)*0.2)
+    #host_callback.id_print(get_iptm(ret))
     if not return_representations:
       del ret['representations']
     ret['num_recycles'] = num_recycles

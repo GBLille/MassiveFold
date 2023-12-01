@@ -166,3 +166,26 @@ def predicted_tm_score(
       pair_residue_weights, axis=-1, keepdims=True))
   per_alignment = np.sum(predicted_tm_term * normed_residue_mask, axis=-1)
   return np.asarray(per_alignment[(per_alignment * residue_weights).argmax()])
+
+def predicted_tm_score_float32(
+    logits: np.ndarray,
+    breaks: np.ndarray,
+    residue_weights: Optional[np.ndarray] = None,
+    asym_id: Optional[np.ndarray] = None,
+    interface: bool = False) -> np.ndarray:
+  """Computes predicted TM alignment or predicted interface TM alignment score.
+
+  Args:
+    logits: [num_res, num_res, num_bins] the logits output from
+      PredictedAlignedErrorHead.
+    breaks: [num_bins] the error bins.
+    residue_weights: [num_res] the per residue weights to use for the
+      expectation.
+    asym_id: [num_res] the asymmetric unit ID - the chain ID. Only needed for
+      ipTM calculation, i.e. when interface=True.
+    interface: If True, interface predicted TM score is computed.
+
+  Returns:
+    ptm_score: The predicted TM alignment or the predicted iTM score.
+  """
+  return predicted_tm_score(logits=logits, breaks=breaks, residue_weights=residue_weights, asym_id=asym_id, interface=interface).astype("float32") 

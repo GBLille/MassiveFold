@@ -98,6 +98,12 @@ fi
 
 output_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['MF_parallel']['output_dir'])")
 logs_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['MF_parallel']['logs_dir'])")
+input_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['MF_parallel']['input_dir'])")
+
+if [ ! -f ${input_dir}/${sequence_name}.fasta ]; then
+  echo "No sequence named ${sequence_name}.fasta in input directory ${input_dir}, exiting."
+  exit 1
+fi
 
 # avoid overwriting run with a same name
 # add an indicator (iteration number) if the run already exists 

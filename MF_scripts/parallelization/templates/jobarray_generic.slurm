@@ -38,8 +38,8 @@ mgnify_max_hits=$MF_run_mgnify_max_hits
 uniprot_max_hits=$MF_run_uniprot_max_hits
 uniref_max_hits=$MF_run_uniref_max_hits
 templates=$MF_run_templates
-score_threshold_output=$MF_run_score_threshold_output
-max_score_stop=$MF_run_max_score_stop
+min_score=$MF_run_min_score
+max_batch_score=$MF_run_max_batch_score
 
 # parameters for each task in the job array
 batches_path=${logs_dir}/${sequence_name}/${run_name}
@@ -66,6 +66,8 @@ echo "python3 $${run_AF_path}
     --dropout_rates_filename=$${dropout_rates_filename}
     --max_recycles=$${max_recycles}
     --early_stop_tolerance=$${early_stop_tolerance}
+    --min_score=$${min_score}
+    --max_batch_score=$${max_batch_score}
     --bfd_max_hits=$${bfd_max_hits}
     --mgnify_max_hits=$${mgnify_max_hits}
     --uniprot_max_hits=$${uniprot_max_hits}
@@ -81,8 +83,6 @@ echo "python3 $${run_AF_path}
     --pdb_seqres_database_path=$${data_dir}/pdb_seqres/pdb_seqres.txt
     --uniref30_database_path=$${data_dir}/uniref30/UniRef30_2021_03
     --uniprot_database_path=$${data_dir}/uniprot/uniprot.fasta
-    --score_threshold_output=$${score_threshold_output} 
-    --max_score_stop=$${max_score_stop}
 "
 
 time python3 $${run_AF_path} \
@@ -102,6 +102,8 @@ time python3 $${run_AF_path} \
     --dropout_rates_filename=$${dropout_rates_filename} \
     --max_recycles=$${max_recycles} \
     --early_stop_tolerance=$${early_stop_tolerance} \
+    --min_score=$${min_score} \
+    --max_batch_score=$${max_batch_score} \
     --bfd_max_hits=$${bfd_max_hits} \
     --mgnify_max_hits=$${mgnify_max_hits} \
     --uniprot_max_hits=$${uniprot_max_hits} \
@@ -116,8 +118,6 @@ time python3 $${run_AF_path} \
     --bfd_database_path=$${data_dir}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt \
     --pdb_seqres_database_path=$${data_dir}/pdb_seqres/pdb_seqres.txt \
     --uniref30_database_path=$${data_dir}/uniref30/UniRef30_2021_03 \
-    --uniprot_database_path=$${data_dir}/uniprot/uniprot.fasta \
-    --score_threshold_output=$${score_threshold_output} \
-    --max_score_stop=$${max_score_stop}
+    --uniprot_database_path=$${data_dir}/uniprot/uniprot.fasta
     
 date

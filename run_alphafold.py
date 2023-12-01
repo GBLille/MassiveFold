@@ -168,12 +168,14 @@ flags.DEFINE_boolean('dropout', False, 'Turn on drop out during inference to get
 flags.DEFINE_boolean('dropout_structure_module',False, 'Dropout in structure module at inference')
 flags.DEFINE_string('dropout_rates_filename', None, 'Provide dropout rates for inference from a json file. '
                      'If None, default rates are used, if "dropout" is True.')
-flags.DEFINE_float('score_threshold_output', 0,
+flags.DEFINE_float('min_score', 0,
                     'Only predictions with ranking confidence above this score '
-                    'will generate pdb and pkl files, predictions below this '
-                    'threshold will still be present in ranking_debug.json.' )
-flags.DEFINE_float('max_score_stop', 1, 'Terminates the computing process when a suitable '
-                   'prediction with a ranking confidence > max_score_stop has been obtained')
+                    'will generate pdb and pkl files and continue recycling, '
+                    'predictions below this threshold will still be present in'
+                    'ranking_debug.json.' )
+flags.DEFINE_float('max_batch_score', 0,
+                    'Terminates the computing process when a suitable '
+                    'prediction with a ranking confidence > max_batch_score has been obtained')
 
 FLAGS = flags.FLAGS
 
@@ -288,7 +290,7 @@ def predict_structure(
     ptms[model_name] = prediction_result['ptm'] * 1
 
 
-    if confidence >= FLAGS.score_threshold_output:
+    if confidence >= FLAGS.min_score:
 
       # Remove jax dependency from results.
       np_prediction_result = _jnp_to_np(dict(prediction_result))
@@ -317,10 +319,10 @@ def predict_structure(
         f.write(unrelaxed_pdbs[model_name])
     else:
       print(f"Prediction {model_name} not saved, ranking confidence {confidence} \
-under threshold {FLAGS.score_threshold_output}")
+under threshold {FLAGS.min_score}")
 
-    if prediction_result['ranking_confidence'] > FLAGS.max_score_stop:
-      print(f"\nThe max score {FLAGS.max_score_stop} has been reached with \
+    if prediction_result['ranking_confidence'] > FLAGS.max_batch_score:
+      print(f"\nThe max score {FLAGS.max_batch_score} has been reached with \
 prediction {model_name}: {prediction_result['ranking_confidence']}\n")
       break
 
@@ -353,7 +355,7 @@ prediction {model_name}: {prediction_result['ranking_confidence']}\n")
   for model_name in to_relax:
 
     if model_name not in unrelaxed_proteins:
-      print(f"Relax target {model_name}'s score < {FLAGS.score_threshold_output}, no output to relax.")
+      print(f"Relax target {model_name}'s score < {FLAGS.min_score}, no output to relax.")
       break
 
     t_0 = time.time()
@@ -520,10 +522,13 @@ def main(argv):
     if FLAGS.model_preset != 'multimer':
         model_config.data.common.num_recycle = FLAGS.max_recycles
 
-    model_config.model.recycle_early_stop_tolerance=FLAGS.early_stop_tolerance
+    model_config.model.recycle_early_stop_tolerance = FLAGS.early_stop_tolerance
+    model_config.model.recycle_min_score = FLAGS.min_score
     model_config.model.global_config.eval_dropout = FLAGS.dropout
     logging.info(f'Setting max_recycles to {model_config.model.num_recycle}')
+
     logging.info(f'Setting early stop tolerance to {model_config.model.recycle_early_stop_tolerance}')
+    logging.info(f'Setting min_score to {model_config.model.recycle_min_score}')
     logging.info(f'Setting dropout to {model_config.model.global_config.eval_dropout}')
 
     # disabling dropout at structure module

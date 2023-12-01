@@ -17,7 +17,7 @@
         "jeanzay_account": "nqf@v100",
         "jeanzay_gpu_with_memory": "v100", 
         "jeanzay_alignment_time": "10:00:00",
-        "jeanzay_jobarray_time": "03:00:00"
+        "jeanzay_jobarray_time": "00:20:00"
     },
     "MF_run": {
         "MF_run_model_preset": "multimer",
@@ -25,8 +25,8 @@
         "MF_run_dropout_structure_module": "false",
         "MF_run_dropout_rates_filename": "",
         "MF_run_templates": "true",
-        "MF_run_score_threshold_output": "0",
-        "MF_run_max_score_stop": "1",
+        "MF_run_min_score": "1",
+        "MF_run_max_batch_score": "1",
         "MF_run_max_recycles": "21",
         "MF_run_db_preset": "full_dbs",
         "MF_run_use_gpu_relax": "true",
