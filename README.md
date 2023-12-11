@@ -6,7 +6,7 @@ Table of contents
 =================
 
   * [Setup](#setup)
-  * [Added flags](#added-flags)
+  * [Added parameters](#added-parameters)
   * [Dropout](#dropout)
   * [Usage](#usage)
     * [Examples](#example)
@@ -18,14 +18,33 @@ Table of contents
   * [Plots](#mf_plots-output-representation)
 
 
-This AlphaFold version aims at massively expanding the sampling of structure predictions following Björn Wallner's AFsample version of AlphaFold (https://github.com/bjornwallner/alphafoldv2.2.0/)  and to provide some optimizations in the computing.\
-These optimizations are described below with the flags that were added to the genuine DeepMind's AlphaFold.
+This AlphaFold version aims at massively expanding the sampling of structure predictions following Björn Wallner's 
+AFsample version of AlphaFold (https://github.com/bjornwallner/alphafoldv2.2.0/)  and to provide some optimizations in the computing.  
+In particular, it optimizes the parallellization of the computing, generating automatically batches of predictions that can be run in parallel. 
+The size of these batches is automatically calculated running a first calibrating run or set manually. All the results are then gathered 
+in a same folder and a final global ranking is performed on all the produced structures.
+The optimizations and the parameters added to the genuine DeepMind's AlphaFold are described below.
 
 MassiveFold is an extended version of DeepMind's AlphaFold v2.3.2: https://github.com/deepmind/alphafold
 
 # Setup
-The setup is the same as the one for AlphaFold v2.3 except that this repository has to be used instead of the DeepMind's one.\
-However, v1 and v2 neural network (NN) model parameters have to be present in the *param* folder and should contain the version number in the name.\
+The setup is the same as the one for AlphaFold v2.3 except that this repository has to be used instead of the DeepMind's one.  
+We use an installation based on conda. You can install it following these steps https://github.com/kalininalab/alphafold_non_docker
+or using the conda environment file that we provide (env.yml). In this last case, don't forget to apply the OpenMM patch and 
+to add the chemical properties to the common folder.
+
+```
+conda create env -f env.yml
+conda activate massivefold-1.1.0
+cd ${CONDA_PREFIX}/lib/python3.8/site-packages/
+wget -N https://raw.githubusercontent.com/GBLille/MassiveFold/MFv1.1.0/docker/openmm.patch
+patch -p0 -N < openmm.patch
+cd ${CONDA_PREFIX}/lib/python3.8/site-packages/alphafold/common/
+wget -N https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
+```
+
+However, v1 and v2 neural network (NN) model parameters have to be present in the *param* folder and should contain the 
+version number in their name.\
 Therefore, the list of NN model parameters in the folder should be as follows:
 
 params_model_1_multimer_v1.npz  
@@ -119,14 +138,16 @@ This is the list of the parameters added to AlphaFold 2.3.2 and their descriptio
   &nbsp;&nbsp;&nbsp;&nbsp; (default: '1')
 
 # Dropout
-The dropout at inference can be activated with the **--dropout** parameter set to true. 
-In this case, the same dropout rates as those used by DeepMind at training are used. Here are DeepMind's architectural details (Jumper J et al, Nature, 2021 - Fig 3.a),
-annotated by Björn Wallner for CASP15 (https://predictioncenter.org/), that shows the various dropout rates:  
+The dropout at inference can be activated with the **--dropout** parameter set to true for activating it in the Evoformer 
+module and **--dropout_structure_module** set to true for activating it in the structure module.
+The same dropout rates as those used by DeepMind at training are used. Here are DeepMind's architectural details 
+(Jumper J et al, Nature, 2021 - Fig 3.a), annotated by Björn Wallner for CASP15 (https://predictioncenter.org/), 
+that shows the various dropout rates:  
 
 ![Dropout](imgs/dropout_arch.png)
 
-However, the **--dropout_rates_filename** parameter allows to modify these rates, providing them in a json file. Here is an example of the content of
-such a json file:
+However, the **--dropout_rates_filename** parameter allows to modify these rates, providing them in a json file. 
+Here is an example of the content of such a json file:
 ```json
 {  
     "dropout_rate_msa_row_attention_with_pair_bias": 0.15,  
@@ -144,11 +165,12 @@ such a json file:
 
 # Usage
 ## Example
-By default, MassiveFold runs with the same parameters as AlphaFold2, however it uses all the versions 
+By default, MassiveFold runs with the same parameters as AlphaFold2, except it uses all the versions 
 of neural network model parameters for complexes and not only the ones of the last version.  
 
 Here is an example how to run a multimer prediction with all versions of neural network model parameters, without templates,
-activating dropout at inference, with 20 recycles maximum and early stop tolerance set to 0.2 Angströms. 
+activating dropout at inference in both Evoformer and structure module, with 100 recycles maximum and early stop tolerance 
+set to 0.1 Angströms. 
 
 ```bash
 python3 ./run_alphafold.py
@@ -165,8 +187,8 @@ python3 ./run_alphafold.py
     --dropout=true
     --dropout_structure_module=true
     --dropout_rates_filename=
-    --max_recycles=20
-    --early_stop_tolerance=0.2
+    --max_recycles=100
+    --early_stop_tolerance=0.1
     --bfd_max_hits=100000
     --mgnify_max_hits=501
     --uniprot_max_hits=50000
@@ -196,33 +218,29 @@ A script is also provided to relax only one structure. The pkl file of the predi
 python3 run_relax_from_results_pkl.py result_model_4_multimer_v3_pred_0.pkl
 ```
 # Running MassiveFold in parallel
+MassiveFold is designed for an optimized use on a GPU cluster because it can automatically split a prediction run in many jobs. 
+This automatic splitting is also convenient for runs on a simple GPU server. All the developments were made to be used 
+with a **SLURM** workload manager, but can be adapted to any other resource managing system working with job arrays, 
+simply modifying the **header** files. The following diagram shows how MassiveFold runs in parallel.
+
 ![header](imgs/massivefold_diagram.svg)
-
-MassiveFold is designed for an optimized use on a GPU cluster or even a simple GPU server. All the developments were made to be used with a **SLURM** workload manager, but can be adapted to any other resource managing system working with job arrays, modifying the header files.  
-
-To make the most out of MassiveFold's expanded sampling on GPU clusters or servers, you can use the parallelization module in the **MF_scripts** directory.
 
 A run is composed of three steps:  
 1. **alignment**: on CPU, sequence alignments is the initiation step (can be skipped if alignments are already computed)
 
-2. **structure prediction**: on GPU, structures prediction follows the massive sampling principle. The total number of prediction is divided into smaller batches and each of them is distributed on a single computed node.
+2. **structure prediction**: on GPU, structure predictions follows the massive sampling principle. The total number 
+of predictions is divided into smaller batches and each of them is distributed on a single GPU. These jobs wait for the 
+alignment job to be over, if the alignments are not provided by the user.
 
-3. **post_treatment**: on CPU, it finishes the job by gathering all batches outputs and produces plots with the [MF_plots module](#mf_plots-output-representation) to represent the run's performances.
+3. **post_treatment**: on CPU, it finishes the job by gathering all batches outputs and produces plots with the 
+[MF_plots module](#mf_plots-output-representation) to visualize the run's performances. This jobs is executed only once 
+all the structure predictions are over. 
+
+To run MassiveFold in parallel, you can use the parallelization module in the **MF_scripts** directory.
 
 ## Setup
 
-1. Clone MassiveFold and install dependencies
-
-```bash
-# clone repository
-git clone https://github.com/GBLille/MassiveFold.git
-cd MassiveFold/
-
-# install environment and massivefold dependencies
-conda env create -f environment.yml
-```
-
-2. Set up file architecture
+1. File architecture
 
 The file tree that the paths in the following step follow looks like this:
 ```bash
@@ -257,7 +275,6 @@ The file tree that the paths in the following step follow looks like this:
 To set up this file tree, follow these instructions:
 ```bash
 # move to location where you want to setup MassiveFold
-cd ..
 mkdir massivefold_runs
 cd massivefold_runs/
 mkdir input
@@ -266,7 +283,7 @@ mkdir log_parallel
 mkdir pipeline
 cp -r ../MassiveFold/MF_scripts/parallelization/* pipeline/
 ```
-3. Set paths in parameters
+2. Set paths in parameters
 
 Edit the json parameter located in MF_scripts/parallelization/params.json. In our example:
 
@@ -287,48 +304,57 @@ And modify params.json:
  },
 ...
 ```
-The *"data_dir"* parameter should be the path used in AlphaFold2 installation where the databases are downloaded.
+The **data_dir** parameter should be the path used in AlphaFold2 installation where the databases are downloaded.
 
-4. Create header files  
+3. Create header files  
 
 To run MassiveFold in parallel on your cluster/server, it is **required** to build custom jobfile headers for each step. They have to be added in the path set in "jobfile_headers_dir". For slurm workload manager, headers for Jean Zay cluster are provided as examples to follow.  
 
 Refer to [Jobfile header building](#jobfiles-header-building) for this installation step.
 
-5. Launch a run
+4. Launch a run
 
-Set the flags of your run in the *MF_run* section of params.json file before running massivefold in parallel with:
+Set the parameters of your run in the **MF_run** section of the **params.json** file, then run massivefold in parallel with, for instance:
 ```bash
 ./MF_parallel -s test_multimer -r basic -p 67 -f params.json
 ```
+
+For more help, run:
+```bash
+./MF_parallel -h
+```
+
 ### Jobfile's header building
 
-The jobfile templates for each step are built by combining the jobfile header that you have to create in *MF_scripts/parallelization/headers* with the jobfile body in *MF_scripts/parallelization/templates/*.
+The jobfile templates for each step are built by combining the jobfile header that you have to create in 
+**MF_scripts/parallelization/headers** with the jobfile body in **MF_scripts/parallelization/templates/**.
 
-They have to be adapted in function of your computing infrastructure. 
-Each of the three headers (alignment, jobarray and post treatment) must be located in the "jobfile_header_dir" directory set in the "MF_parallel" section of params.json.
+Only the headers have to be adapted in function of your computing infrastructure. 
+Each of the three headers (alignment, jobarray and post treatment) must be located in the **headers** directory 
+inside the **pipeline** directory (see [File architecture](#setup-1) section).
 
-Their names should be identic to:
+Their names should be identical to:
 * **header_alignment.slurm**
 * **header_jobarray.slurm**
 * **header_post_treatment.slurm**
 
-The templates work with the parameters provided in **run_params.json** passed to the **MF_parallel.sh** script.\
+The templates work with the parameters provided in **run_params.json** given as a parameter to the **MF_parallel.sh** script.\
 These parameters are substituted in the template job files thanks to the python library [string.Template](https://docs.python.org/3.8/library/string.html#template-strings).\
 Refer to [How to add a parameter](#how-to-add-a-parameter) for parameter substitution.
 
-- **Requirement:** In the jobarray header, state that it is a job array and the number of task in it has to be passed.\
+- **Requirement:** In the jobarray header should be stated that it is a job array and the number of tasks in it has to 
+be given.\
 The task number argument is substituted with the *$substitute_batch_number* parameter.\
 For slurm, the expression should be:
 ```bash
 #SBATCH --array=0-$substitute_batch_number
 ```
-For example, if there is 45 batches, with one batch per task of the job array, the substituted expression will be:
+For example, if there are 45 batches, with one batch per task of the job array, the substituted expression will be:
 ```bash
 #SBATCH --array=0-44
 ```
 
-- To store jobfile logs while following [Set up](#setup-1)'s file tree, add these lines in the headers:
+- To store jobfile logs while following [Setup](#setup-1)'s file tree, add these lines in the headers:
 
 In **header_alignment.slurm**:
 ```bash
@@ -346,10 +372,11 @@ In **header_post_treatment.slurm**:
 #SBATCH --output=${logs_dir}/${sequence_name}/${run_name}/post_treatment.log
 #SBATCH --error=${logs_dir}/${sequence_name}/${run_name}/post_treatment.log
 ```
-We provide here templates for the Jean Zay french CNRS national GPU cluster accessible at the [IDRIS](http://www.idris.fr/).
+On the git, we provide templates for the Jean Zay french CNRS national GPU cluster accessible at the 
+[IDRIS](http://www.idris.fr/).
 
 #### How to add a parameter
-- Add **\$new_parameter** or **\$\{new_parameter\}** in the template were you want its value to be set and in the 
+- Add **\$new_parameter** or **\$\{new_parameter\}** in the template where you want its value to be set and in the 
 "custom_params" section of **run_params.json** where its value can be specified and changed for each run.
 
 - Example in the json parameters file for Jean Zay headers:
@@ -425,7 +452,7 @@ It launches MassiveFold with the same parameters introduced above but instead of
 it divides it in multiple batches.
 
 
-For the following examples, we assume that **--model_preset=multimer** as it is the most beneficial case to run MassiveFold in parallel.
+For the following examples, we assume that **--model_preset=multimer** as it is the majority of cases to run MassiveFold in parallel.
 
 However, **--model_preset=monomer_ptm** works too and needs to be adapted accordingly, at least the models to use.
 
@@ -437,11 +464,11 @@ You can decide how the run will be divided by assigning **MF_parallel.sh** param
 
 The predictions are computed individually for each neural network model,  **-p** or **--predictions_per_model** allows to specify 
 the number of predictions desired for each chosen model.\
-These **--predictions_per_model** are then divided by batch with a fixed **-b** or **--batch_size** to optimize the run 
+These **--predictions_per_model** are then divided into batches with a fixed **-b** or **--batch_size** to optimize the run 
 in parallel as each batch can be computed on a different GPU, if available. The last batch of the cycle is generally smaller 
 than the others to match the number of predictions fixed by **--predictions_per_model**.
 
-***N.B.***: an interest to use MF_parallel.shon a single server with a single GPU is to be able to run massive sampling for a 
+***N.B.***: an interest to use MF_parallel.sh on a single server with a single GPU is to be able to run massive sampling for a 
 structure in low priority, allowing small jobs with higher priority to be run in between.
 
 For example, with **-b 25** and **-p 67** the predictions are divided into the following batches, which is repeated 
@@ -451,17 +478,18 @@ for each NN model:
   2.  Second batch: **--start_prediction=25** and **--num_predictions_per_model=49**
   3.  Third batch: **--start_prediction=50** and **--num_predictions_per_model=67** 
 
-By default (if **--models_to_use** is not assigned), all models are used: with **--model_preset=multimer**, 15 models in total: 
-5 neural network models $\times$ 3 AlphaFold2 versions.
+By default (if **--models_to_use** is not assigned), all NN models are used: with **--model_preset=multimer**, 15 models 
+in total = 5 neural network models $\times$ 3 AlphaFold2 versions.
 
 The prediction number per model can be adjusted, here with 67 per model and 15 models, it amounts to **1005 predictions 
-in total divided in 45 batches**.
+in total divided into 45 batches**.
 
 ### Run parameters
 
 #### Parameters in MF_parallel.sh
 
-In addition to the parameters displayed with -h option, the parameters file set in **-f** or **--parameters** should be organized as *MF_scripts/parallelization/generic_params.json*.
+In addition to the parameters displayed with -h option, the parameters file set in **-f** or **--parameters** should be 
+organized as *MF_scripts/parallelization/generic_params.json*.
 
 #### Parameters in the json file
 
@@ -490,7 +518,8 @@ It is presented as:
 ```
 You have to fill the paths in this section. Templates are specified here to setup the run, build your owns according to the [Template building](#jobfiles-header-building) section.
 
-- The **custom_params** section is relative to the personalized parameters that you want to add for your own cluster.
+- The **custom_params** section is relative to the personalized parameters that you want to add for your own cluster. 
+For instance, for the Jean Zay GPU cluster:
 ```json
 ...
   "custom_params": 
@@ -503,13 +532,14 @@ You have to fill the paths in this section. Templates are specified here to setu
     }
 ...
 ```
-As explained in [How to add a parameter](#how-to-add-a-parameter), these variables will be substituted by their value when the jobfiles are created.
+As explained in [How to add a parameter](#how-to-add-a-parameter), these variables are substituted by their value 
+when the jobfiles are created.
 
-- The **MF_run** section gathers all parameters used by MassiveFold in the run. (see [Example](#example) and 
-[Added flags](#added-flags)). All flags  except *--models_to_relax*, *--use_precomputed_msas*, *--alignment_only*, *--start_prediction*, *--end_prediction*, *--fasta_path* and *--output_dir* are exposed in this
+- The **MF_run** section gathers all the parameters used by MassiveFold for the run. (see [Example](#example) and 
+[Added parameters](#added-parameters)). All parameters  except *--models_to_relax*, *--use_precomputed_msas*, *--alignment_only*, *--start_prediction*, *--end_prediction*, *--fasta_path* and *--output_dir* are exposed in this
 section.\
-You can adapt the flags values in function of your needs.\
-The non exposed flags mentionned before are set in intern by MF_parallel.sh pipeline.
+You can adapt the parameters values in function of your needs.\
+The non exposed parameters mentioned before are set in intern by the MF_parallel.sh pipeline.
 
 ```json
 ... 
@@ -548,7 +578,8 @@ Lastly, section **MF_plots** is used for the MassiveFold plotting module.
 
 # Authors
 Guillaume Brysbaert (UGSF - UMR 8576, France)  
-Nessim Raouraoua (UGSF - UMR 8576, France)  
+Nessim Raouraoua (UGSF - UMR 8576, France)
+Marc F Lensink (UGSF - UMR8576, France)
 Christophe Blanchet (IFB, France)  
 Claudio Mirabello (NBIS, Sweden)  
 Björn Wallner (Linköping University, Sweden)  
