@@ -36,6 +36,7 @@ def extract_top_predictions():
   with open(f'{FLAGS.input_path}/ranking_debug.json', 'r') as json_file:
     scores = json.load(json_file)
   top_pred = scores['order'][:FLAGS.top_n_predictions]
+  top_pred = [pred for pred in top_pred if os.path.isfile(f'{FLAGS.input_path}/result_{pred}.pkl')]
   return top_pred
   
 def CF_PAEs():
@@ -277,6 +278,7 @@ directly chose the plots you want.")
     MF_score_distribution(types)
   if "distribution_comparison" in FLAGS.chosen_plots:
     MF_distribution_comparison(FLAGS.input_path, FLAGS.runs_to_compare)
+  
   MF_plot()
 
 if __name__ == "__main__":

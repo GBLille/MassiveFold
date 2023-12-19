@@ -48,13 +48,19 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
     # Move pdb files and rename with rank
     old_pdb_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pred_new_name) 
     new_pdb_path = os.path.join(all_batches_path, f"ranked_{i}_{pred_new_name}")
-    cp(old_pdb_path, new_pdb_path)
+    try:
+      mv(old_pdb_path, new_pdb_path)
+    except FileNotFoundError:
+      print(f"{pred_batch_map[prediction]}/ranked_{i}_{pred_new_name} does not exist, probably score < --min_score.")
     
     # Move pkl files
     pkl_name = f"result_{prediction}.pkl"
     old_pkl_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pkl_name)
     new_pkl_path = os.path.join(all_batches_path, pkl_name)
-    mv(old_pkl_path, new_pkl_path)
+    try:
+      mv(old_pkl_path, new_pkl_path)
+    except FileNotFoundError:
+      print(f"{pred_batch_map[prediction]}/result_{prediction}.pkl does not exist, probably score < --min_score.")
 
 def remove_batch_dirs(all_batches_path):
   batch_dirs = [d for d in os.listdir(all_batches_path) if d.startswith('batch')]
