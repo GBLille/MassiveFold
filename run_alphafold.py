@@ -249,8 +249,10 @@ def predict_structure(
   relax_metrics = {}
 
   ranking_confidences = {}
-  iptms = {}
-  ptms = {}
+  
+  if FLAGS.model_preset == "multimer":
+    iptms = {}
+    ptms = {}
 
   # Run the models.
   num_models = len(model_runners)
@@ -286,8 +288,9 @@ def predict_structure(
     confidence = prediction_result['ranking_confidence']
 
     ranking_confidences[model_name] = prediction_result['ranking_confidence']
-    iptms[model_name] = prediction_result['iptm'] * 1
-    ptms[model_name] = prediction_result['ptm'] * 1
+    if FLAGS.model_preset == "multimer":
+      iptms[model_name] = prediction_result['iptm'] * 1
+      ptms[model_name] = prediction_result['ptm'] * 1
 
 
     if confidence >= FLAGS.min_score:
@@ -321,10 +324,11 @@ def predict_structure(
       print(f"Prediction {model_name} not saved, ranking confidence {confidence} \
 under threshold {FLAGS.min_score}")
 
-    if prediction_result['ranking_confidence'] > FLAGS.max_batch_score:
-      print(f"\nThe max score {FLAGS.max_batch_score} has been reached with \
-prediction {model_name}: {prediction_result['ranking_confidence']}\n")
-      break
+    if FLAGS.model_preset == "multimer":
+      if prediction_result['ranking_confidence'] > FLAGS.max_batch_score:
+        print(f"\nThe max score {FLAGS.max_batch_score} has been reached with \
+  prediction {model_name}: {prediction_result['ranking_confidence']}\n")
+        break
 
   # Rank by model confidence.
   ranked_order = [
@@ -354,9 +358,10 @@ prediction {model_name}: {prediction_result['ranking_confidence']}\n")
 
   for model_name in to_relax:
 
-    if model_name not in unrelaxed_proteins:
-      print(f"Relax target {model_name}'s score < {FLAGS.min_score}, no output to relax.")
-      break
+    if FLAGS.model_preset == "multimer":
+      if model_name not in unrelaxed_proteins:
+        print(f"Relax target {model_name}'s score < {FLAGS.min_score}, no output to relax.")
+        break
 
     t_0 = time.time()
     relaxed_pdb_str, _, violations = amber_relaxer.process(
