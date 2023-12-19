@@ -46,30 +46,45 @@ def batches_all_models(batches_unit, all_models):
   return batches
       
 def main(argv):
-  model_names = [
-  'model_1_multimer_v1',
-  'model_2_multimer_v1',
-  'model_3_multimer_v1',
-  'model_4_multimer_v1',
-  'model_5_multimer_v1',
-  'model_1_multimer_v2',
-  'model_2_multimer_v2',
-  'model_3_multimer_v2',
-  'model_4_multimer_v2',
-  'model_5_multimer_v2',
-  'model_1_multimer_v3',
-  'model_2_multimer_v3',
-  'model_3_multimer_v3',
-  'model_4_multimer_v3',
-  'model_5_multimer_v3'
-  ]
+  if not FLAGS.path_to_parameters:
+    raise ValueError('--path_to_parameters is required')
   
+  with open(FLAGS.path_to_parameters, 'r') as params:
+    all_params = json.load(params)
+  
+  models = all_params['MF_parallel']['models_to_use']
+  model_preset = all_params['MF_run']['MF_run_model_preset']  
 
-  if FLAGS.path_to_parameters:
-    with open(FLAGS.path_to_parameters, 'r') as params:
-      models = json.load(params)['MF_parallel']['models_to_use']
-    if models:
-      model_names = [model for model in model_names if model in models]
+  if model_preset == 'multimer':
+    model_names = [
+    'model_1_multimer_v1',
+    'model_2_multimer_v1',
+    'model_3_multimer_v1',
+    'model_4_multimer_v1',
+    'model_5_multimer_v1',
+    'model_1_multimer_v2',
+    'model_2_multimer_v2',
+    'model_3_multimer_v2',
+    'model_4_multimer_v2',
+    'model_5_multimer_v2',
+    'model_1_multimer_v3',
+    'model_2_multimer_v3',
+    'model_3_multimer_v3',
+    'model_4_multimer_v3',
+    'model_5_multimer_v3'
+    ]
+
+  elif model_preset == 'monomer_ptm':
+    model_names = [
+    'model_1_ptm',
+    'model_2_ptm',
+    'model_3_ptm',
+    'model_4_ptm',
+    'model_5_ptm',
+    ]
+  
+  if models:
+    model_names = [model for model in model_names if model in models]
   if FLAGS.models_to_use:
     model_names = [model for model in model_names if model in FLAGS.models_to_use]
 

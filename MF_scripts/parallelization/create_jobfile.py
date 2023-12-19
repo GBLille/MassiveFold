@@ -28,10 +28,12 @@ def group_templates(all_params, job_types:list):
   sequence = all_params['MF_parallel']['sequence_name']
   run = all_params['MF_parallel']['run_name']
   grouped_templates = {}
-
+  
+  model_preset = all_params['MF_run']['MF_run_model_preset']
   for job_type in job_types:
-    header_path = f"{templates_paths['jobfile_headers_dir']}/header_{job_type}.slurm"
-    template_path = f"{templates_paths['jobfile_templates_dir']}/{job_type}_generic.slurm"
+    template_file = f"{job_type}_{model_preset}"
+    header_path = f"{templates_paths['jobfile_headers_dir']}/{job_type}.slurm"
+    template_path = f"{templates_paths['jobfile_templates_dir']}/{template_file}.slurm"
     jobfile = f"{sequence}_{run}_{job_type}.slurm"
     merge_header_and_template(header_path, template_path, jobfile)
 

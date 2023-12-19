@@ -8,7 +8,7 @@ from absl import flags
 from absl import app
 import matplotlib.pyplot as plt
 from colabfold_plots import plot_msa_v2, plot_plddts, plot_confidence, plot_paes, plot_plddt_legend
-
+from scipy.stats import gaussian_kde
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string('input_path', None, 
@@ -24,11 +24,12 @@ flags.DEFINE_list('chosen_plots', [],
 flags.DEFINE_enum('action', "save", ["save", "show"], "Chose to save the plot or show them.")
 flags.DEFINE_string('output_path', None, 
                     'Path to directory that will be store the plot, same as the input dir by default.')
+flags.DEFINE_list('runs_to_compare', [], 'Runs you want to compare on their distribution')
 
 PLOT_TYPES = {
   "for_each": ["DM_plddt_PAE", "CF_plddt"],
   "one_for_all": ["CF_PAEs", "CF_plddts"],
-  "specific": ["coverage", "score_distribution"]
+  "specific": ["coverage", "score_distribution", "distribution_comparison"]
 }
 
 def extract_top_predictions():
@@ -224,6 +225,28 @@ PLOT_MAP = {
   "CF_plddts": CF_plddts
 }
 
+def MF_distribution_comparison(sequence_path, runs):
+  all_scores = {}
+  for run in runs:
+    run_basename = os.path.basename(run)
+    scores = []
+    with open(f"{sequence_path}/{run}/ranking_debug.json" ,'r') as json_file:
+      run_scores = json.load(json_file)['iptm+ptm']
+    run_scores = [run_scores[score] for score in run_scores]
+    if len(runs) <= 3:
+      plt.hist(run_scores, bins=30, alpha=0.5, label=run_basename)
+    else:
+      all_scores[run_basename] = run_scores
+  if len(runs) > 3:
+    datas = pd.DataFrame(all_scores)
+    datas.plot(kind='kde')
+  plt.legend()
+  plt.title(f'Distribution comparison between {os.path.basename(sequence_path)} runs')
+  plt.xlabel('Ranking confidence')
+  plt.ylabel('Number of predictions')
+  plt.savefig(f'{sequence_path}/distribution_compa.png')
+  print('Saved as distribution_compa.png')
+
 def MF_plot():
   # plot names assignment
   chosen = []
@@ -252,10 +275,9 @@ directly chose the plots you want.")
   if "score_distribution" in FLAGS.chosen_plots:
     types = ["scores", "versions_scores", "models_scores"]
     MF_score_distribution(types)
+  if "distribution_comparison" in FLAGS.chosen_plots:
+    MF_distribution_comparison(FLAGS.input_path, FLAGS.runs_to_compare)
   MF_plot()
-
-
-
 
 if __name__ == "__main__":
   """ 
@@ -275,4 +297,3 @@ if __name__ == "__main__":
     -> regardless of the plot type, plot alignment coverage and group PAE for top 10 predictions
   """
   app.run(main)
-  
