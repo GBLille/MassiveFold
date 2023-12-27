@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import numpy as np
 import pandas as pd
 import os
@@ -193,17 +195,27 @@ def MF_models_density(scores:dict):
     NN_models[model.split('_pred')[0]].append(scores[model])
 
   scores_per_model = pd.DataFrame(NN_models)
-  kde_models, ax3 = plt.subplots()
-  scores_per_model.plot(kind="kde", ax=ax3)
-  ax3.set(
-    title="Ranked confidence density per NN model",
-    xlabel="Ranked confidence",
-    ylabel="Density"
-  )
+  cols = scores_per_model.columns
+  scores_per_model.columns = [col.replace('model_', '').replace('multimer_', '') for col in cols]
+  pastel_colors = ['#add8e6', '#87ceeb', '#b0c4de', '#b0e0e6',
+  '#e0ffff', '#afeeee', '#90ee90', '#98fb98', '#fafad2', '#ffa07a',
+  '#f08080', '#ffb6c1', '#e6a8d7', '#fff0f5', '#ffe4e1']
+  colors = {
+  'boxes': '#add8e6',
+  }
+  ax = scores_per_model.boxplot(sym='g+', patch_artist=True, color = colors, flierprops=dict(markerfacecolor='red'))
+  
+  for box, color in zip(ax.artists, pastel_colors):
+    box.set_facecolor(color)
+
+  plt.grid(False)
+  ax.set_ylim(bottom=0, top=1.1)
   if FLAGS.action == "save":
-    kde_models.savefig(f"{FLAGS.output_path}/models_density.png")
+    plt.savefig(f"{FLAGS.output_path}/models_density.png")
     print("Saved as models_density.png")
-    plt.close(kde_models)
+
+  plt.show()
+  plt.close()
 
 def MF_score_distribution(distribution_types):
   jobname = FLAGS.input_path
