@@ -1,7 +1,7 @@
 {
     "MF_parallel": {
         "run_massivefold": "/gpfs7kw/linkhome/rech/genasu01/urh88pc/git/MassiveFold_dev/run_alphafold.py",
-        "run_massivefold_plots": "/gpfswork/rech/fvp/commun/plots/MF_plots.py",
+        "run_massivefold_plots": "/gpfs7kw/linkhome/rech/genasu01/urh88pc/git/MassiveFold_dev/MF_scripts/plots/MF_plots.py",
         "data_dir": "/gpfsdswork/dataset/AlphaFold-2.3.1",
         "jobfile_headers_dir": "./headers",
         "jobfile_templates_dir": "./templates",
@@ -17,7 +17,7 @@
         "jeanzay_account": "nqf@v100",
         "jeanzay_gpu_with_memory": "v100", 
         "jeanzay_alignment_time": "10:00:00",
-        "jeanzay_jobarray_time": "00:20:00"
+        "jeanzay_jobarray_time": "02:00:00"
     },
     "MF_run": {
         "MF_run_model_preset": "multimer",
@@ -25,7 +25,7 @@
         "MF_run_dropout_structure_module": "false",
         "MF_run_dropout_rates_filename": "",
         "MF_run_templates": "true",
-        "MF_run_min_score": "1",
+        "MF_run_min_score": "0",
         "MF_run_max_batch_score": "1",
         "MF_run_max_recycles": "21",
         "MF_run_db_preset": "full_dbs",

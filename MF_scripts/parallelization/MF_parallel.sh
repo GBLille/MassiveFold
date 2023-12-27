@@ -25,7 +25,8 @@ Usage: $USAGE\n\
   Facultative options:\n\
     -c| --calibrate: calibrate --batch_size value. Searches for this sequence previous runs and uses\n\
         the longest prediction time found to compute the maximal number of prediction per batch.\n\
-        This maximal number depends on the total time given by --wall_time."
+        This maximal number depends on the total time given by --wall_time.\n\
+    -a| --recompute_msas: purges previous alignment step and recomputes msas."
 
   exit 1
 fi
@@ -37,12 +38,13 @@ calibration=false
 predictions_per_model=67
 batch_size=25
 wall_time=20
+force_msas_computation=false
 
 # argument parser
 while true; do
   case "$1" in
     -s|--sequence)
-      sequence_name=$2
+      sequence_file=$2
       shift 2
       ;;
     -r|--run)
@@ -81,6 +83,10 @@ while true; do
       wall_time=$2
       shift 2
       ;;
+    -a|--recompute_msas)
+      force_msas_computation=true
+      shift
+      ;;
     *)
       break
       ;;
@@ -89,7 +95,7 @@ done
 
 # check mandatory args
 if
-  [ -z "$sequence_name" ] ||
+  [ -z "$sequence_file" ] ||
   [ -z "$run_name" ] ||
   [ -z "$parameters_file" ]; then
   echo -e "Usage: $USAGE"
@@ -98,10 +104,11 @@ fi
 
 output_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['MF_parallel']['output_dir'])")
 logs_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['MF_parallel']['logs_dir'])")
-input_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['MF_parallel']['input_dir'])")
 
-if [ ! -f ${input_dir}/${sequence_name}.fasta ]; then
-  echo "No sequence named ${sequence_name}.fasta in input directory ${input_dir}, exiting."
+sequence_name=$(basename -s .fasta $sequence_file)
+
+if [ ! -f ${sequence_file} ]; then
+  echo "No sequence named ${sequence_name}.fasta in input directory $(dirname $sequence_file), exiting."
   exit 1
 fi
 
@@ -225,21 +232,35 @@ echo "Run $run_name on sequence $sequence_name with $predictions_per_model predi
 mkdir -p ${logs_dir}/${sequence_name}/${run_name}/
 cp ${sequence_name}_${run_name}_batches.json ${logs_dir}/${sequence_name}/${run_name}/
 
-# starts alignment only when not pre-existing
-if [ -d ${output_dir}/${sequence_name}/msas/ ]; then
-  echo -e "Detected msas for ${sequence_name} located ${output_dir}/${sequence_name}/msas/, using them.\n"
+
+# align when forcing or no precomputed and detected msas
+
+if [ ! -z $msas_precomputed ]; then
+  echo "Using precomputed msas at $msas_precomputed"
+elif [ -d ${output_dir}/${sequence_name}/msas/ ]; then
+  echo -e "Detected msas for ${sequence_name} at ${output_dir}/${sequence_name}/msas/, \
+  using them.\n"
   msas_precomputed="${output_dir}/${sequence_name}"
-elif [ -z ${msas_precomputed} ]; then
-  # Create and start alignment job
+fi
+
+waiting_for_alignment=false
+conditions_to_align="[[ \$force_msas_computation = true ]] || \
+                     ( [[ ! -d \${output_dir}/\${sequence_name}/msas/ ]] && \
+                       [[ -z \$msas_precomputed ]] )"
+
+if eval $conditions_to_align; then
+  echo "Running alignment for $sequence_name"
   ./create_jobfile.py \
-    --job_type=alignment \
-    --sequence_name=${sequence_name} \
-    --run_name=${run_name} \
-    --path_to_parameters=${parameters_file}
+  --job_type=alignment \
+  --sequence_name=${sequence_name} \
+  --run_name=${run_name} \
+  --path_to_parameters=${parameters_file}
 
   ALIGNMENT_ID=$(sbatch --parsable ${sequence_name}_${run_name}_alignment.slurm)
+  waiting_for_alignment=true
+
 elif [ -d  $msas_precomputed/msas ]; then
-  echo "Using precomputed msas at $msas_precomputed"
+  echo "$msas_precomputed are valid."
   mkdir -p ${output_dir}/${sequence_name}/
   ln -s $(realpath $msas_precomputed/msas) ${output_dir}/${sequence_name}/
 else
@@ -255,7 +276,7 @@ fi
   --path_to_parameters=${parameters_file} 
 
 # Only wait for alignment if not precomputed
-if ! [ -d $msas_precomputed/msas ]; then
+if [[ $waiting_for_alignment = true  ]]; then
   ARRAY_ID=$(sbatch --parsable --dependency=afterok:$ALIGNMENT_ID ${sequence_name}_${run_name}_jobarray.slurm)
 else
   ARRAY_ID=$(sbatch --parsable ${sequence_name}_${run_name}_jobarray.slurm)
