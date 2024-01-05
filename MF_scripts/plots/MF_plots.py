@@ -11,6 +11,9 @@ from absl import app
 import matplotlib.pyplot as plt
 from colabfold_plots import plot_msa_v2, plot_plddts, plot_confidence, plot_paes, plot_plddt_legend
 from scipy.stats import gaussian_kde
+import shutil
+
+
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string('input_path', None, 
@@ -25,13 +28,13 @@ flags.DEFINE_list('chosen_plots', [],
                   'CF_PAEs for all predictions PAEs on the plot and CF_plddts for all predictions plddt on the same plot.')
 flags.DEFINE_enum('action', "save", ["save", "show"], "Chose to save the plot or show them.")
 flags.DEFINE_string('output_path', None, 
-                    'Path to directory that will be store the plot, same as the input dir by default.')
+                    'Path to directory that will store the plot, same as the input dir by default.')
 flags.DEFINE_list('runs_to_compare', [], 'Runs you want to compare on their distribution')
 
 PLOT_TYPES = {
   "for_each": ["DM_plddt_PAE", "CF_plddt"],
   "one_for_all": ["CF_PAEs", "CF_plddts"],
-  "specific": ["coverage", "score_distribution", "distribution_comparison"]
+  "specific": ["coverage", "score_distribution", "distribution_comparison", "recycles"]
 }
 
 def extract_top_predictions():
@@ -183,7 +186,7 @@ def MF_versions_density(scores:dict):
     print("Saved as versions_density.png")
     plt.close(kde_versions)
 
-def MF_models_density(scores:dict):
+def MF_models_scores(scores:dict):
   try:
     scores = scores['iptm+ptm']
   except KeyError:
@@ -203,16 +206,30 @@ def MF_models_density(scores:dict):
   colors = {
   'boxes': '#add8e6',
   }
+
+# Create a boxplot with inclined x-axis labels
+  fig, ax = plt.subplots()
   ax = scores_per_model.boxplot(sym='g+', patch_artist=True, color = colors, flierprops=dict(markerfacecolor='red'))
   
   for box, color in zip(ax.artists, pastel_colors):
     box.set_facecolor(color)
 
   plt.grid(False)
+  
+  ax.set(
+    title="Ranking confidence boxplot per NN model",
+    xlabel="NN model",
+    ylabel="Ranking confidence"
+  )
+  ax.set_xticklabels(scores_per_model.columns, rotation=45)
+  ax.spines['top'].set_visible(False)
+  ax.spines['right'].set_visible(False)
   ax.set_ylim(bottom=0, top=1.1)
+  plt.tight_layout()
+  
   if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/models_density.png")
-    print("Saved as models_density.png")
+    plt.savefig(f"{FLAGS.output_path}/models_scores.png", dpi=100)
+    print("Saved as models_scores.png")
 
   plt.show()
   plt.close()
@@ -225,7 +242,7 @@ def MF_score_distribution(distribution_types):
   DISTRIBUTION_MAP = {
     "scores": MF_score_histogram,
     "versions_scores": MF_versions_density,
-    "models_scores":MF_models_density
+    "models_scores":MF_models_scores
   }
 
   for distrib in distribution_types:
@@ -260,6 +277,90 @@ def MF_distribution_comparison(sequence_path, runs):
   plt.savefig(f'{sequence_path}/distribution_compa.png')
   print('Saved as distribution_compa.png')
 
+def MF_extract_pred_recycle(log, relative_position):
+  with open(log, 'r') as log_file:
+    lines = log_file.readlines()
+  recycling_scores = [ float(score.strip()) for score in lines if score.strip()[:2] in ['0', '1', '0.'] ]
+  start_symbol = 0
+  end_symbol = 1
+
+  validity_conditions = [
+    recycling_scores[0] == start_symbol,
+    recycling_scores[-1] == end_symbol,
+    all([ recycling_scores[index+1] == start_symbol for index, element in enumerate(recycling_scores[:-1]) if element == end_symbol ])
+  ]
+  
+  if all(validity_conditions):
+    splited_recycle_scores = []
+    i = 0
+    for score in recycling_scores[:]:
+      if score == 1:
+        splited_recycle_scores.append(recycling_scores[1:i])
+        recycling_scores = recycling_scores[i+1:]
+        i = 0
+      else:
+        i+=1
+    return splited_recycle_scores[relative_position[0]]
+
+def MF_recycling():
+  all_models_pae = []
+  jobname = FLAGS.input_path
+  run = os.path.basename(jobname)
+  seq = os.path.basename(os.path.dirname(jobname))
+  logs_dir = os.path.join(jobname, '../../../log_parallel/', seq, run)
+  batches_file = os.path.join(logs_dir, f'{seq}_{run}_batches.json')
+  
+  preds_to_plot = extract_top_predictions()
+
+  recycle_dir = f'{FLAGS.output_path}/recycles/'
+  if not shutil.os.path.exists(recycle_dir):
+    shutil.os.makedirs(recycle_dir)
+    
+  with open(batches_file, 'r') as batches:
+    batches_to_model = json.load(batches)
+
+  model_to_batch = {}
+  for batch in batches_to_model:
+    start = int(batches_to_model[batch]['start'])
+    end = int(batches_to_model[batch]['end'])
+    model = batches_to_model[batch]['model']
+    if not model in model_to_batch:
+      model_to_batch[model] = {}
+    pred_to_batch = {pred: batch for pred in range(start, end + 1)}
+    model_to_batch[model].update(pred_to_batch)
+  
+  for pred in preds_to_plot:
+    pred_model, pred_nb = pred.split('_pred_')
+    
+    model_preds = model_to_batch[pred_model]
+    batch_number = model_preds[int(pred_nb)]
+    log_file = os.path.join(logs_dir, f"jobarray_{batch_number}.log")
+    all_preds_in_batch = sorted([ pred for pred in model_preds if model_preds[pred] == batch_number ])
+    position_in_batch = all_preds_in_batch.index(int(pred_nb))
+    batch_size = len(all_preds_in_batch)
+
+    relative_position = (position_in_batch, batch_size)
+
+    pred_recycles = MF_extract_pred_recycle(log_file, relative_position)
+    
+    if pred_recycles:
+      fig, ax = plt.subplots()
+    
+      ax.plot(np.linspace(0, len(pred_recycles) +1, len(pred_recycles)), pred_recycles)
+      ax.set_title(f"{pred_model}_pred_{pred_nb} score evolution during recycling")
+      ax.set_ylabel('Ranking confidence')
+      ax.set_xlabel('Recycles')
+      ax.set_ylim(bottom=0, top=1.1)
+
+      if FLAGS.action == "save":
+        plt.savefig(f"{recycle_dir}/{pred_model}_pred_{pred_nb}.png")
+        print(f"Saved as {pred_model}_pred_{pred_nb}.png")
+        plt.close()
+      if FLAGS.action == "show":
+        plt.show()
+    else:
+      print(f'Recycles are broken for {os.path.basename(log_file)}')
+
 def MF_plot():
   # plot names assignment
   chosen = []
@@ -280,7 +381,10 @@ def main(argv):
     raise ValueError(f"Chose either a plot type to have the default plots associated or\
 directly chose the plots you want.")
   if not FLAGS.output_path:
-    FLAGS.output_path = FLAGS.input_path
+    FLAGS.output_path = f"{FLAGS.input_path}/plots/"
+
+  if not shutil.os.path.exists(FLAGS.output_path):
+    shutil.os.makedirs(FLAGS.output_path)
 
   # Plot depending on the user specifications
   if "coverage" in FLAGS.chosen_plots:
@@ -290,7 +394,9 @@ directly chose the plots you want.")
     MF_score_distribution(types)
   if "distribution_comparison" in FLAGS.chosen_plots:
     MF_distribution_comparison(FLAGS.input_path, FLAGS.runs_to_compare)
-  
+  if "recycles" in FLAGS.chosen_plots:
+    MF_recycling()
+
   MF_plot()
 
 if __name__ == "__main__":
