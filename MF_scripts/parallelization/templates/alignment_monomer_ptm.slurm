@@ -31,7 +31,7 @@ echo "python3 $${run_AF_path}
     --uniref_max_hits=$${uniref_max_hits} 
     --uniref90_database_path=$${data_dir}/uniref90/uniref90.fasta 
     --mgnify_database_path=$${data_dir}/mgnify/mgy_clusters_2022_05.fa 
-    --template_mmcif_dir=$${data_dir}/pdb_mmcif 
+    --template_mmcif_dir=$${data_dir}/pdb_mmcif/mmcif_files
     --obsolete_pdbs_path=$${data_dir}/pdb_mmcif/obsolete.dat 
     --bfd_database_path=$${data_dir}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt 
     --pdb_seqres_database_path=$${data_dir}/pdb_seqres/pdb_seqres.txt 
@@ -54,7 +54,7 @@ time python3 $${run_AF_path} \
     --uniref_max_hits=$${uniref_max_hits} \
     --uniref90_database_path=$${data_dir}/uniref90/uniref90.fasta \
     --mgnify_database_path=$${data_dir}/mgnify/mgy_clusters_2022_05.fa \
-    --template_mmcif_dir=$${data_dir}/pdb_mmcif \
+    --template_mmcif_dir=$${data_dir}/pdb_mmcif/mmcif_files \
     --obsolete_pdbs_path=$${data_dir}/pdb_mmcif/obsolete.dat \
     --bfd_database_path=$${data_dir}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt \
     --pdb_seqres_database_path=$${data_dir}/pdb_seqres/pdb_seqres.txt \
