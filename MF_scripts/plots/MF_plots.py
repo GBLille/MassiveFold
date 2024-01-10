@@ -18,8 +18,6 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string('input_path', None, 
                     'Path to directory were the alphafold output to be plotted lies.')
-flags.DEFINE_enum('plot_type', "", ['one_for_all', 'for_each', ""],
-                  'Select either a global plot for all specified predictions or one plot for each of them.')
 flags.DEFINE_integer('top_n_predictions', 10, 
                      'Specify the number of predictions taken into account for plotting, it will be the n best predictions.')
 flags.DEFINE_list('chosen_plots', [], 
@@ -30,12 +28,6 @@ flags.DEFINE_enum('action', "save", ["save", "show"], "Chose to save the plot or
 flags.DEFINE_string('output_path', None, 
                     'Path to directory that will store the plot, same as the input dir by default.')
 flags.DEFINE_list('runs_to_compare', [], 'Runs you want to compare on their distribution')
-
-PLOT_TYPES = {
-  "for_each": ["DM_plddt_PAE", "CF_plddt"],
-  "one_for_all": ["CF_PAEs", "CF_plddts"],
-  "specific": ["coverage", "score_distribution", "distribution_comparison", "recycles"]
-}
 
 def extract_top_predictions():
   with open(f'{FLAGS.input_path}/ranking_debug.json', 'r') as json_file:
@@ -234,7 +226,8 @@ def MF_models_scores(scores:dict):
   plt.show()
   plt.close()
 
-def MF_score_distribution(distribution_types):
+def MF_score_distribution():
+  distribution_types = ["scores", "versions_scores", "models_scores"]
   jobname = FLAGS.input_path
   with open(f'{jobname}/ranking_debug.json', 'r') as json_scores:
     scores = json.load(json_scores)
@@ -248,14 +241,9 @@ def MF_score_distribution(distribution_types):
   for distrib in distribution_types:
     DISTRIBUTION_MAP[distrib](scores)
 
-PLOT_MAP = {
-  "DM_plddt_PAE": call_dual,
-  "CF_plddt": MF_indiv_plddt,
-  "CF_PAEs": CF_PAEs,
-  "CF_plddts": CF_plddts
-}
-
-def MF_distribution_comparison(sequence_path, runs):
+def MF_distribution_comparison():
+  sequence_path = FLAGS.input_path
+  runs = FLAGS.runs_to_compare
   all_scores = {}
   for run in runs:
     run_basename = os.path.basename(run)
@@ -280,29 +268,29 @@ def MF_distribution_comparison(sequence_path, runs):
 def MF_extract_pred_recycle(log, relative_position):
   with open(log, 'r') as log_file:
     lines = log_file.readlines()
-  recycling_scores = [ float(score.strip()) for score in lines if score.strip()[:2] in ['0', '1', '0.'] ]
+  recycle_scores = [ float(score.strip()) for score in lines if score.strip()[:2] in ['0', '1', '0.'] ]
   start_symbol = 0
   end_symbol = 1
 
   validity_conditions = [
-    recycling_scores[0] == start_symbol,
-    recycling_scores[-1] == end_symbol,
-    all([ recycling_scores[index+1] == start_symbol for index, element in enumerate(recycling_scores[:-1]) if element == end_symbol ])
+    recycle_scores[0] == start_symbol,
+    recycle_scores[-1] == end_symbol,
+    all([ recycle_scores[index+1] == start_symbol for index, element in enumerate(recycle_scores[:-1]) if element == end_symbol ])
   ]
   
   if all(validity_conditions):
     splited_recycle_scores = []
     i = 0
-    for score in recycling_scores[:]:
+    for score in recycle_scores[:]:
       if score == 1:
-        splited_recycle_scores.append(recycling_scores[1:i])
-        recycling_scores = recycling_scores[i+1:]
+        splited_recycle_scores.append(recycle_scores[1:i])
+        recycle_scores = recycle_scores[i+1:]
         i = 0
       else:
         i+=1
     return splited_recycle_scores[relative_position[0]]
 
-def MF_recycling():
+def MF_recycles():
   all_models_pae = []
   jobname = FLAGS.input_path
   run = os.path.basename(jobname)
@@ -347,7 +335,7 @@ def MF_recycling():
       fig, ax = plt.subplots()
     
       ax.plot(np.linspace(0, len(pred_recycles) +1, len(pred_recycles)), pred_recycles)
-      ax.set_title(f"{pred_model}_pred_{pred_nb} score evolution during recycling")
+      ax.set_title(f"{pred_model}_pred_{pred_nb} score evolution during recycles")
       ax.set_ylabel('Ranking confidence')
       ax.set_xlabel('Recycles')
       ax.set_ylim(bottom=0, top=1.1)
@@ -361,43 +349,33 @@ def MF_recycling():
     else:
       print(f'Recycles are broken for {os.path.basename(log_file)}')
 
-def MF_plot():
-  # plot names assignment
-  chosen = []
-  if FLAGS.chosen_plots:
-    chosen = FLAGS.chosen_plots
-  # if there is no plot names from the plot_type selected, add them by default
-  if FLAGS.plot_type and not set(chosen) & set(PLOT_TYPES[FLAGS.plot_type]):
-    chosen.extend(PLOT_TYPES[FLAGS.plot_type])
-
-  # plot all the chosen plots
-  for plot in chosen:
-    if plot not in PLOT_TYPES['specific']:
-      PLOT_MAP[plot]()
-
 def main(argv):
   FLAGS.input_path = os.path.realpath(FLAGS.input_path)
-  if not FLAGS.chosen_plots and not FLAGS.plot_type:
-    raise ValueError(f"Chose either a plot type to have the default plots associated or\
-directly chose the plots you want.")
+  MF_plots = {
+    "DM_plddt_PAE": call_dual,
+    "CF_plddt": MF_indiv_plddt,
+    "CF_PAEs": CF_PAEs,
+    "CF_plddts": CF_plddts,
+    "coverage": MF_coverage,
+    "score_distribution": MF_score_distribution,
+    "distribution_comparison": MF_distribution_comparison,
+    "recycles": MF_recycles
+    }
+
+  # Flags checking
+  if not FLAGS.input_path or not FLAGS.chosen_plots:
+    print('Required flags: --input_path and --chosen_plots')  
   if not FLAGS.output_path:
     FLAGS.output_path = f"{FLAGS.input_path}/plots/"
+  if "distribution_comparison" in FLAGS.chosen_plots and not FLAGS.runs_to_compare:
+    print('Flag --runs_to_compare is required for --chosen_plots=distribution_comparison')
+    FLAGS.chosen_plots = [ plot for plot in FLAGS.chosen_plots if plot != 'distribution_comparison' ]
+
 
   if not shutil.os.path.exists(FLAGS.output_path):
     shutil.os.makedirs(FLAGS.output_path)
-
-  # Plot depending on the user specifications
-  if "coverage" in FLAGS.chosen_plots:
-    MF_coverage()
-  if "score_distribution" in FLAGS.chosen_plots:
-    types = ["scores", "versions_scores", "models_scores"]
-    MF_score_distribution(types)
-  if "distribution_comparison" in FLAGS.chosen_plots:
-    MF_distribution_comparison(FLAGS.input_path, FLAGS.runs_to_compare)
-  if "recycles" in FLAGS.chosen_plots:
-    MF_recycling()
-
-  MF_plot()
+  for chosen_plot in FLAGS.chosen_plots:
+    MF_plots[chosen_plot]()
 
 if __name__ == "__main__":
   """ 
@@ -407,12 +385,6 @@ if __name__ == "__main__":
   https://colab.research.google.com/github/deepmind/alphafold/blob/main/notebooks/AlphaFold.ipynb
   
   Here are some basic commands:
-  python MF_plots.py --input_path ./jobname --plot_type one_for_all
-    -> group plots with values from all the top 10 predictions (default value of top_n_prediction parameter)
-  python MF_plots.py --input_path ./jobname --plot_type for_each --top_n_predictions 5
-    -> individual plots for each of the top 5 predictions
-  python MF_plots.py --input_path ./jobname --plot_type for_each --top_n_predictions 5 --chosen_plots CF_PAEs
-    -> mix plot_type by adding group PAE plot to the "for_each" individual ones
   python MF_plots.py --input_path ./jobname --chosen_plots coverage,CF_PAEs
     -> regardless of the plot type, plot alignment coverage and group PAE for top 10 predictions
   """
