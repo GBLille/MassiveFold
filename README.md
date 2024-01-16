@@ -12,9 +12,9 @@ Table of contents
     * [Examples](#example)
   * [MassiveFold in parallel](#running-massivefold-in-parallel)
       * [Setup](#setup-1)
+      * [Header Building](#jobfiles-header-building)
       * [Usage](#usage-1)
       * [Inference workflow](#inference-workflow)
-      * [Template Building](#template-building)
   * [Plots](#mf_plots-output-representation)
 
 
@@ -249,7 +249,7 @@ The file tree that the paths in the following step follow looks like this:
 └── massivefold_runs
     ├── input
         └── test_multimer.fasta
-    ├── log_parallel
+    ├── log
     │   └── test_multimer/basic
     │       ├── jobarray_0.log
     │       ...
@@ -261,7 +261,7 @@ The file tree that the paths in the following step follow looks like this:
     │       │   ...
     │       │   └── ranking_debug.json
     │       └── msas
-    └── pipeline
+    └── scripts
         ├── headers/
         ├── templates/
         ├── MF_parallel.sh
@@ -274,51 +274,48 @@ The file tree that the paths in the following step follow looks like this:
 ```
 To set up this file tree, follow these instructions:
 ```bash
-# move to location where you want to setup MassiveFold
-mkdir massivefold_runs
-cd massivefold_runs/
-mkdir input
-mkdir output
-mkdir log_parallel
-mkdir pipeline
-cp -r ../MassiveFold/MF_scripts/parallelization/* pipeline/
+# Chose where to install your massivefold runs directory
+./install.sh <INSTALLATION_PATH> <data_dir>
 ```
-2. Set paths in parameters
+The **data_dir** parameter should be the path used in AlphaFold2 installation where the databases are downloaded.
 
-Edit the json parameter located in MF_scripts/parallelization/params.json. In our example:
+2. Create header files  
+
+Refer to [Jobfile header building](#jobfiles-header-building) for this installation step.
+
+To run MassiveFold in parallel on your cluster/server, it is **required** to build custom jobfile headers for each step.  
+They have to be added in the path set in the **\<INSTALLATION_PATH>/scripts/headers/** directory that can be modified in the "jobfile_headers_dir" parameter of the params.json file.  
+Headers for Jean Zay cluster are provided as examples to follow (named *example_header_\<step>_jeanzay.slurm*).  
+
+
+3. Set custom parameters
+
+Edit the json parameter located in <INSTALLATION_PATH>/scripts/params.json. In our example:
 
 ```bash
-cd pipeline/
+cd <INSTALLATION_PATH>/massivefold_runs/scripts/
 ```
 And modify params.json:
 ```json
- "MF_parallel": {
+ "custom_params": {
     "run_massivefold": "../MassiveFold_dev/run_alphafold.py",
     "run_massivefold_plots": "../MassiveFold_dev/MF_scripts/plots/MF_plots.py",
     "jobfile_headers_dir": "./headers",
     "jobfile_templates_dir": "./templates",
-    "output_dir": "../output_array",
-    "logs_dir": "../log_parallel",
-    "input_dir": "../input",
+    "output_dir": "../output",
+    "logs_dir": "../log",
     "data_dir": "AlphaFold2 <DOWNLOAD_DIR>"
  },
 ...
 ```
 The **data_dir** parameter should be the path used in AlphaFold2 installation where the databases are downloaded.
 
-3. Create header files  
-
-To run MassiveFold in parallel on your cluster/server, it is **required** to build custom jobfile headers for each step. They have to be added in the path set in "jobfile_headers_dir". For slurm workload manager, headers for Jean Zay cluster are provided as examples to follow.  
-
-Refer to [Jobfile header building](#jobfiles-header-building) for this installation step.
-
 4. Launch a run
 
 Set the parameters of your run in the **MF_run** section of the **params.json** file, then run massivefold in parallel with, for instance:
 ```bash
-./MF_parallel -s test_multimer -r basic -p 67 -f params.json
+./MF_parallel -s ../input/test_multimer.fasta -r basic_run -p 67 -f params.json
 ```
-
 For more help, run:
 ```bash
 ./MF_parallel -h
@@ -379,17 +376,19 @@ On the git, we provide templates for the Jean Zay french CNRS national GPU clust
 - Add **\$new_parameter** or **\$\{new_parameter\}** in the template where you want its value to be set and in the 
 "custom_params" section of **run_params.json** where its value can be specified and changed for each run.
 
-- Example in the json parameters file for Jean Zay headers:
+**Example** in the json parameters file for Jean Zay headers:
 ```json
 ...
   "custom_params": {
-      "jeanzay_account": "nqf@v100",
+      "jeanzay_account": "project@v100",
       "jeanzay_gpu_with_memory": "v100-32g",
-      "jeanzay_jobarray_time": "03:00:00"
+      "jeanzay_jobarray_time": "10:00:00"
   },
 ...
 ```
-Are substituted in the following lines of the header:
+Where project is your 3 letter project with allocated hours on Jean Zay.
+
+- These parameters will be substitued in the header where the parameter keys are located:
 
 ```bash
 #SBATCH --account=$jeanzay_account
@@ -414,9 +413,8 @@ To use $ inside the template files (bash variables or other uses), use instead $
 
 ## Usage
 
-Usage:  
 ```bash
-./MF_parallel.sh -s your_sequence -r run_name -p predictions_per_model -f parameters_file 
+./MF_parallel.sh -s sequence_path -r run_name -p predictions_per_model -f parameters_file 
 ```
 Other facultative parameters can be set and can be consulted with:
 
@@ -459,7 +457,7 @@ However, **--model_preset=monomer_ptm** works too and needs to be adapted accord
 You can decide how the run will be divided by assigning **MF_parallel.sh** parameters *e.g.*:
 
 ```bash
-./MF_parallel.sh -s H1144 -r 1005_predictions -p 67 -b 25 -f run_params.json
+./MF_parallel.sh -s ..input/H1144.fasta -r 1005_preds -p 67 -b 25 -f run_params.json
 ```
 
 The predictions are computed individually for each neural network model,  **-p** or **--predictions_per_model** allows to specify 
@@ -501,16 +499,13 @@ It is presented as:
 
 ```json
    "MF_parallel": {
-       "run_massivefold": "",
-       "run_massivefold_plots": "",
-       "data_dir": "",
-       "alignment_header": "",
-       "jobarray_header": "",
-       "post_treatment_header": "",
-       "jobfile_templates_dir": "",
-       "output_dir": "",
-       "logs_dir": "",
-       "input_dir": "",
+       "run_massivefold": "<cloned_repo_path>/run_alphafold.py",
+       "run_massivefold_plots": "<cloned_repo_path>/MF_scripts/plots/MF_plots.py",
+       "data_dir": "<data_dir>",
+       "jobfile_header_dir": "<INSTALLATION_PATH>/headers/",
+       "jobfile_templates_dir": "<INSTALLATION_PATH>/templates",
+       "output_dir": "../output",
+       "logs_dir": "../log",
        "predictions_to_relax": "",
        "models_to_use": ""
    },
@@ -524,11 +519,11 @@ For instance, for the Jean Zay GPU cluster:
 ...
   "custom_params": 
     {
-      "jeanzay_project": "nqf",
-      "jeanzay_account": "nqf@v100",
+      "jeanzay_project": "project",
+      "jeanzay_account": "project@v100",
       "jeanzay_gpu_with_memory": "v100-32g",
       "jeanzay_alignment_time": "10:00:00",
-      "jeanzay_jobarray_time": "03:00:00"
+      "jeanzay_jobarray_time": "10:00:00"
     }
 ...
 ```
@@ -549,9 +544,9 @@ The non exposed parameters mentioned before are set in intern by the MF_parallel
     "MF_run_dropout_structure_module": "false",
     "MF_run_dropout_rates_filename": "",
     "MF_run_templates": "true",
-    "MF_run_score_threshold_output": "0",
-    "MF_run_max_score_stop": "1",
-    "MF_run_max_recycles": "21",
+    "MF_run_min_score": "0",
+    "MF_run_max_batch_score": "1",
+    "MF_run_max_recycles": "20",
     "MF_run_db_preset": "full_dbs",
     "MF_run_use_gpu_relax": "true",
     "MF_run_models_to_relax": "none",
@@ -573,13 +568,41 @@ Lastly, section **MF_plots** is used for the MassiveFold plotting module.
       "MF_plots_chosen_plots": "coverage,DM_plddt_PAE,CF_PAEs"
     }
 ```
-# MF_plots: output representation
+# massivefold_plots: output representation
 
+MassiveFold plotting module can be used on a MassiveFold output to represent its results efficiency.  
+
+Here is an example of a basic command you can run:
+```bash
+./massivefold_plots.py --input_path=<path_to_MF_output> --chosen_plots=DM_plddt_PAE
+```
+## Required arguments
+- **--input_path**: it designates MassiveFold output dir and the directory to store the plots except if you want them in a separate directory, use *--output_path* for this purpose
+
+- **--chosen_plots**: plots you want to get. You can give a list of plot names separated by a coma (e.g: *--chosen_plots=coverage,DM_plddt_PAE,CF_PAEs*). This is the list of all the plots available:
+  * DM_plddt_PAE: Deepmind's plot for predicted lddt per residue and predicted aligned error matrix
+  ![header](imgs/plot_illustrations/plddt_PAES.png)
+  * CF_plddt:
+  * CF_PAEs: Colabfold's plot for predicted aligned error of the n best predictions set with *--top_n_predictions*
+  ![header](imgs/plot_illustrations/PAEs.png)
+  * CF_plddts:
+  ![header](imgs/plot_illustrations/plddts.png)
+  * coverage: Colabfold's plot for sequence alignment coverage
+  ![header](imgs/plot_illustrations/coverage.png)
+  * score_distribution:
+  * distribution_comparison: ranking confidence distribution comparison between different massivefold outputs, tipically useful for runs with different parameters on the same sequence.
+  ![header](imgs/plot_illustrations/distribution_comparison.png)
+  * recycles: ranking confidence during the recycle process
+  ![header](imgs/plot_illustrations/recycles.png)
+
+## Facultative arguments
+- *--top_n_predictions*: (default 10), number of predictions taken into account for plotting, it will be the n best predictions
+- *--runs_to_compare*: names of the runs you want to compare on their distribution,this argument is coupled with **--chosen_plots=distribution_comparison**
 
 # Authors
 Guillaume Brysbaert (UGSF - UMR 8576, France)  
-Nessim Raouraoua (UGSF - UMR 8576, France)
-Marc F Lensink (UGSF - UMR8576, France)
+Nessim Raouraoua (UGSF - UMR 8576, France)  
+Marc F Lensink (UGSF - UMR8576, France)  
 Christophe Blanchet (IFB, France)  
 Claudio Mirabello (NBIS, Sweden)  
 Björn Wallner (Linköping University, Sweden)  

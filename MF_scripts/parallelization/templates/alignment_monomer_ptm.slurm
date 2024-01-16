@@ -34,10 +34,8 @@ echo "python3 $${run_AF_path}
     --template_mmcif_dir=$${data_dir}/pdb_mmcif/mmcif_files
     --obsolete_pdbs_path=$${data_dir}/pdb_mmcif/obsolete.dat 
     --bfd_database_path=$${data_dir}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt 
-    --pdb_seqres_database_path=$${data_dir}/pdb_seqres/pdb_seqres.txt 
-    --uniref30_database_path=$${data_dir}/uniref30/UniRef30_2021_03 
-    --uniprot_database_path=$${data_dir}/uniprot/uniprot.fasta"
-
+    --pdb70_database_path=$${data_dir}/pdb70/pdb70
+    --uniref30_database_path=$${data_dir}/uniref30/UniRef30_2021_03" 
 
 time python3 $${run_AF_path} \
     --alignments_only=$${alignments_only} \
@@ -57,8 +55,7 @@ time python3 $${run_AF_path} \
     --template_mmcif_dir=$${data_dir}/pdb_mmcif/mmcif_files \
     --obsolete_pdbs_path=$${data_dir}/pdb_mmcif/obsolete.dat \
     --bfd_database_path=$${data_dir}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt \
-    --pdb_seqres_database_path=$${data_dir}/pdb_seqres/pdb_seqres.txt \
-    --uniref30_database_path=$${data_dir}/uniref30/UniRef30_2021_03 \
-    --uniprot_database_path=$${data_dir}/uniprot/uniprot.fasta
+    --pdb70_database_path=$${data_dir}/pdb70/pdb70 \
+    --uniref30_database_path=$${data_dir}/uniref30/UniRef30_2021_03
 
 date

@@ -21,7 +21,7 @@
         "MF_run_templates": "true",
         "MF_run_min_score": "1",
         "MF_run_max_batch_score": "1",
-        "MF_run_max_recycles": "21",
+        "MF_run_max_recycles": "20",
         "MF_run_db_preset": "full_dbs",
         "MF_run_use_gpu_relax": "true",
         "MF_run_models_to_relax": "none",
@@ -33,6 +33,6 @@
     },
     "MF_plots": {
         "MF_plots_top_n_predictions": "5",
-        "MF_plots_chosen_plots": "coverage,DM_plddt_PAE,CF_PAEs"
+        "MF_plots_chosen_plots": "coverage,DM_plddt_PAE,CF_PAEs,score_distribution"
     }
 }

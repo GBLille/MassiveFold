@@ -181,9 +181,10 @@ def MF_versions_density(scores:dict):
 def MF_models_scores(scores:dict):
   try:
     scores = scores['iptm+ptm']
+    s_type = 'iptm+ptm'
   except KeyError:
     scores = scores['plddts']
-
+    s_type = "plddts"
   # Score distribution by NN model
   NN_models = {prediction.split('_pred')[0]: [] for prediction in scores}
   for model in scores:
@@ -198,7 +199,6 @@ def MF_models_scores(scores:dict):
   colors = {
   'boxes': '#add8e6',
   }
-
 # Create a boxplot with inclined x-axis labels
   fig, ax = plt.subplots()
   ax = scores_per_model.boxplot(sym='g+', patch_artist=True, color = colors, flierprops=dict(markerfacecolor='red'))
@@ -216,14 +216,18 @@ def MF_models_scores(scores:dict):
   ax.set_xticklabels(scores_per_model.columns, rotation=45)
   ax.spines['top'].set_visible(False)
   ax.spines['right'].set_visible(False)
-  ax.set_ylim(bottom=0, top=1.1)
+  if s_type == 'iptm+ptm':
+    ax.set_ylim(bottom=0, top=1.1)
+  elif s_type == 'plddts':
+    ax.set_ylim(bottom=0, top=110)
   plt.tight_layout()
   
   if FLAGS.action == "save":
     plt.savefig(f"{FLAGS.output_path}/models_scores.png", dpi=100)
     print("Saved as models_scores.png")
 
-  plt.show()
+  if FLAGS.action == "show":
+    plt.show()
   plt.close()
 
 def MF_score_distribution():
@@ -249,7 +253,12 @@ def MF_distribution_comparison():
     run_basename = os.path.basename(run)
     scores = []
     with open(f"{sequence_path}/{run}/ranking_debug.json" ,'r') as json_file:
-      run_scores = json.load(json_file)['iptm+ptm']
+      run = json.load(json_file)
+      try:
+        run_scores = run['iptm+ptm']
+      except KeyError:
+        run_scores = run['plddts']
+
     run_scores = [run_scores[score] for score in run_scores]
     if len(runs) <= 3:
       plt.hist(run_scores, bins=30, alpha=0.5, label=run_basename)
@@ -342,7 +351,7 @@ def MF_recycles():
 
       if FLAGS.action == "save":
         plt.savefig(f"{recycle_dir}/{pred_model}_pred_{pred_nb}.png")
-        print(f"Saved as {pred_model}_pred_{pred_nb}.png")
+        print(f"Saved as recycles/{pred_model}_pred_{pred_nb}.png")
         plt.close()
       if FLAGS.action == "show":
         plt.show()
@@ -362,11 +371,12 @@ def main(argv):
     "recycles": MF_recycles
     }
 
-  # Flags checking
+  # Flags checking²
   if not FLAGS.input_path or not FLAGS.chosen_plots:
     print('Required flags: --input_path and --chosen_plots')  
   if not FLAGS.output_path:
     FLAGS.output_path = f"{FLAGS.input_path}/plots/"
+  print(f"Plot are stored in {FLAGS.output_path}")
   if "distribution_comparison" in FLAGS.chosen_plots and not FLAGS.runs_to_compare:
     print('Flag --runs_to_compare is required for --chosen_plots=distribution_comparison')
     FLAGS.chosen_plots = [ plot for plot in FLAGS.chosen_plots if plot != 'distribution_comparison' ]

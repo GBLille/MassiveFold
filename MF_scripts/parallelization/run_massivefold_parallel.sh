@@ -39,6 +39,7 @@ predictions_per_model=67
 batch_size=25
 wall_time=20
 force_msas_computation=false
+only_msas=false
 
 # argument parser
 while true; do
@@ -82,6 +83,11 @@ while true; do
     -w|--wall_time)
       wall_time=$2
       shift 2
+      ;;
+    -o|--only_msas)
+      only_msas=true
+      force_msas_computation=true
+      shift
       ;;
     -a|--recompute_msas)
       force_msas_computation=true
@@ -258,7 +264,10 @@ if eval $conditions_to_align; then
 
   ALIGNMENT_ID=$(sbatch --parsable ${sequence_name}_${run_name}_alignment.slurm)
   waiting_for_alignment=true
-
+  if $only_msas; then
+    echo "Only run sequence alignment."
+    exit 1
+  fi
 elif [ -d  $msas_precomputed/msas ]; then
   echo "$msas_precomputed are valid."
   mkdir -p ${output_dir}/${sequence_name}/
