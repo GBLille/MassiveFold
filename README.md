@@ -25,11 +25,11 @@ The script `scripts/download_all_data.sh` can be used to download and set up all
     scripts/download_all_data.sh <DOWNLOAD_DIR>
     ```
 
-For more details, read the documentation provided on by [AlphaFold2](https://github.com/google-deepmind/alphafold/#genetic-databases). 
+For more details, read the documentation provided by [AlphaFold2](https://github.com/google-deepmind/alphafold/#genetic-databases). 
 
 ### AlphaFold models parameters
 
-MassiveFold uses several neural network (NN) model parameters provided by different versions of [AlphaFold2](https://github.com/google-deepmind/alphafold/) including versions `2.1.*`, `2.2.*` and `2.3.*`. I you have already installed the genetic databases for [AlphaFold2 2.3.2](https://github.com/google-deepmind/alphafold/), then you have to copy the v1 and v2 neural network (NN) model parameters in the `<DOWNLOAD_DIR>/params` folder created during the installlation of the genetic databases.
+MassiveFold uses several neural network (NN) model parameters provided by different versions of [AlphaFold2](https://github.com/google-deepmind/alphafold/) including versions `2.1.*`, `2.2.*` and `2.3.*`. If you have already installed the genetic databases for [AlphaFold2 2.3.2](https://github.com/google-deepmind/alphafold/), then you have to copy the v1 and v2 neural network (NN) model parameters in the `<DOWNLOAD_DIR>/params` folder created during the installlation of the genetic databases.
 
 Parameters for monomer and multimer v1 (used by AlphaFold [v2.1.0](https://github.com/google-deepmind/alphafold/tree/v2.1.0)) are available here: https://storage.googleapis.com/alphafold/alphafold_params_2021-10-27.tar
 
