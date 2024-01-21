@@ -9,12 +9,55 @@ These optimizations are described below with the flags that were added to the ge
 
 It was started with a fork of the DeepMind's AlphaFold v2.3.1 - 10/03/2023: https://github.com/deepmind/alphafold
 
-# Setup
-The setup is the same as the one for AlphaFold v2.3 except that this repository has to be used instead of the DeepMind's
-one. However, v1 and v2 neural network (NN) model parameters have to be present in the
-*param* folder and should contain the version number in the name.  
-Therefore, the list of NN model parameters in the folder should be as follows:
+The setup is the same as the one for AlphaFold v2.3 except that this repository has to be used instead of the DeepMind's one. 
 
+## Installation
+
+### Genetic databases
+
+MassiveFold requires the installation of the genetic databases which are provided by [AlphaFold2](https://github.com/google-deepmind/alphafold/). 
+
+The script `scripts/download_all_data.sh` can be used to download and set up all of the databases:
+
+*   Recommended default:
+
+    ```bash
+    scripts/download_all_data.sh <DOWNLOAD_DIR>
+    ```
+
+For more details, read the documentation provided on by [AlphaFold2](https://github.com/google-deepmind/alphafold/#genetic-databases). 
+
+### AlphaFold models parameters
+
+MassiveFold uses several neural network (NN) model parameters provided by different versions of [AlphaFold2](https://github.com/google-deepmind/alphafold/) including versions `2.1.*`, `2.2.*` and `2.3.*`. I you have already installed the genetic databases for [AlphaFold2 2.3.2](https://github.com/google-deepmind/alphafold/), then you have to copy the v1 and v2 neural network (NN) model parameters in the `<DOWNLOAD_DIR>/params` folder created during the installlation of the genetic databases.
+
+Parameters for monomer and multimer v1 (used by AlphaFold [v2.1.0](https://github.com/google-deepmind/alphafold/tree/v2.1.0)) are available here: https://storage.googleapis.com/alphafold/alphafold_params_2021-10-27.tar
+
+```bash
+ALPHAFOLD_PARAMS="alphafold_params_2021-10-27.tar"
+wget https://storage.googleapis.com/alphafold/${ALPHAFOLD_PARAMS}
+tar xf ${ALPHAFOLD_PARAMS} -C <DOWNLOAD_DIR>/params`
+```
+
+Parameters for monomer and multimer v2 (used by AlphaFold [v2.2.0](https://github.com/google-deepmind/alphafold/blob/v2.2.0), [v2.2.1](https://github.com/google-deepmind/alphafold/blob/v2.2.1), [v2.2.2](https://github.com/google-deepmind/alphafold/blob/v2.2.2), [v2.2.3](https://github.com/google-deepmind/alphafold/blob/v2.2.3), [v2.2.4](https://github.com/google-deepmind/alphafold/blob/v2.2.4)) are available here: https://storage.googleapis.com/alphafold/alphafold_params_2022-03-02.tar
+
+```bash
+ALPHAFOLD_PARAMS="alphafold_params_2022-03-02.tar"
+wget https://storage.googleapis.com/alphafold/${ALPHAFOLD_PARAMS}
+tar xf ${ALPHAFOLD_PARAMS} -C <DOWNLOAD_DIR>/params`
+```
+
+Parameters for monomer and multimer v3 (used by AlphaFold [v2.3.0](https://github.com/google-deepmind/alphafold/blob/v2.3.0), [v2.3.1](https://github.com/google-deepmind/alphafold/blob/v2.3.1), [v2.3.2](https://github.com/google-deepmind/alphafold/blob/v2.3.2)) are available here: https://storage.googleapis.com/alphafold/alphafold_params_2022-12-06.tar
+
+```bash
+ALPHAFOLD_PARAMS="alphafold_params_2022-12-06.tar"
+wget https://storage.googleapis.com/alphafold/${ALPHAFOLD_PARAMS}
+tar xf ${ALPHAFOLD_PARAMS} -C <DOWNLOAD_DIR>/params`
+```
+
+Once the installation completed, the list of NN model parameters in the `<DOWNLOAD_DIR>/params` folder should be as follows:
+
+```
 params_model_1_multimer_v1.npz  
 params_model_1_multimer_v2.npz  
 params_model_1_multimer_v3.npz  
@@ -40,12 +83,12 @@ params_model_5_multimer_v2.npz
 params_model_5_multimer_v3.npz  
 params_model_5.npz  
 params_model_5_ptm.npz  
+```
 
-Parameters for monomer and multimer v3 are available here: https://storage.googleapis.com/alphafold/alphafold_params_2022-12-06.tar  
-Parameters for monomer and multimer v2 are available here: https://storage.googleapis.com/alphafold/alphafold_params_2022-03-02.tar  
-Parameters for monomer and multimer v1 are available here: https://storage.googleapis.com/alphafold/alphafold_params_2021-10-27.tar  
+## Running MassiveFold
 
-# Added flags
+### New flags added in MassiveFold with respect to AlphaFold
+
 Here is the list of the flags added to AlphaFold 2.3.1 (this intermediate version of AlphaFold includes the flags of 2.3.2) and their description, also accessible through the --help
 option.
 
@@ -97,14 +140,15 @@ option.
     (default: 'false')  
   **--template_mmcif_dir**: path to a directory with template mmCIF structures, each named <pdb_id>.cif  
 
-# Dropout
+### Dropout
+
 The dropout at inference can be activated with the **--dropout** flag set to true. 
 In this case, the same dropout rates as those used by DeepMind at training are used. Here are DeepMind's architectural details (Jumper J et al, Nature, 2021 - Fig 3.a),
 annotated by Björn Wallner for CASP15 (https://predictioncenter.org/), that shows the various dropout rates:  
 
 ![Dropout](imgs/dropout_arch.png)
 
-However, the **--dropout_rates_filename** flag allows to modify these rates, providing them in a json file. Here is an example of the content of
+However, the `--dropout_rates_filename` flag allows to modify these rates, providing them in a json file. Here is an example of the content of
 such a json file:
 ```json
 {  
@@ -121,15 +165,18 @@ such a json file:
 }  
 ```
 
-# Example
+### Example
+
 Here is an example how to run a multimer prediction with all versions of model parameters, without templates,
 activating dropout at inference, with 100 recycles max and early stop tolerance set at 0.2 Angströms. The flags can be set in a separated 
-text file called for instance *flags.flg* and called by the command line:
+text file called for instance `flags.flg` and called by the command line:
+
 ```bash
 python3 ./run_alphafold.py --flagfile=./flags.flg
 ```
-the *flags.flg* flag file containing:  
+the `flags.flg` flag file contains:  
 
+```
 --fasta_paths=./seq.fasta  
 --output_dir=./output  
 --data_dir=*path_to_set*  
@@ -141,7 +188,7 @@ the *flags.flg* flag file containing:
 --pdb_seqres_database_path=*path_to_set*  
 --uniref30_database_path=*path_to_set*  
 --uniprot_database_path=*path_to_set*  
---max_template_date=2023-05-01  
+--max_template_date=2024-01-01
 --use_precomputed_msas=true  
 --num_predictions_per_model=5  
 --models_to_relax=best  
@@ -159,17 +206,19 @@ the *flags.flg* flag file containing:
 --models_to_use=  
 --start_prediction=1  
 --no_templates=true  
+```
 
-To only use a selection of models, separate them with a comma in the ***--models_to_use*** flag, *e.g.*:  
---models_to_use=model_3_multimer_v1,model_3_multimer_v3  
+To only use a selection of models, separate them with a comma in the `--models_to_use` flag, *e.g.*:
+`--models_to_use=model_3_multimer_v1,model_3_multimer_v3`
 
 A script is also provided to relax only one structure. The pkl file of the prediction has to be given in parameters and the 
-*features.pkl* file must be present in the folder. *e.g.*:
+`features.pkl` file must be present in the folder. *e.g.*:
+
 ```bash
 python3 run_relax_from_results_pkl.py result_model_4_multimer_v3_pred_0.pkl
 ```
 
-# Authors
+## Authors
 Guillaume Brysbaert (UGSF - UMR 8576, France)  
 Nessim Raouraoua (UGSF - UMR 8576, France)  
 Christophe Blanchet (IFB, France)  
