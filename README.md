@@ -2,32 +2,38 @@
 
 # MassiveFold
 
-Table of contents
-=================
+## Table of contents
+<!-- TOC -->
+* [Setup](#setup)
+* [Added parameters](#added-parameters)
+* [Dropout](#dropout)
+* [Usage](#usage)
+  * [Example](#example)
+* [Running MassiveFold in parallel](#running-massivefold-in-parallel)
+  * [Setup](#setup-1)
+    * [Jobfile's header building](#jobfiles-header-building)
+      * [How to add a parameter](#how-to-add-a-parameter)
+  * [Usage](#usage-1)
+    * [Inference workflow](#inference-workflow)
+    * [Run parameters](#run-parameters)
+      * [Parameters in MF_parallel.sh](#parameters-in-mf_parallelsh)
+      * [Parameters in the json file](#parameters-in-the-json-file)
+* [massivefold_plots: output representation](#massivefold_plots-output-representation)
+  * [Required arguments](#required-arguments)
+  * [Facultative arguments](#facultative-arguments)
+* [Authors](#authors)
+<!-- TOC -->
 
-  * [Setup](#setup)
-  * [Added parameters](#added-parameters)
-  * [Dropout](#dropout)
-  * [Usage](#usage)
-    * [Examples](#example)
-  * [MassiveFold in parallel](#running-massivefold-in-parallel)
-      * [Setup](#setup-1)
-      * [Header Building](#jobfiles-header-building)
-      * [Usage](#usage-1)
-      * [Inference workflow](#inference-workflow)
-  * [Plots](#mf_plots-output-representation)
+MassiveFold aims at massively expanding the sampling of structure predictions by improving the computing of AlphaFold 
+based predictions. It optimizes the parallelization of the structure inference by splitting the computing on CPU 
+for alignments, running automatically batches of structure predictions on GPU, finally gathering all the results in one  
+final folder, with a global ranking and various plots.
 
+MassiveFold uses AFmassive (https://github.com/GBLille/AFmassive), a modified AlphaFold version that integrates diversity  
+parameters for massive sampling, as an updated version of Björn Wallner's AFsample version of AlphaFold  
+(https://github.com/bjornwallner/alphafoldv2.2.0/).
 
-This AlphaFold version aims at massively expanding the sampling of structure predictions following Björn Wallner's 
-AFsample version of AlphaFold (https://github.com/bjornwallner/alphafoldv2.2.0/)  and to provide some optimizations in the computing.  
-In particular, it optimizes the parallellization of the computing, generating automatically batches of predictions that can be run in parallel. 
-The size of these batches is automatically calculated running a first calibrating run or set manually. All the results are then gathered 
-in a same folder and a final global ranking is performed on all the produced structures.
-The optimizations and the parameters added to the genuine DeepMind's AlphaFold are described below.
-
-MassiveFold is an extended version of DeepMind's AlphaFold v2.3.2: https://github.com/deepmind/alphafold
-
-# Setup
+# Installation
 The setup is the same as the one for AlphaFold v2.3 except that this repository has to be used instead of the DeepMind's one.  
 We use an installation based on conda. You can install it following these steps https://github.com/kalininalab/alphafold_non_docker
 or using the conda environment file that we provide (env.yml). In this last case, don't forget to apply the OpenMM patch and 
