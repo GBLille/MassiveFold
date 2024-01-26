@@ -37,5 +37,5 @@ dependencies:
       - pandas==1.3.4
       - scipy==1.7.3
       - tensorflow-cpu==2.11.0
-      - git+https://github.com/GBLille/MassiveFold@MFv1.0.0
+      - git+https://github.com/GBLille/AFmassive@AFMv1.1.0
       - https://storage.googleapis.com/jax-releases/cuda11/jaxlib-0.3.25+cuda11.cudnn805-cp38-cp38-manylinux2014_x86_64.whl

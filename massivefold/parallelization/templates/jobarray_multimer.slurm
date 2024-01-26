@@ -8,7 +8,7 @@ sequence_name=$sequence_name
 run_name=$run_name
 echo "&${run_massivefold}&"
 fafile=${input_dir}/$${sequence_name}.fasta
-run_AF_path=$run_massivefold
+run_massivefold=$run_massivefold
 data_dir=$data_dir
 
 output_dir=$$(realpath ${output_dir})
@@ -49,7 +49,7 @@ batch_end=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batc
 
 echo Model used is $$batch_model, batch computed between prediction $$batch_start and $$batch_end
 
-echo "python3 $${run_AF_path}
+echo "$${run_massivefold}
     --fasta_paths=$${fafile}
     --output_dir=$${output_path}
     --data_dir=$${data_dir}
@@ -85,7 +85,7 @@ echo "python3 $${run_AF_path}
     --uniprot_database_path=$${data_dir}/uniprot/uniprot.fasta
 "
 
-time python3 $${run_AF_path} \
+time $${run_massivefold} \
     --fasta_paths=$${fafile} \
     --output_dir=$${output_path} \
     --data_dir=$${data_dir} \

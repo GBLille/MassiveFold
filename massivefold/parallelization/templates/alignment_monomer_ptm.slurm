@@ -1,7 +1,7 @@
 # variables to adapt: used for alignment
 sequence_name=$sequence_name
 run_name=$run_name
-run_AF_path=$run_massivefold
+run_massivefold=$run_massivefold
 output=$output_dir
 fafile=${input_dir}/$${sequence_name}.fasta
 data_dir=$data_dir
@@ -16,7 +16,7 @@ uniprot_max_hits=50000
 uniref_max_hits=10000
 use_gpu_relax=false
 
-echo "python3 $${run_AF_path} 
+echo "$${run_massivefold}
     --alignments_only=$${alignments_only} 
     --fasta_paths=$${fafile} 
     --output_dir=$${output} 
@@ -37,7 +37,7 @@ echo "python3 $${run_AF_path}
     --pdb70_database_path=$${data_dir}/pdb70/pdb70
     --uniref30_database_path=$${data_dir}/uniref30/UniRef30_2021_03" 
 
-time python3 $${run_AF_path} \
+time $${run_massivefold} \
     --alignments_only=$${alignments_only} \
     --fasta_paths=$${fafile} \
     --output_dir=$${output} \
