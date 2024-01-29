@@ -17,6 +17,16 @@ elif [ ! -d $alphafold_databases ]; then
   exit 1
 fi
 
+# create massivefold env
+conda create env -f environment.yml
+
+# add run_AFmassive.py and massivefold_plots.py in path (python executables)
+wget -O $CONDA_PREFIX/bin/run_AFmassive.py https://raw.githubusercontent.com/GBLille/AFmassive/devs_l/run_AFmassive.py
+chmod +x $CONDA_PREFIX/bin/run_AFmassive.py
+cp massivefold/massivefold_plots.py $CONDA_PREFIX/bin/massivefold_plots.py
+chmod +x $CONDA_PREFIX/bin/massivefold_plots.py
+
+# set file tree
 runs=$install_path/massivefold_runs
 mkdir -p $runs/input
 mkdir $runs/output
@@ -34,7 +44,7 @@ cp massivefold/parallelization/*.json $pipeline
 cp -r massivefold/parallelization/templates $pipeline
 cp massivefold/run_massivefold.sh $pipeline
 
-
+# parameters auto setting
 param_file=$pipeline/params.json
 params_with_paths=$(cat $param_file | python3 -c "
 import json

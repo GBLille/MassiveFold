@@ -1,5 +1,5 @@
 {
-    "MF_parallel": {
+    "massivefold": {
         "run_massivefold": "",
         "run_massivefold_plots": "",
         "data_dir": "/gpfsdswork/dataset/AlphaFold-2.3.1",
@@ -19,25 +19,25 @@
         "jeanzay_alignment_time": "10:00:00",
         "jeanzay_jobarray_time": "02:00:00"
     },
-    "MF_run": {
-        "MF_run_model_preset": "multimer",
-        "MF_run_dropout": "false",
-        "MF_run_dropout_structure_module": "false",
-        "MF_run_dropout_rates_filename": "",
-        "MF_run_templates": "true",
-        "MF_run_min_score": "0",
-        "MF_run_max_batch_score": "1",
-        "MF_run_max_recycles": "21",
-        "MF_run_db_preset": "full_dbs",
-        "MF_run_use_gpu_relax": "true",
-        "MF_run_models_to_relax": "none",
-        "MF_run_early_stop_tolerance": "0.5",
-        "MF_run_bfd_max_hits": "100000",
-        "MF_run_mgnify_max_hits": "501",
-        "MF_run_uniprot_max_hits": "50000",
-        "MF_run_uniref_max_hits": "10000"
+    "AFM_run": {
+        "AFM_run_model_preset": "multimer",
+        "AFM_run_dropout": "false",
+        "AFM_run_dropout_structure_module": "false",
+        "AFM_run_dropout_rates_filename": "",
+        "AFM_run_templates": "true",
+        "AFM_run_min_score": "0",
+        "AFM_run_max_batch_score": "1",
+        "AFM_run_max_recycles": "21",
+        "AFM_run_db_preset": "full_dbs",
+        "AFM_run_use_gpu_relax": "true",
+        "AFM_run_models_to_relax": "none",
+        "AFM_run_early_stop_tolerance": "0.5",
+        "AFM_run_bfd_max_hits": "100000",
+        "AFM_run_mgnify_max_hits": "501",
+        "AFM_run_uniprot_max_hits": "50000",
+        "AFM_run_uniref_max_hits": "10000"
     },
-    "MF_plots": {
+    "plots": {
         "MF_plots_top_n_predictions": "5",
         "MF_plots_chosen_plots": "coverage,DM_plddt_PAE,CF_PAEs,score_distribution,recycles"
     }

@@ -52,8 +52,8 @@ def main(argv):
   with open(FLAGS.path_to_parameters, 'r') as params:
     all_params = json.load(params)
   
-  models = all_params['MF_parallel']['models_to_use']
-  model_preset = all_params['MF_run']['MF_run_model_preset']  
+  models = all_params['massivefold']['models_to_use']
+  model_preset = all_params['AFM_run']['AFM_run_model_preset']  
 
   if model_preset == 'multimer':
     model_names = [

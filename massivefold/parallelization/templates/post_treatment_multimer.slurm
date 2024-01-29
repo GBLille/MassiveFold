@@ -3,7 +3,6 @@ run_name=$run_name
 output=${output_dir}/$${sequence_name}/$${run_name}/
 mf_plots_path=$run_massivefold_plots
 
-
 # rename and move files
 echo "time ./organize_outputs.py --batches_path $$output"
 time ./organize_outputs.py --batches_path $$output

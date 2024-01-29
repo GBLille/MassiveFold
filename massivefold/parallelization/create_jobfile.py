@@ -24,9 +24,9 @@ def create_all_jobfile(templates:dict, params:dict):
     create_single_jobfile(jobtype, templates, params)
 
 def group_templates(all_params, job_types:list):
-  templates_paths = all_params['MF_parallel']
-  sequence = all_params['MF_parallel']['sequence_name']
-  run = all_params['MF_parallel']['run_name']
+  templates_paths = all_params['massivefold']
+  sequence = all_params['massivefold']['sequence_name']
+  run = all_params['massivefold']['run_name']
   grouped_templates = {}
   
   model_preset = all_params['MF_run']['MF_run_model_preset']
@@ -65,25 +65,25 @@ def main(argv):
   with open(FLAGS.path_to_parameters, 'r') as parameters_json:
     all_params = json.load(parameters_json)
 
-  all_params['MF_parallel']['sequence_name'] = FLAGS.sequence_name
-  all_params['MF_parallel']['run_name'] = FLAGS.run_name
+  all_params['massivefold']['sequence_name'] = FLAGS.sequence_name
+  all_params['massivefold']['run_name'] = FLAGS.run_name
 
-  run_params.update(all_params['MF_parallel'])
+  run_params.update(all_params['massivefold'])
   run_params.update(all_params['custom_params'])
-  run_params.update(all_params['MF_run'])
-  run_params.update(all_params['MF_plots'])
+  run_params.update(all_params['AFM_run'])
+  run_params.update(all_params['plots'])
 
   if FLAGS.job_type == "jobarray":  
     print("Parameters of the run:")
     for i in all_params['custom_params']:
       print(f"{i}: {all_params['custom_params'][i]}")
-    for i in all_params['MF_run']:
-      print(f"{i}: {all_params['MF_run'][i]}")
+    for i in all_params['AFM_runs']:
+      print(f"{i}: {all_params['AFM_run'][i]}")
     print()
   if FLAGS.job_type == "post_treatment":
     print("Parameters for plots:")
-    for i in all_params['MF_plots']:
-      print(f"{i}: {all_params['MF_plots'][i]}")
+    for i in all_params['plots']:
+      print(f"{i}: {all_params['plots'][i]}")
 
   if FLAGS.job_type != 'all':
     all_templates = group_templates(all_params, [FLAGS.job_type])
