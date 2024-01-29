@@ -39,6 +39,16 @@ wget https://storage.googleapis.com/alphafold/${ALPHAFOLD_PARAMS}
 tar xf ${ALPHAFOLD_PARAMS} -C <DOWNLOAD_DIR>/params
 ```
 
+After download, rename all the files for the multimer model to add the `_v1` suffix:
+
+```bash
+for model in $(seq 5); do
+  mv params_model_${model}_multimer.npz params_model_${model}_multimer_v1.npz
+done
+```
+
+params_model_1_multimer_v1.npz
+
 Parameters for monomer and multimer v2 (used by AlphaFold [v2.2.0](https://github.com/google-deepmind/alphafold/blob/v2.2.0), [v2.2.1](https://github.com/google-deepmind/alphafold/blob/v2.2.1), [v2.2.2](https://github.com/google-deepmind/alphafold/blob/v2.2.2), [v2.2.3](https://github.com/google-deepmind/alphafold/blob/v2.2.3), [v2.2.4](https://github.com/google-deepmind/alphafold/blob/v2.2.4)) are available here: https://storage.googleapis.com/alphafold/alphafold_params_2022-03-02.tar
 
 ```bash
@@ -54,6 +64,8 @@ ALPHAFOLD_PARAMS="alphafold_params_2022-12-06.tar"
 wget https://storage.googleapis.com/alphafold/${ALPHAFOLD_PARAMS}
 tar xf ${ALPHAFOLD_PARAMS} -C <DOWNLOAD_DIR>/params
 ```
+
+Note that all the files `params_model_*.npz` which correspond to the monomer predictions models are all the same across the thre archives.
 
 Once the installation completed, the list of NN model parameters in the `<DOWNLOAD_DIR>/params` folder should be as follows:
 
