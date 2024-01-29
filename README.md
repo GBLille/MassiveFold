@@ -4,15 +4,16 @@
 
 ## Table of contents
 <!-- TOC -->
-* [Running MassiveFold in parallel](#running-massivefold-in-parallel)
+* [MassiveFold: parallellize protein structure prediction](#massivefold-parallellize-protein-structure-prediction)
 * [Installation](#installation)
-    * [Jobfile's header building](#jobfiles-header-building)
-      * [How to add a parameter](#how-to-add-a-parameter)
-  * [Usage](#usage)
-    * [Inference workflow](#inference-workflow)
-    * [Run parameters](#run-parameters)
-      * [Parameters in run_massivefold.sh](#parameters-in-mf_parallelsh)
-      * [Parameters in the json file](#parameters-in-the-json-file)
+  * [Steps](#steps)
+  * [Jobfile's header building](#jobfiles-header-building)
+    * [How to add a parameter](#how-to-add-a-parameter)
+* [Usage](#usage)
+  * [Inference workflow](#inference-workflow)
+  * [Parameters](#parameters)
+    * [Parameters in run_massivefold.sh](#parameters-in-run_massivefoldsh)
+    * [Parameters in the json file](#parameters-in-the-json-file)
 * [massivefold_plots: output representation](#massivefold_plots-output-representation)
   * [Required arguments](#required-arguments)
   * [Facultative arguments](#facultative-arguments)
@@ -21,65 +22,63 @@
 
 MassiveFold aims at massively expanding the sampling of structure predictions by improving the computing of AlphaFold 
 based predictions. It optimizes the parallelization of the structure inference by splitting the computing on CPU 
-for alignments, running automatically batches of structure predictions on GPU, finally gathering all the results in one  
+for alignments, running automatically batches of structure predictions on GPU, finally gathering all the results in one 
 final folder, with a global ranking and various plots.
 
-MassiveFold uses AFmassive (https://github.com/GBLille/AFmassive), a modified AlphaFold version that integrates diversity  
-parameters for massive sampling, as an updated version of Björn Wallner's AFsample version of AlphaFold  
-(https://github.com/bjornwallner/alphafoldv2.2.0/).
+MassiveFold uses [AFmassive](https://github.com/GBLille/AFmassive), a modified AlphaFold version that integrates diversity 
+parameters for massive sampling, as an updated version of Björn Wallner's [AFsample](https://github.com/bjornwallner/alphafoldv2.2.0/).
 
-# MassiveFold: parallellize protein's structure prediction
-MassiveFold is designed for an optimized use on a GPU cluster because it can automatically split a prediction run in many jobs.   
-This automatic splitting is also convenient for runs on a simple GPU server. All the developments were made to be used with a **SLURM** workload manager.
+# MassiveFold: parallellize protein structure prediction
+MassiveFold is designed for an optimized use on a GPU cluster because it can automatically split a prediction run into many jobs.  
+This automatic splitting is also convenient for runs on a simple GPU server to manage priorities in jobs. All the developments 
+were made to be used with a **SLURM** (Simple Linux Utility for Resource Management) workload manager.
 
 ![header](imgs/massivefold_diagram.svg)
 
 A run is composed of three steps:  
 1. **alignment**: on CPU, sequence alignments is the initiation step (can be skipped if alignments are already computed)
 
-2. **structure prediction**: on GPU, structure predictions follows the massive sampling principle. The total number 
+2. **structure prediction**: on GPU, structure predictions follow the massive sampling principle. The total number 
 of predictions is divided into smaller batches and each of them is distributed on a single GPU. These jobs wait for the 
 alignment job to be over, if the alignments are not provided by the user.
 
 3. **post_treatment**: on CPU, it finishes the job by gathering all batches outputs and produces plots with the 
-[MF_plots module](#mf_plots-output-representation) to visualize the run's performances. This jobs is executed only once 
+[MF_plots module](#massivefold_plots-output-representation) to visualize the run's performances. This job is executed only once 
 all the structure predictions are over. 
-
-To run MassiveFold in parallel, you can use the parallelization module in the **MF_scripts** directory.
-
 
 # Installation
 
-MassiveFold was initially developed to run massive sampling with AFmassive (https://github.com/GBLille/AFmassive) and 
-relies on it for the installation.
+MassiveFold was initially developed to run massive sampling with [AFmassive](https://github.com/GBLille/AFmassive) and 
+relies on it for its installation.
 
 ## Steps
 
 1. **Retrieve MassiveFold**
 
 ```bash
-# clone MassiveFold
+# clone MassiveFold's repository
 git clone https://github.com/GBLille/MassiveFold_dev.git
 ```
 
-For AFmassive runs: 
-AFmassive's installations steps are also required to use MassiveFold for AFmassive runs:
+For AFmassive runs:   
+Two additional installation steps are required to use MassiveFold for AFmassive runs:
 - Download [sequence databases](https://github.com/GBLille/AFmassive?tab=readme-ov-file#sequence-databases)
 - Retrieve the [neural network models parameters](https://github.com/GBLille/AFmassive?tab=readme-ov-file#alphafold-neural-network-model-parameters)
 
-
 2. **Install MassiveFold**
 
-We use an installation based on conda. The **install.sh** script will especially install the conda environment using the *environment.yml* file provided.  
-It also creates the file's organization and set paths according to this organization in the params.json parameters file.
+We use an installation based on conda. The **install.sh** script we provide installs the conda environment using the 
+`environment.yml` file. It also creates the file's organization and set paths according to this organization 
+in the `params.json` parameters file.
 
 ```bash
-# Chose where to install massivefold runs directory
 ./install.sh <INSTALLATION_PATH> <data_dir>
 ```
-The <**data_dir**> parameter is the path used in AlphaFold2 installation where the databases are downloaded.
+The <**data_dir**> parameter is the path used in AlphaFold2 installation where the sequence databases are downloaded.
 
-This file tree displays the file's organization after using *./install.sh*. If the <INSTALLATION_PATH> used is '..', the tree will be similar to this  :
+This file tree displays the files' organization after running `./install.sh`. If the <INSTALLATION_PATH> used is 
+'..', the tree will be similar to this  :
+
 ```txt
 .
 ├── MassiveFold
@@ -116,21 +115,25 @@ This file tree displays the file's organization after using *./install.sh*. If t
 Refer to [Jobfile header building](#jobfiles-header-building) for this installation step.
 
 To run MassiveFold in parallel on your cluster/server, it is **required** to build custom jobfile headers for each step. 
-Their name should be as followed: {step}.slurm (alignment.slurm, jobarray.slurm and post_treatment.slurm).  
-They have to be added in **\<INSTALLATION_PATH>/scripts/headers/** directory. It can also be modified in the "jobfile_headers_dir" parameter of the params.json file.  
-Headers for Jean Zay cluster are provided as examples to follow (named *example_header_\<step>_jeanzay.slurm*), if you want to use them, rename them following the naming previously mentionned.  
+They should be named as follows: `{step}.slurm` (alignment.slurm, jobarray.slurm and post_treatment.slurm).  
+They have to be added in `<INSTALLATION_PATH>/scripts/headers/` directory or another directory set in the 
+`jobfile_headers_dir` parameter of the `params.json` file.  
+Headers for Jean Zay cluster are provided as examples to follow (named `example_header_\<step>_jeanzay.slurm`), if you 
+want to use them, rename them following the previously mentioned naming convention.  
 
 4. **Set custom parameters**
 
-Each cluster have their own difference in parameters for jobfiles. For flexibility needs, you can add your custom parameters in your headers, and then in the params.json file so that you can dynamically change their values in the json file.  
+Each cluster has its own specifications in parameterizing job files. For flexibility needs, you can add your custom 
+parameters in your headers, and then in the `params.json` file so that you can dynamically change their values in the json file.  
 
-To illustrate these "special needs", this is an example of parameters that can be used on Jean Zay to specify GPU type, time limits or the project on which the hours are used:
+To illustrate these "special needs", here is an example of parameters that can be used on the french national Jean Zay 
+cluster to specify GPU type, time limits or the project on which the hours are used:
 
+Go to `params.json` location:
 ```bash
-# go to params.json location
 cd <INSTALLATION_PATH>/massivefold_runs/scripts/
 ```
-And modify params.json:
+Modify `params.json`:
 ```json
  "custom_params": {
         "jeanzay_gpu": "v100",
@@ -141,7 +144,7 @@ And modify params.json:
         "jeanzay_jobarray_time": "15:00:00"
  },
 ```
-And specify them in the jobfile headers (such as here for jobarray.slurm) 
+And specify them in the jobfile headers (such as here for `jobarray.slurm`) 
 ```bash
 #SBATCH --time=$jeanzay_jobarray_time
 #SBATCH -C $jeanzay_gpu_with_memory
@@ -153,16 +156,17 @@ The jobfile templates for each step are built by combining the jobfile header th
 **MF_scripts/parallelization/headers** with the jobfile body in **MF_scripts/parallelization/templates/**.
 
 Only the headers have to be adapted in function of your computing infrastructure. 
-Each of the three headers (alignment, jobarray and post treatment) must be located in the **scripts/headers** directory (see [File architecture](#setup-1) section).
+Each of the three headers (`alignment`, `jobarray` and `post treatment`) must be located in the **scripts/headers** 
+directory (see [File architecture](#setup-1) section).
 
 Their names should be identical to:
 * **alignment.slurm**
 * **jobarray.slurm**
 * **post_treatment.slurm**
 
-The templates work with the parameters provided in **params.json** given as a parameter to the **run_massivefold.sh** script.\
-These parameters are substituted in the template job files thanks to the python library [string.Template](https://docs.python.org/3.8/library/string.html#template-strings).\
-Refer to [How to add a parameter](#how-to-add-a-parameter) for parameter substitution.
+The templates work with the parameters provided in `params.json` file, given as a parameter to the **run_massivefold.sh** script.  
+These parameters are substituted in the template job files thanks to the python library [string.Template](https://docs.python.org/3.8/library/string.html#template-strings).  
+Refer to [How to add a parameter](#how-to-add-a-parameter) for parameters substitution.
 
 - **Requirement:** In the jobarray's jobfile header (*massivefold_runs/scripts/headers/jobarray.slurm*) should be stated that it is a job array and the number of tasks in it has to be given.  
 The task number argument is substituted with the *$substitute_batch_number* parameter.\
