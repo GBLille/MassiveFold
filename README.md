@@ -233,25 +233,25 @@ To use $ inside the template files (bash variables or other uses), use instead $
 
 # Usage
 
-Set the [parameters of your run](https://github.com/GBLille/AFmassive?tab=readme-ov-file#new-parameters-added-in-afmassive-with-respect-to-alphafold) in the **MF_run** section of the **params.json** file for instance:
+Set the [parameters of your run](https://github.com/GBLille/AFmassive?tab=readme-ov-file#new-parameters-added-in-afmassive-with-respect-to-alphafold) in the **AFM_run** section of the **params.json** file for instance:
 ```json
-"MF_run": {
-        "AMF_run_model_preset": "multimer",
-        "AMF_run_dropout": "false",
-        "AMF_run_dropout_structure_module": "false",
-        "AMF_run_dropout_rates_filename": "",
-        "AMF_run_templates": "true",
-        "MF_run_min_score": "0",
-        "MF_run_max_batch_score": "1",
-        "MF_run_max_recycles": "20",
-        "MF_run_db_preset": "full_dbs",
-        "MF_run_use_gpu_relax": "true",
-        "MF_run_models_to_relax": "none",
-        "MF_run_early_stop_tolerance": "0.5",
-        "MF_run_bfd_max_hits": "100000",
-        "MF_run_mgnify_max_hits": "501",
-        "MF_run_uniprot_max_hits": "50000",
-        "MF_run_uniref_max_hits": "10000"
+"AFM_run": {
+        "AF_run_model_preset": "multimer",
+        "AFM_run_dropout": "false",
+        "AFM_run_dropout_structure_module": "false",
+        "AFM_run_dropout_rates_filename": "",
+        "AFM_run_templates": "true",
+        "AFM_run_min_score": "0",
+        "AFM_run_max_batch_score": "1",
+        "AFM_run_max_recycles": "20",
+        "AFM_run_db_preset": "full_dbs",
+        "AFM_run_use_gpu_relax": "true",
+        "AFM_run_models_to_relax": "none",
+        "AFM_run_early_stop_tolerance": "0.5",
+        "AFM_run_bfd_max_hits": "100000",
+        "AFM_run_mgnify_max_hits": "501",
+        "AFM_run_uniprot_max_hits": "50000",
+        "AFM_run_uniref_max_hits": "10000"
     },
 ```
 And activate the conda environment before launching massivefold:
@@ -307,7 +307,7 @@ However, **--model_preset=monomer_ptm** works too and needs to be adapted accord
 You can decide how the run will be divided by assigning **run_massivefold.sh** parameters *e.g.*:
 
 ```bash
-./run_massivefold.sh -s ..input/H1144.fasta -r 1005_preds -p 67 -b 25 -f run_params.json
+./run_massivefold.sh -s ..input/H1144.fasta -r 1005_preds -p 67 -b 25 -f params.json
 ```
 
 The predictions are computed individually for each neural network model,  **-p** or **--predictions_per_model** allows to specify the number of predictions desired for each chosen model.  
@@ -318,9 +318,9 @@ The last batch of the cycle is generally smaller than the others to match the nu
 
 For example, with **-b 25** and **-p 67** the predictions are divided into the following batches, which is repeated for each NN model:
 
-  1.  First batch: **--start_prediction=0** and **--num_predictions_per_model=24**
-  2.  Second batch: **--start_prediction=25** and **--num_predictions_per_model=49**
-  3.  Third batch: **--start_prediction=50** and **--num_predictions_per_model=67** 
+  1.  First batch: **--start_prediction=0** and **--end_prediction=24**
+  2.  Second batch: **--start_prediction=25** and **--end_prediction=49**
+  3.  Third batch: **--start_prediction=50** and **--end_prediction=67** 
 
 By default (if **--models_to_use** is not assigned), all NN models are used: with **--model_preset=multimer**, 15 models in total = 5 neural network models $\times$ 3 AlphaFold2 versions.
 
@@ -335,7 +335,7 @@ organized as *massivefold/parallelization/params.json*.
 
 ### Parameters in the json file
 
-Each section of **run_params.json** is used for a different purpose.
+Each section of **params.json** is used for a different purpose.
 
 The section **massivefold** designates the whole run parameters.  
 
@@ -376,7 +376,7 @@ For instance, for the Jean Zay GPU cluster:
 ```
 As explained in [How to add a parameter](#how-to-add-a-parameter), these variables are substituted by their value when the jobfiles are created.
 
-- The **MF_run** section gathers all the parameters used by MassiveFold for the run. (see [Example](#example) and [Added parameters](#added-parameters)). All parameters  except *--models_to_relax*, *--use_precomputed_msas*, *--alignment_only*, *--start_prediction*, *--end_prediction*, *--fasta_path* and *--output_dir* are exposed in this section.  
+- The **AFM_run** section gathers all the parameters used by MassiveFold for the run. (see [Example](#example) and [Added parameters](#added-parameters)). All parameters  except *--models_to_relax*, *--use_precomputed_msas*, *--alignment_only*, *--start_prediction*, *--end_prediction*, *--fasta_path* and *--output_dir* are exposed in this section.  
 You can adapt the parameters values in function of your needs.  
 The non exposed parameters mentioned before are set in intern by the Massivefold's pipeline.
 
