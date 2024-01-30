@@ -8,7 +8,6 @@
 * [Installation](#installation)
   * [Steps](#steps)
   * [Jobfile's header building](#jobfiles-header-building)
-    * [How to add a parameter](#how-to-add-a-parameter)
 * [Usage](#usage)
   * [Inference workflow](#inference-workflow)
   * [Parameters](#parameters)
@@ -77,8 +76,8 @@ in the `params.json` parameters file.
 The <**data_dir**> parameter is the path used in AlphaFold2 installation where the sequence databases are downloaded.
 
 This file tree displays the files' organization after running `./install.sh`. If the <INSTALLATION_PATH> used is 
-'..', the tree will be similar to this  :
-
+'..', the tree will be:
+<a id="link"></a>
 ```txt
 .
 ├── MassiveFold
@@ -90,25 +89,21 @@ This file tree displays the files' organization after running `./install.sh`. If
     │   ├── examine_run.py
     │   ├── get_batch.py
     │   └── organize_outputs.py
-    ├──input
-    │   └── test_multimer.fasta
+    ├── input
     ├── log
-    │   └── test_multimer/default
-    │       ├── alignment.log
-    │       │   ...
-    │       └── post_treatment.log
     ├── output
-    │   └── test_multimer
-    │       ├── default
-    │       │   ├── plots/
-    │       │   │   ...
-    │       │   └── ranking_debug.json
-    │       └── msas  
     └── AFmassive_pipeline
         ├── params.json
         ├── run_massivefold.sh
         └── templates/
 ```
+A `massivefold_runs` folder is created, which contains:
+- `scripts` with all the MassiveFold scripts and headers to create (see below),
+- `input` which contains the FASTA sequences,
+- `log` with the logs of the MassiveFold runs, 
+- `output` which contains the predictions, 
+- `AFmassive_pipeline` which contains the [run_massiveFold.sh](https://github.com/GBLille/MassiveFold_dev?tab=readme-ov-file#usage) 
+script and the [params.json parameters](#parameters) for a MassiveFold run.
 
 3. **Create header files**  
 
@@ -239,8 +234,9 @@ To use $ inside the template files (bash variables or other uses), use instead $
 
 # Usage
 
-Set the [parameters of your run](https://github.com/GBLille/AFmassive?tab=readme-ov-file#running-afmassive) 
-in the **AFM_run** section of the `params.json` file for instance:
+Following the [file architecture](#link), find the `params.json` parameters file and edit it. 
+Set first the [parameters of your run](https://github.com/GBLille/AFmassive?tab=readme-ov-file#running-afmassive) 
+in the **AFM_run** section. For instance:
 ```json
 "AFM_run": {
         "AFM_run_model_preset": "multimer",
@@ -368,7 +364,7 @@ The **massivefold** section designates the whole run parameters.
   }
 }
 ```
-You have to fill the paths in this section. However, the `install.sh` should fill in the majority of them. 
+The paths in the section are filled by `install.sh` but can be changed here if necessary. 
 Headers are specified here to setup the run, in order to give the parameters that are required to run the jobs on your 
 cluster. Build your own according to the [Jobfile's header building](#jobfiles-header-building) section.
 
