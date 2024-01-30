@@ -57,7 +57,7 @@ relies on it for its installation.
 
 ```bash
 # clone MassiveFold's repository
-git clone https://github.com/GBLille/MassiveFold_dev.git
+git clone https://github.com/GBLille/MassiveFold.git
 ```
 
 For AFmassive runs:   
@@ -112,7 +112,7 @@ This file tree displays the files' organization after running `./install.sh`. If
 
 3. **Create header files**  
 
-Refer to [Jobfile header building](#jobfiles-header-building) for this installation step.
+Refer to [Jobfile's header building](#jobfiles-header-building) for this installation step.
 
 To run MassiveFold in parallel on your cluster/server, it is **required** to build custom jobfile headers for each step. 
 They should be named as follows: `{step}.slurm` (alignment.slurm, jobarray.slurm and post_treatment.slurm).  
@@ -157,7 +157,7 @@ The jobfile templates for each step are built by combining the jobfile header th
 
 Only the headers have to be adapted in function of your computing infrastructure. 
 Each of the three headers (`alignment`, `jobarray` and `post treatment`) must be located in the **scripts/headers** 
-directory (see [File architecture](#setup-1) section).
+directory (see [File architecture](#installation) section).
 
 Their names should be identical to:
 * **alignment.slurm**
@@ -168,17 +168,18 @@ The templates work with the parameters provided in `params.json` file, given as 
 These parameters are substituted in the template job files thanks to the python library [string.Template](https://docs.python.org/3.8/library/string.html#template-strings).  
 Refer to [How to add a parameter](#how-to-add-a-parameter) for parameters substitution.
 
-- **Requirement:** In the jobarray's jobfile header (*massivefold_runs/scripts/headers/jobarray.slurm*) should be stated that it is a job array and the number of tasks in it has to be given.  
-The task number argument is substituted with the *$substitute_batch_number* parameter.\
-For slurm, the expression should be:
+- **Requirement:** In the jobarray's jobfile header (*massivefold_runs/scripts/headers/jobarray.slurm*) should be stated 
+that it is a job array and the number of tasks in it has to be given. The task number argument is substituted with 
+the *$substitute_batch_number* parameter.\
+For SLURM, the expression should be:
 ```bash
 #SBATCH --array=0-$substitute_batch_number
 ```
-For example, if there are 45 batches, with one batch per task of the job array, the substituted expression will be:
+For example, if there are 45 batches, with 1 batch per task of the job array, the substituted expression will be:
 ```bash
 #SBATCH --array=0-44
 ```
-- To store job logs while following [Setup](#setup-1)'s file tree, add these lines in the headers:
+- To store job logs following [Setup](#steps)'s file tree, add these lines in the headers:
 
 In **alignment.slurm**:
 ```bash
@@ -196,11 +197,12 @@ In **post_treatment.slurm**:
 #SBATCH --output=${logs_dir}/${sequence_name}/${run_name}/post_treatment.log
 #SBATCH --error=${logs_dir}/${sequence_name}/${run_name}/post_treatment.log
 ```
-We provide templates for the Jean Zay french CNRS national GPU cluster accessible at the 
-[IDRIS](http://www.idris.fr/).
+We provide templates for the Jean Zay french CNRS national GPU cluster accessible at the [IDRIS](http://www.idris.fr/), 
+that can also be used as examples for your own infrastructure.
 
 ### How to add a parameter
-- Add **\$new_parameter** or **\$\{new_parameter\}** in the template where you want its value to be set and in the "custom_params" section of **params.json** where its value can be specified and changed for each run.
+- Add **\$new_parameter** or **\$\{new_parameter\}** in the template where you want its value to be set and in the 
+"custom_params" section of `params.json` where its value can be specified and changed for each run.
 
 **Example** in the json parameters file for Jean Zay headers:
 ```json
@@ -210,7 +212,7 @@ We provide templates for the Jean Zay french CNRS national GPU cluster accessibl
       "jeanzay_jobarray_time": "10:00:00"
   },
 ```
-Where project is your 3 letter project with allocated hours on Jean Zay.
+Where "project" is your 3 letter project with allocated hours on Jean Zay.
 
 - These parameters will be substituted in the header where the parameter keys are located:
 
@@ -229,7 +231,7 @@ Where project is your 3 letter project with allocated hours on Jean Zay.
 #SBATCH --time=$jeanzay_jobarray_time
 ##SBATCH --qos=qos_gpu-dev             # Uncomment for job requiring less than 2 hours
 ##SBATCH --qos=qos_gpu-t4         # Uncomment for job requiring more than 20h (max 16 GPUs)
-#SBATCH -C $jeanzay_gpu_with_memory             # Use gpu
+#SBATCH -C $jeanzay_gpu_with_memory             # GPU type+memory
 ```
 - Never use single \$ symbol for other uses than parameter/value substitution from the json file.\
 To use $ inside the template files (bash variables or other uses), use instead $$ as an escape following 
@@ -237,10 +239,11 @@ To use $ inside the template files (bash variables or other uses), use instead $
 
 # Usage
 
-Set the [parameters of your run](https://github.com/GBLille/AFmassive?tab=readme-ov-file#new-parameters-added-in-afmassive-with-respect-to-alphafold) in the **AFM_run** section of the **params.json** file for instance:
+Set the [parameters of your run](https://github.com/GBLille/AFmassive?tab=readme-ov-file#running-afmassive) 
+in the **AFM_run** section of the `params.json` file for instance:
 ```json
 "AFM_run": {
-        "AF_run_model_preset": "multimer",
+        "AFM_run_model_preset": "multimer",
         "AFM_run_dropout": "false",
         "AFM_run_dropout_structure_module": "false",
         "AFM_run_dropout_rates_filename": "",
@@ -258,25 +261,20 @@ Set the [parameters of your run](https://github.com/GBLille/AFmassive?tab=readme
         "AFM_run_uniref_max_hits": "10000"
     },
 ```
-And activate the conda environment before launching massivefold:
+Activate the conda environment, then launch MassiveFold.
 ```bash
 conda activate massivefold-1.1.0
+./run_massivefold.sh -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> 
+```
+Example:
+```bash
 ./run_massivefold.sh -s ../input/test_multimer.fasta -r basic_run -p 67 -f params.json
 ```
-For more help, run:
+For more help and list of required and facultative parameters, run:
 ```bash
 ./run_massivefold.sh -h
 ```
-
-```bash
-./run_massivefold.sh -s sequence_path -r run_name -p predictions_per_model -f parameters_file 
-```
-Other facultative parameters can be set and can be consulted with:
-
-```bash
-./run_massivefold.sh -h
-```
-This is the help message associated with this command:
+Here is the help message associated with this command:
 
 ```txt
 Usage: ./run_massivefold.sh -s str -r str -p int -f str [-m str] [-n str] [-b int | [[-C str | -c] [-w int]] ]
@@ -301,49 +299,57 @@ Usage: ./run_massivefold.sh -s str -r str -p int -f str [-m str] [-n str] [-b in
 ```
 ## Inference workflow
 
-It launches MassiveFold with the same parameters introduced above but instead of running **run_AFmassive.py** script a single time, it divides it in multiple batches.
+It launches MassiveFold with the same parameters introduced above but instead of running AFmassive a 
+single time, it divides it into multiple batches.
 
+For the following examples, we assume that **--model_preset=multimer** as it is the majority of cases to run MassiveFold 
+in parallel.
 
-For the following examples, we assume that **--model_preset=multimer** as it is the majority of cases to run MassiveFold in parallel.
+However, **--model_preset=monomer_ptm** works too and needs to be adapted accordingly, at least the models to use (if not all 
+as set by default).
 
-However, **--model_preset=monomer_ptm** works too and needs to be adapted accordingly, at least the models to use.
-
-You can decide how the run will be divided by assigning **run_massivefold.sh** parameters *e.g.*:
+You can decide how the run will be divided by assigning `run_massivefold.sh` parameters *e.g.*:
 
 ```bash
 ./run_massivefold.sh -s ..input/H1144.fasta -r 1005_preds -p 67 -b 25 -f params.json
 ```
 
-The predictions are computed individually for each neural network model,  **-p** or **--predictions_per_model** allows to specify the number of predictions desired for each chosen model.  
-These **--predictions_per_model** are then divided into batches with a fixed **-b** or **--batch_size** to optimize the run in parallel as each batch can be computed on a different GPU, if available.  
-The last batch of the cycle is generally smaller than the others to match the number of predictions fixed by **--predictions_per_model**.
+The predictions are computed individually for each neural network model,  **-p** or **--predictions_per_model** allows 
+to specify the number of predictions desired for each chosen model.  
+These **--predictions_per_model** are then divided into batches with a fixed **-b** or **--batch_size** to optimize the 
+run in parallel as each batch can be computed on a different GPU, if available.  
+The last batch of each NN model is generally smaller than the others to match the number of predictions fixed by 
+**--predictions_per_model**.
 
-***N.B.***: an interest to use run_massivefold.sh on a single server with a single GPU is to be able to run massive sampling for a structure in low priority, allowing small jobs with higher priority to be run in between.
+***N.B.***: an interest to use `run_massivefold.sh` on a single server with a single GPU is to be able to run massive 
+sampling for a structure in low priority, allowing other jobs with higher priority to be run in between.
 
-For example, with **-b 25** and **-p 67** the predictions are divided into the following batches, which is repeated for each NN model:
+For example, with **-b 25** and **-p 67** the predictions are divided into the following batches, which is repeated for 
+each NN model:
 
   1.  First batch: **--start_prediction=0** and **--end_prediction=24**
   2.  Second batch: **--start_prediction=25** and **--end_prediction=49**
   3.  Third batch: **--start_prediction=50** and **--end_prediction=67** 
 
-By default (if **--models_to_use** is not assigned), all NN models are used: with **--model_preset=multimer**, 15 models in total = 5 neural network models $\times$ 3 AlphaFold2 versions.
+By default (if **--models_to_use** is not assigned), all NN models are used: with **--model_preset=multimer**, 
+15 models in total = 5 neural network models $\times$ 3 AlphaFold2 versions; with **--model_preset=monomer_ptm**, 5 
+neural network models are used.
 
-The prediction number per model can be adjusted, here with 67 per model and 15 models, it amounts to **1005 predictions in total divided into 45 batches**.
+The prediction number per model can be adjusted, here with 67 per model and 15 models, it amounts to **1005 predictions 
+in total divided into 45 batches**, these batches can therefore be run in parallel on a GPU cluster infrastructure.
 
 ## Parameters
 
 ### Parameters in run_massivefold.sh
 
-In addition to the parameters displayed with -h option, the parameters file set in **-f** or **--parameters** should be 
-organized as *massivefold/parallelization/params.json*.
+In addition to the parameters displayed with **-h** option, the json parameters file set with **-f** or **--parameters** 
+should be organized like the `params.json` file.
 
 ### Parameters in the json file
 
-Each section of **params.json** is used for a different purpose.
+Each section of `params.json` is used for a different purpose.
 
-The section **massivefold** designates the whole run parameters.  
-
-It is presented as:
+The **massivefold** section designates the whole run parameters.  
 
 ```json
 {
@@ -359,10 +365,12 @@ It is presented as:
     "input_dir": "../input",
     "predictions_to_relax": "5",
     "models_to_use": ""
-  },
+  }
 }
 ```
-You have to fill the paths in this section. Templates are specified here to setup the run, build your owns according to the [Template building](#jobfiles-header-building) section.
+You have to fill the paths in this section. However, the `install.sh` should fill in the majority of them. 
+Headers are specified here to setup the run, in order to give the parameters that are required to run the jobs on your 
+cluster. Build your own according to the [Jobfile's header building](#jobfiles-header-building) section.
 
 - The **custom_params** section is relative to the personalized parameters that you want to add for your own cluster. 
 For instance, for the Jean Zay GPU cluster:
@@ -378,11 +386,14 @@ For instance, for the Jean Zay GPU cluster:
     }
 }
 ```
-As explained in [How to add a parameter](#how-to-add-a-parameter), these variables are substituted by their value when the jobfiles are created.
+As explained in [How to add a parameter](#how-to-add-a-parameter), these variables are substituted by their value when 
+the jobfiles are created.
 
-- The **AFM_run** section gathers all the parameters used by MassiveFold for the run. (see [Example](#example) and [Added parameters](#added-parameters)). All parameters  except *--models_to_relax*, *--use_precomputed_msas*, *--alignment_only*, *--start_prediction*, *--end_prediction*, *--fasta_path* and *--output_dir* are exposed in this section.  
+- The **AFM_run** section gathers all the parameters used by MassiveFold for the run (see [AFmassive parameters](https://github.com/GBLille/AFmassive?tab=readme-ov-file#running-afmassive) 
+section). All parameters except *--models_to_relax*, *--use_precomputed_msas*, 
+*--alignment_only*, *--start_prediction*, *--end_prediction*, *--fasta_path* and *--output_dir* are exposed in this section.  
 You can adapt the parameters values in function of your needs.  
-The non exposed parameters mentioned before are set in intern by the Massivefold's pipeline.
+The non exposed parameters mentioned before are set internally by the Massivefold's pipeline.
 
 ```json
 {
@@ -407,7 +418,7 @@ The non exposed parameters mentioned before are set in intern by the Massivefold
     }
 }
 ```
-Lastly, section **MF_plots** is used for the MassiveFold plotting module.
+Lastly, the **MF_plots** section is used for the MassiveFold plotting module.
 
 ```json
   "plots": 
@@ -418,7 +429,7 @@ Lastly, section **MF_plots** is used for the MassiveFold plotting module.
 ```
 # massivefold_plots: output representation
 
-MassiveFold plotting module can be used on a MassiveFold output to represent its results efficiency.  
+MassiveFold plotting module can be used on a MassiveFold output to evaluate its predictions visually.  
 
 Here is an example of a basic command you can run:
 ```bash
@@ -426,36 +437,40 @@ conda activate massivefold-1.1.0
 massivefold_plots.py --input_path=<path_to_MF_output> --chosen_plots=DM_plddt_PAE
 ```
 ## Required arguments
-- **--input_path**: it designates MassiveFold output dir and the directory to store the plots except if you want them in a separate directory, use *--output_path* for this purpose
+- **--input_path**: it designates MassiveFold output dir and the directory to store the plots except if you want them 
+- in a separate directory, use *--output_path* for this purpose
 
-- **--chosen_plots**: plots you want to get. You can give a list of plot names separated by a coma (e.g: *--chosen_plots=coverage,DM_plddt_PAE,CF_PAEs*). This is the list of all the plots available:
+- **--chosen_plots**: plots you want to get. You can give a list of plot names separated by a coma 
+- (e.g: *--chosen_plots=coverage,DM_plddt_PAE,CF_PAEs*). This is the list of all the available plots:
   * DM_plddt_PAE: Deepmind's plot for predicted lddt per residue and predicted aligned error matrix
   ![header](imgs/plot_illustrations/plddt_PAES.png)
-  * CF_plddt:
-  * CF_PAEs: Colabfold's plot for predicted aligned error of the n best predictions set with *--top_n_predictions*
-  ![header](imgs/plot_illustrations/PAEs.png)
-  * CF_plddts:
+  * CF_plddts: ColabFold's plot for predicted lddt per residue
   ![header](imgs/plot_illustrations/plddts.png)
-  * coverage: Colabfold's plot for sequence alignment coverage
+  * CF_PAEs: ColabFold's plot for predicted aligned error of the n best predictions set with *--top_n_predictions*
+  ![header](imgs/plot_illustrations/PAEs.png)
+  * coverage: ColabFold's plot for sequence alignment coverage
   ![header](imgs/plot_illustrations/coverage.png)
   * score_distribution:
-  * distribution_comparison: ranking confidence distribution comparison between different massivefold outputs, tipically useful for runs with different parameters on the same sequence.
+  * distribution_comparison: ranking confidence distribution comparison between various MassiveFold outputs, typically 
+  useful for runs with different parameters on the same sequence.
   ![header](imgs/plot_illustrations/distribution_comparison.png)
   * recycles: ranking confidence during the recycle process (only for multimers)
   ![header](imgs/plot_illustrations/recycles.png)
 
 ## Facultative arguments
-- *--top_n_predictions*: (default 10), number of predictions taken into account for plotting, it will be the n best predictions
-- *--runs_to_compare*: names of the runs you want to compare on their distribution,this argument is coupled with **--chosen_plots=distribution_comparison**
+- *--top_n_predictions*: (default 10), number of best predictions to take into account for plotting
+- *--runs_to_compare*: names of the runs you want to compare on their distribution,this argument is coupled with 
+**--chosen_plots=distribution_comparison**
 
 # Authors
-Guillaume Brysbaert (UGSF - UMR 8576, France)  
 Nessim Raouraoua (UGSF - UMR 8576, France)  
-Marc F Lensink (UGSF - UMR8576, France)  
-Christophe Blanchet (IFB, France)  
 Claudio Mirabello (NBIS, Sweden)  
+Christophe Blanchet (IFB, France)  
 Björn Wallner (Linköping University, Sweden)  
+Marc F Lensink (UGSF - UMR8576, France)  
+Guillaume Brysbaert (UGSF - UMR 8576, France)  
 
 This work was carried out as part of the Work Package 4 of the [MUDIS4LS project](https://www.france-bioinformatique.fr/actualites/mudis4ls-le-projet-despaces-numeriques-mutualises-pour-les-sciences-du-vivant/) 
-lead by the French Bioinformatics Institute ([IFB](https://www.france-bioinformatique.fr/)). It was initiated at the [IDRIS Open Hackathon](http://www.idris.fr/annonces/idris-gpu-hackathon-2023.html), 
-part of the Open Hackathons program. The authors would like to acknowledge OpenACC-Standard.org for their support.
+lead by the French Bioinformatics Institute ([IFB](https://www.france-bioinformatique.fr/)). It was initiated at the 
+[IDRIS Open Hackathon](http://www.idris.fr/annonces/idris-gpu-hackathon-2023.html), part of the Open Hackathons program. 
+The authors would like to acknowledge OpenACC-Standard.org for their support.
