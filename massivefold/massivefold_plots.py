@@ -33,7 +33,7 @@ def extract_top_predictions():
   with open(f'{FLAGS.input_path}/ranking_debug.json', 'r') as json_file:
     scores = json.load(json_file)
   top_pred = scores['order'][:FLAGS.top_n_predictions]
-  top_pred = [pred for pred in top_pred if os.path.isfile(f'{FLAGS.input_path}/result_{pred}.pkl')] 
+  #top_pred = [pred for pred in top_pred if os.path.isfile(f'{FLAGS.input_path}/result_{pred}.pkl')] 
 
   return top_pred
   
@@ -283,23 +283,44 @@ def MF_distribution_comparison():
 def MF_extract_pred_recycle(log, relative_position):
   with open(log, 'r') as log_file:
     lines = log_file.readlines()
-  recycle_scores = [ float(score.strip()) for score in lines if score.strip()[:2] in ['0', '1', '0.'] ]
-  start_symbol = 0
-  end_symbol = 1
+  
+  start_symbol = 999
+  end_symbol = 9999
+  distance_token = 123
+  score_token = 456
+  
+  recycle_logs = []
+  for score in lines:
+    try:
+      recycle_logs.append(float(score.strip()))
+    except ValueError:
+      pass
+  #recycle_scores = [ float(score.strip()) for score in lines if score.strip()[:2] in ['0', '1', '0.'] ]
+  
+  next_to_end_is_start = all([ recycle_logs[index+1] == start_symbol for index, element in enumerate(recycle_logs[:-1]) if element == end_symbol ])
+  
+  # even indices element of the list must be tokens
+  # should begin by distance's token then score's token
+  # this order is verified
+  tokens = recycle_logs[1:-1][::2]
+  is_distance_ordered = set(tokens[::2]) == set([distance_token])
+  is_score_ordered = set(tokens[1::2]) == set([score_token])
 
   validity_conditions = [
-    recycle_scores[0] == start_symbol,
-    recycle_scores[-1] == end_symbol,
-    all([ recycle_scores[index+1] == start_symbol for index, element in enumerate(recycle_scores[:-1]) if element == end_symbol ])
+    recycle_logs[0] == start_symbol,
+    recycle_logs[-1] == end_symbol,
+    next_to_end_is_start,
+    is_distance_ordered,
+    is_score_ordered
   ]
-  
+ 
   if all(validity_conditions):
     splited_recycle_scores = []
     i = 0
-    for score in recycle_scores[:]:
-      if score == 1:
-        splited_recycle_scores.append(recycle_scores[1:i])
-        recycle_scores = recycle_scores[i+1:]
+    for score in recycle_logs[:]:
+      if score == end_symbol:
+        splited_recycle_scores.append(recycle_logs[1:i])
+        recycle_logs = recycle_logs[i+1:]
         i = 0
       else:
         i+=1
@@ -313,6 +334,7 @@ def MF_recycles():
   jobname = FLAGS.input_path
   run = os.path.basename(jobname)
   seq = os.path.basename(os.path.dirname(jobname))
+  print('Starting recycle logs retrieving')
   #logs_dir = os.path.join(jobname, '../../../log_parallel/', seq, run)
   logs_dir = os.path.join(jobname, '../../../log/', seq, run)
   batches_file = os.path.join(logs_dir, f'{seq}_{run}_batches.json')
@@ -335,7 +357,7 @@ def MF_recycles():
       model_to_batch[model] = {}
     pred_to_batch = {pred: batch for pred in range(start, end + 1)}
     model_to_batch[model].update(pred_to_batch)
- 
+
   for pred in preds_to_plot:
     pred_model, pred_nb = pred.split('_pred_')
     
@@ -349,15 +371,28 @@ def MF_recycles():
     relative_position = (position_in_batch, batch_size)
 
     pred_recycles = MF_extract_pred_recycle(log_file, relative_position)
+    non_tokens = pred_recycles[1::2]
+    scores_elements = non_tokens[1::2]
+    distances_elements = non_tokens[::2]
     
     if pred_recycles:
-      fig, ax = plt.subplots()
-    
-      ax.plot(np.linspace(0, len(pred_recycles) +1, len(pred_recycles)), pred_recycles)
-      ax.set_title(f"{pred_model}_pred_{pred_nb} score evolution during recycles")
-      ax.set_ylabel('Ranking confidence')
-      ax.set_xlabel('Recycles')
-      ax.set_ylim(bottom=0, top=1.1)
+      
+      fig, ax1 = plt.subplots()
+      
+      color = 'tab:red'
+      ax1.set_xlabel('recycle step')
+      ax1.set_ylabel('ranking confidence', color=color)
+      ax1.set_ylim(bottom=0, top=1.1)
+      ax1.plot(np.linspace(0, len(scores_elements) +1, len(scores_elements)), scores_elements, color=color)
+      ax1.tick_params(axis='y', labelcolor=color)
+
+      ax2 = ax1.twinx()
+      color = 'tab:blue'
+      ax2.set_ylabel('distance with previous step structure', color=color)
+      ax2.plot(np.linspace(0, len(distances_elements) +1, len(distances_elements)), distances_elements, color=color)
+      ax2.tick_params(axis='y', labelcolor=color)
+      ax1.set_title(f"{pred_model}_pred_{pred_nb} score and structure distance in recycles")
+      fig.tight_layout() 
 
       if FLAGS.action == "save":
         plt.savefig(f"{recycle_dir}/{pred_model}_pred_{pred_nb}.png")

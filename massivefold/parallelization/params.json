@@ -12,12 +12,6 @@
         "models_to_use": ""
     },
     "custom_params": {
-        "jeanzay_gpu": "v100",
-        "jeanzay_project": "fvp",
-        "jeanzay_account": "fvp@v100",
-        "jeanzay_gpu_with_memory": "v100", 
-        "jeanzay_alignment_time": "10:00:00",
-        "jeanzay_jobarray_time": "02:00:00"
     },
     "AFM_run": {
         "AFM_run_model_preset": "multimer",
