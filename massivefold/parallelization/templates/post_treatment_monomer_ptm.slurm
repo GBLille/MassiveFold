@@ -2,10 +2,11 @@ sequence_name=$sequence_name
 run_name=$run_name
 output=${output_dir}/$${sequence_name}/$${run_name}/
 mf_plots_path=$run_massivefold_plots
+scripts_dir=$scripts_dir
 
 # rename and move files
-echo "time ./organize_outputs.py --batches_path $$output"
-time ./organize_outputs.py --batches_path $$output
+echo "time $${scripts_dir}/organize_outputs.py --batches_path $$output"
+time $${scripts_dir}/organize_outputs.py --batches_path $$output
 
 # plots
 echo "Generating plots"

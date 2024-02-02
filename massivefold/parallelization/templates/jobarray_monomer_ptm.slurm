@@ -9,6 +9,7 @@ run_name=$run_name
 fafile=${input_dir}/$${sequence_name}.fasta
 run_massivefold=$run_massivefold
 data_dir=$data_dir
+scripts_dir=$scripts_dir
 
 output_dir=$$(realpath ${output_dir})
 output_path="$${output_dir}/$${sequence_name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID}"
@@ -42,9 +43,9 @@ max_batch_score=$AFM_run_max_batch_score
 
 # parameters for each task in the job array
 batches_path=${logs_dir}/${sequence_name}/${run_name}
-batch_model=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element model)
-batch_start=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element start)
-batch_end=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element end)
+batch_model=$$($${scripts_dir}/get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element model)
+batch_start=$$($${scripts_dir}/get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element start)
+batch_end=$$($${scripts_dir}/get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element end)
 
 echo Model used is $$batch_model, batch computed between prediction $$batch_start and $$batch_end
 
