@@ -42,7 +42,7 @@ templates=$AFM_run_templates
 min_score=$AFM_run_min_score
 max_score=$AFM_run_max_score
 keep_pkl=$AFM_run_keep_pkl
-stop_recycle_below=$AFM_run_stop_recycle_below
+stop_recycling_below=$AFM_run_stop_recycling_below
 
 # parameters for each task in the job array
 batches_path=${logs_dir}/${sequence_name}/${run_name}
@@ -72,7 +72,7 @@ echo "$${run_massivefold}
     --min_score=$${min_score}
     --max_score=$${max_score}
     --keep_pkl=$${keep_pkl}
-    --stop_recycle_below=$${stop_recycle_below}
+    --stop_recycling_below=$${stop_recycling_below}
     --bfd_max_hits=$${bfd_max_hits}
     --mgnify_max_hits=$${mgnify_max_hits}
     --uniprot_max_hits=$${uniprot_max_hits}
@@ -110,7 +110,7 @@ time $${run_massivefold} \
     --min_score=$${min_score} \
     --max_score=$${max_score} \
     --keep_pkl=$${keep_pkl} \
-    --stop_recycle_below=$${stop_recycle_below} \
+    --stop_recycling_below=$${stop_recycling_below} \
     --bfd_max_hits=$${bfd_max_hits} \
     --mgnify_max_hits=$${mgnify_max_hits} \
     --uniprot_max_hits=$${uniprot_max_hits} \
