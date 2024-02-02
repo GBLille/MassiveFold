@@ -8,6 +8,7 @@
 * [Installation](#installation)
   * [Steps](#steps)
   * [Jobfile's header building](#jobfiles-header-building)
+    * [How to add a parameter](#how-to-add-a-parameter)
 * [Usage](#usage)
   * [Inference workflow](#inference-workflow)
   * [Parameters](#parameters)
@@ -28,9 +29,10 @@ MassiveFold uses [AFmassive](https://github.com/GBLille/AFmassive), a modified A
 parameters for massive sampling, as an updated version of Björn Wallner's [AFsample](https://github.com/bjornwallner/alphafoldv2.2.0/).
 
 # MassiveFold: parallellize protein structure prediction
-MassiveFold is designed for an optimized use on a GPU cluster because it can automatically split a prediction run into many jobs.  
-This automatic splitting is also convenient for runs on a simple GPU server to manage priorities in jobs. All the developments 
-were made to be used with a **SLURM** (Simple Linux Utility for Resource Management) workload manager.
+MassiveFold is designed for an optimized use on a GPU cluster because it can automatically split a prediction run into 
+many jobs. This automatic splitting is also convenient for runs on a simple GPU server to manage priorities in jobs. 
+All the developments were made to be used with a **SLURM** (Simple Linux Utility for Resource Management) workload 
+manager.
 
 ![header](imgs/massivefold_diagram.svg)
 
@@ -68,7 +70,7 @@ Two additional installation steps are required to use MassiveFold for AFmassive 
 
 We use an installation based on conda. The **install.sh** script we provide installs the conda environment using the 
 `environment.yml` file. It also creates the file's organization and set paths according to this organization 
-in the `params.json` parameters file.
+in the `AFmassive_params.json` parameters file.
 
 ```bash
 ./install.sh <DATA_DIR>
@@ -106,23 +108,23 @@ Refer to [Jobfile's header building](#jobfiles-header-building) for this install
 To run MassiveFold in parallel on your cluster/server, it is **required** to build custom jobfile headers for each step. 
 They should be named as follows: `{step}.slurm` (alignment.slurm, jobarray.slurm and post_treatment.slurm).  
 They have to be added in `<INSTALLATION_PATH>/scripts/headers/` directory or another directory set in the 
-`jobfile_headers_dir` parameter of the `params.json` file.  
+`jobfile_headers_dir` parameter of the `AFmassive_params.json` file.  
 Headers for Jean Zay cluster are provided as examples to follow (named `example_header_\<step>_jeanzay.slurm`), if you 
 want to use them, rename them following the previously mentioned naming convention.  
 
 4. **Set custom parameters**
 
 Each cluster has its own specifications in parameterizing job files. For flexibility needs, you can add your custom 
-parameters in your headers, and then in the `params.json` file so that you can dynamically change their values in the json file.  
+parameters in your headers, and then in the `AFmassive_params.json` file so that you can dynamically change their values in the json file.  
 
 To illustrate these "special needs", here is an example of parameters that can be used on the french national Jean Zay 
 cluster to specify GPU type, time limits or the project on which the hours are used:
 
-Go to `params.json` location:
+Go to `AFmassive_params.json` location:
 ```bash
 cd <INSTALLATION_PATH>/massivefold_runs/scripts/
 ```
-Modify `params.json`:
+Modify `AFmassive_params.json`:
 ```json
  "custom_params": {
         "jeanzay_gpu": "v100",
@@ -153,7 +155,7 @@ Their names should be identical to:
 * **jobarray.slurm**
 * **post_treatment.slurm**
 
-The templates work with the parameters provided in `params.json` file, given as a parameter to the **run_massivefold.sh** script.  
+The templates work with the parameters provided in `AFmassive_params.json` file, given as a parameter to the **run_massivefold.sh** script.  
 These parameters are substituted in the template job files thanks to the python library [string.Template](https://docs.python.org/3.8/library/string.html#template-strings).  
 Refer to [How to add a parameter](#how-to-add-a-parameter) for parameters substitution.
 
@@ -191,7 +193,7 @@ that can also be used as examples for your own infrastructure.
 
 ### How to add a parameter
 - Add **\$new_parameter** or **\$\{new_parameter\}** in the template where you want its value to be set and in the 
-"custom_params" section of `params.json` where its value can be specified and changed for each run.
+"custom_params" section of `AFmassive_params.json` where its value can be specified and changed for each run.
 
 **Example** in the json parameters file for Jean Zay headers:
 ```json
@@ -261,7 +263,7 @@ conda activate massivefold-1.1.0
 ```
 Example:
 ```bash
-./run_massivefold.sh -s ../input/test_multimer.fasta -r basic_run -p 67 -f params.json
+./run_massivefold.sh -s ../input/test_multimer.fasta -r basic_run -p 67 -f AFmassive_params.json
 ```
 For more help and list of required and facultative parameters, run:
 ```bash
@@ -304,7 +306,7 @@ as set by default).
 You can decide how the run will be divided by assigning `run_massivefold.sh` parameters *e.g.*:
 
 ```bash
-./run_massivefold.sh -s ..input/H1144.fasta -r 1005_preds -p 67 -b 25 -f params.json
+./run_massivefold.sh -s ..input/H1144.fasta -r 1005_preds -p 67 -b 25 -f AFmassive_params.json
 ```
 
 The predictions are computed individually for each neural network model,  **-p** or **--predictions_per_model** allows 
@@ -336,11 +338,11 @@ in total divided into 45 batches**, these batches can therefore be run in parall
 ### Parameters in run_massivefold.sh
 
 In addition to the parameters displayed with **-h** option, the json parameters file set with **-f** or **--parameters** 
-should be organized like the `params.json` file.
+should be organized like the `AFmassive_params.json` file.
 
 ### Parameters in the json file
 
-Each section of `params.json` is used for a different purpose.
+Each section of `AFmassive_params.json` is used for a different purpose.
 
 The **massivefold** section designates the whole run parameters.  
 

@@ -21,7 +21,7 @@
         "AFM_run_templates": "true",
         "AFM_run_min_score": "0",
         "AFM_run_max_score": "1",
-        "AFM_run_stop_recycling_below": "1",
+        "AFM_run_stop_recycling_below": "0",
         "AFM_run_keep_pkl": "false",
         "AFM_run_max_recycles": "20",
         "AFM_run_db_preset": "full_dbs",
