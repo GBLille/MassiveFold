@@ -13,8 +13,6 @@ dependencies:
   - wget
   - ipykernel
   - py3dmol
-  - matplotlib
-  - numpy
   - tqdm
   - openmm=7.5.1
   - cudatoolkit=11.2.2
@@ -37,5 +35,7 @@ dependencies:
       - pandas==1.3.4
       - scipy==1.7.3
       - tensorflow-cpu==2.11.0
+      - matplotlib==3.7.2
+      - seaborn==0.13.2
       - git+https://github.com/GBLille/AFmassive@AFMv1.1.0
       - https://storage.googleapis.com/jax-releases/cuda11/jaxlib-0.3.25+cuda11.cudnn805-cp38-cp38-manylinux2014_x86_64.whl
