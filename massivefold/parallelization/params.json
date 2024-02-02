@@ -21,7 +21,7 @@
         "AFM_run_templates": "true",
         "AFM_run_min_score": "0",
         "AFM_run_max_batch_score": "1",
-        "AFM_run_max_recycles": "21",
+        "AFM_run_max_recycles": "20",
         "AFM_run_db_preset": "full_dbs",
         "AFM_run_use_gpu_relax": "true",
         "AFM_run_models_to_relax": "none",

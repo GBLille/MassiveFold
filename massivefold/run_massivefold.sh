@@ -2,8 +2,8 @@
 
 
 USAGE="\
-./MF_parallel.sh -s str -r str -p int -f str [-m str] [-n str] [-b int | [[-C str | -c] [-w int]] ]\n\
-./MF_parallel.sh -h for more details "
+./run_massivefold.sh -s str -r str -p int -f str [-m str] [-n str] [-b int | [[-C str | -c] [-w int]] ]\n\
+./run_massivefold.sh -h for more details "
 
 # help message
 if [[ " ${@} " == *" -h "* ]] || [[ " ${@} " == *" --help "* ]]; then
@@ -109,9 +109,9 @@ if
   exit 1
 fi
 
-output_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['MF_parallel']['output_dir'])")
-logs_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['MF_parallel']['logs_dir'])")
-scripts_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['MF_parallel']['scripts_dir'])")
+output_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['massivefold']['output_dir'])")
+logs_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['massivefold']['logs_dir'])")
+scripts_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['massivefold']['scripts_dir'])")
 
 sequence_name=$(basename -s .fasta $sequence_file)
 

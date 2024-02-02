@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
 ##SBATCH --job-name=MF_inference
 #SBATCH --account=$jeanzay_account
 

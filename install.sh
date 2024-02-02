@@ -14,7 +14,7 @@ fi
 conda="$(conda info --base)/etc/profile.d/conda.sh"
 source $conda
 conda env create -f environment.yml
-conda activate massivefold-1.0.0
+conda activate massivefold-1.1.0
 
 # add run_AFmassive.py and massivefold_plots.py in path (python executables)
 wget -O $CONDA_PREFIX/bin/run_AFmassive.py https://raw.githubusercontent.com/GBLille/AFmassive/devs_l/run_AFmassive.py

@@ -19,7 +19,7 @@
 * [Authors](#authors)
 <!-- TOC -->
 
-MassiveFold aims at massively expanding the sampling of structure predictions by improving the computing of AlphaFold 
+MassiveFold aims at massively expanding the sampling of structure predictions by improving the computing of [AlphaFold](https://github.com/google-deepmind/alphafold) 
 based predictions. It optimizes the parallelization of the structure inference by splitting the computing on CPU 
 for alignments, running automatically batches of structure predictions on GPU, finally gathering all the results in one 
 final folder, with a global ranking and various plots.
@@ -71,39 +71,33 @@ We use an installation based on conda. The **install.sh** script we provide inst
 in the `params.json` parameters file.
 
 ```bash
-./install.sh <INSTALLATION_PATH> <data_dir>
+./install.sh <DATA_DIR>
 ```
-The <**data_dir**> parameter is the path used in AlphaFold2 installation where the sequence databases are downloaded.
+The <**DATA_DIR**> parameter is the path used in AlphaFold2 installation where the sequence databases are downloaded.
+<a id="tree"></a>  
+This file tree displays the files' organization after running `./install.sh`.
 
-This file tree displays the files' organization after running `./install.sh`. If the <INSTALLATION_PATH> used is 
-'..', the tree will be:
-<a id="link"></a>
 ```txt
 .
-├── MassiveFold
+├── massivefold
 └── massivefold_runs
-    ├── scripts
-    │   ├── headers/
-    │   ├── batching.py
-    │   ├── create_jobfile.py
-    │   ├── examine_run.py
-    │   ├── get_batch.py
-    │   └── organize_outputs.py
-    ├── input
-    ├── log
-    ├── output
-    └── AFmassive_pipeline
-        ├── params.json
-        ├── run_massivefold.sh
-        └── templates/
+    ├── AFmassive_params.json
+    ├── headers/
+        ├── example_header_alignment_jeanzay.slurm
+        ├── example_header_jobarray_jeanzay.slurm
+        └── example_header_post_treatment_jeanzay.slurm
+    ├── input/
+    ├── log/
+    ├── output/
+    └── run_massivefold.sh
 ```
 A `massivefold_runs` folder is created, which contains:
-- `scripts` with all the MassiveFold scripts and headers to create (see below),
+- `AFmassive_params.json` that contains the parameters for an AFmassive run
+- `header` with all the headers to create (see below), examples are given for the Jean Zay national CNRS french cluster
 - `input` which contains the FASTA sequences,
 - `log` with the logs of the MassiveFold runs, 
 - `output` which contains the predictions, 
-- `AFmassive_pipeline` which contains the [run_massiveFold.sh](https://github.com/GBLille/MassiveFold_dev?tab=readme-ov-file#usage) 
-script and the [params.json parameters](#parameters) for a MassiveFold run.
+- `run_massivefold.sh`, the script to run [MassiveFold](#usage)
 
 3. **Create header files**  
 
@@ -234,7 +228,7 @@ To use $ inside the template files (bash variables or other uses), use instead $
 
 # Usage
 
-Following the [file architecture](#link), find the `params.json` parameters file and edit it. 
+Edit the `AFmassive_params.json` parameters file (see [file architecture](#tree)).  
 Set first the [parameters of your run](https://github.com/GBLille/AFmassive?tab=readme-ov-file#running-afmassive) 
 in the **AFM_run** section. For instance:
 ```json
@@ -257,6 +251,9 @@ in the **AFM_run** section. For instance:
         "AFM_run_uniref_max_hits": "10000"
     },
 ```
+then you can set the parameters of the **custom_params** section if necessary and the 
+[plots section](#massivefold_plots-output-representation)  
+
 Activate the conda environment, then launch MassiveFold.
 ```bash
 conda activate massivefold-1.1.0
@@ -349,7 +346,7 @@ The **massivefold** section designates the whole run parameters.
 
 ```json
 {
-"massivefold": 
+"AFM_run": 
   {
     "run_massivefold": "",
     "run_massivefold_plots": "",
