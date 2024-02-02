@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from plots.colabfold_plots import plot_msa_v2, plot_plddts, plot_confidence, plot_paes, plot_plddt_legend
 from scipy.stats import gaussian_kde
 import shutil
-import seaborn as sns
+from matplotlib.lines import Line2D
 
 FLAGS = flags.FLAGS
 
@@ -204,8 +204,7 @@ def MF_models_scores(scores:dict):
   }
 # Create a boxplot with inclined x-axis labels
   fig, ax = plt.subplots()
-  #ax = scores_per_model.boxplot(sym='g+', patch_artist=True, color = colors, flierprops=dict(markerfacecolor='red'))
-  sns.boxplot(scores_per_model)
+  ax = scores_per_model.boxplot(sym='g+', patch_artist=True, color = colors, flierprops=dict(markerfacecolor='red'))
   
   for box, color in zip(ax.artists, pastel_colors):
     box.set_facecolor(color)
@@ -284,50 +283,28 @@ def MF_extract_pred_recycle(log, relative_position):
   with open(log, 'r') as log_file:
     lines = log_file.readlines()
   
-  start_symbol = 999
-  end_symbol = 9999
-  distance_token = 123
-  score_token = 456
+  start_symbol = 'Starts recycling'
+  end_symbol = 'Ends recycling'
   
   recycle_logs = []
-  for score in lines:
-    try:
-      recycle_logs.append(float(score.strip()))
-    except ValueError:
-      pass
-  #recycle_scores = [ float(score.strip()) for score in lines if score.strip()[:2] in ['0', '1', '0.'] ]
+  for line in lines:
+    if line.startswith(start_symbol):
+      pred = {
+        'scores': [],
+        'distances': []
+      }
+    elif line.startswith(end_symbol):
+      pred['distances'] = [distance for i, distance in enumerate(pred['distances']) if i != 1]
+      recycle_logs.append(pred)
+    
+    elif line.startswith('Distance for') or line.startswith("Last step's distance"):
+      distance = float(line.split(': ')[1])
+      pred['distances'].append(distance)
+    elif line.startswith('Score for') or line.startswith("Last step's score"):
+      score = float(line.split(': ')[1])
+      pred['scores'].append(score)
   
-  next_to_end_is_start = all([ recycle_logs[index+1] == start_symbol for index, element in enumerate(recycle_logs[:-1]) if element == end_symbol ])
-  
-  # even indices element of the list must be tokens
-  # should begin by distance's token then score's token
-  # this order is verified
-  tokens = recycle_logs[1:-1][::2]
-  is_distance_ordered = set(tokens[::2]) == set([distance_token])
-  is_score_ordered = set(tokens[1::2]) == set([score_token])
-
-  validity_conditions = [
-    recycle_logs[0] == start_symbol,
-    recycle_logs[-1] == end_symbol,
-    next_to_end_is_start,
-    is_distance_ordered,
-    is_score_ordered
-  ]
- 
-  if all(validity_conditions):
-    splited_recycle_scores = []
-    i = 0
-    for score in recycle_logs[:]:
-      if score == end_symbol:
-        splited_recycle_scores.append(recycle_logs[1:i])
-        recycle_logs = recycle_logs[i+1:]
-        i = 0
-      else:
-        i+=1
-    return splited_recycle_scores[relative_position[0]]
-  
-  else:
-    print(f'Recycles scores validity conditions on {log} not verified')
+  return recycle_logs[relative_position[0]]
 
 def MF_recycles():
   all_models_pae = []
@@ -371,10 +348,12 @@ def MF_recycles():
     relative_position = (position_in_batch, batch_size)
 
     pred_recycles = MF_extract_pred_recycle(log_file, relative_position)
-    non_tokens = pred_recycles[1::2]
-    scores_elements = non_tokens[1::2]
-    distances_elements = non_tokens[::2]
-    
+    scores_elements = pred_recycles['scores']
+    distances_elements = pred_recycles['distances']
+   
+    with open(log_file, 'r') as log:
+      lines = log.readlines()
+    early_stop_tolerance = [line.split('=')[1].strip() for line in lines if 'early_stop_tolerance=' in line][0]
     if pred_recycles:
       
       fig, ax1 = plt.subplots()
@@ -383,15 +362,25 @@ def MF_recycles():
       ax1.set_xlabel('recycle step')
       ax1.set_ylabel('ranking confidence', color=color)
       ax1.set_ylim(bottom=0, top=1.1)
-      ax1.plot(np.linspace(0, len(scores_elements) +1, len(scores_elements)), scores_elements, color=color)
+      x_vals = np.linspace(0, len(scores_elements) - 1, len(scores_elements))
+      ax1.plot(x_vals, scores_elements, color=color)
       ax1.tick_params(axis='y', labelcolor=color)
+      ax1.set_xticks(np.arange(min(x_vals), max(x_vals)+1, 1))
+      ax.spines['top'].set_visible(False)
+      ax.spines['right'].set_visible(False)
 
       ax2 = ax1.twinx()
+      color = 'tab:grey'
+      ax2.plot(x_vals, [float(early_stop_tolerance) for val in x_vals], color=color)
+      plt.text(x_vals[-2], 0.55, 'Early stop tolerance', color = color)
       color = 'tab:blue'
       ax2.set_ylabel('distance with previous step structure', color=color)
-      ax2.plot(np.linspace(0, len(distances_elements) +1, len(distances_elements)), distances_elements, color=color)
+      ax2.plot(x_vals, distances_elements, color=color)
       ax2.tick_params(axis='y', labelcolor=color)
-      ax1.set_title(f"{pred_model}_pred_{pred_nb} score and structure distance in recycles")
+      
+      ax1_infos = ax1.get_legend_handles_labels()
+      ax2_infos = ax2.get_legend_handles_labels()
+      fig.suptitle(f"Recycling of {pred_model}_pred_{pred_nb}")
       fig.tight_layout() 
 
       if FLAGS.action == "save":
@@ -416,7 +405,7 @@ def main(argv):
     "recycles": MF_recycles
     }
 
-  # Flags checking²
+  # Flags checking
   if not FLAGS.input_path or not FLAGS.chosen_plots:
     print('Required flags: --input_path and --chosen_plots')  
   if not FLAGS.output_path:
@@ -425,7 +414,6 @@ def main(argv):
   if "distribution_comparison" in FLAGS.chosen_plots and not FLAGS.runs_to_compare:
     print('Flag --runs_to_compare is required for --chosen_plots=distribution_comparison')
     FLAGS.chosen_plots = [ plot for plot in FLAGS.chosen_plots if plot != 'distribution_comparison' ]
-
 
   if not shutil.os.path.exists(FLAGS.output_path):
     shutil.os.makedirs(FLAGS.output_path)
