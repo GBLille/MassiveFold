@@ -29,7 +29,7 @@ def group_templates(all_params, job_types:list):
   run = all_params['massivefold']['run_name']
   grouped_templates = {}
   
-  model_preset = all_params['MF_run']['MF_run_model_preset']
+  model_preset = all_params['AFM_run']['AFM_run_model_preset']
   for job_type in job_types:
     template_file = f"{job_type}_{model_preset}"
     header_path = f"{templates_paths['jobfile_headers_dir']}/{job_type}.slurm"
@@ -77,7 +77,7 @@ def main(argv):
     print("Parameters of the run:")
     for i in all_params['custom_params']:
       print(f"{i}: {all_params['custom_params'][i]}")
-    for i in all_params['AFM_runs']:
+    for i in all_params['AFM_run']:
       print(f"{i}: {all_params['AFM_run'][i]}")
     print()
   if FLAGS.job_type == "post_treatment":
