@@ -41,7 +41,6 @@ uniref_max_hits=$AFM_run_uniref_max_hits
 templates=$AFM_run_templates
 min_score=$AFM_run_min_score
 max_score=$AFM_run_max_score
-keep_pkl=$AFM_run_keep_pkl
 stop_recycling_below=$AFM_run_stop_recycling_below
 
 # parameters for each task in the job array
@@ -71,7 +70,6 @@ echo "$${run_massivefold}
     --early_stop_tolerance=$${early_stop_tolerance}
     --min_score=$${min_score}
     --max_score=$${max_score}
-    --keep_pkl=$${keep_pkl}
     --stop_recycling_below=$${stop_recycling_below}
     --bfd_max_hits=$${bfd_max_hits}
     --mgnify_max_hits=$${mgnify_max_hits}
@@ -109,7 +107,6 @@ time $${run_massivefold} \
     --early_stop_tolerance=$${early_stop_tolerance} \
     --min_score=$${min_score} \
     --max_score=$${max_score} \
-    --keep_pkl=$${keep_pkl} \
     --stop_recycling_below=$${stop_recycling_below} \
     --bfd_max_hits=$${bfd_max_hits} \
     --mgnify_max_hits=$${mgnify_max_hits} \

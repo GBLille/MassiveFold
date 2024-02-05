@@ -1,15 +1,15 @@
 {
     "massivefold": {
-        "run_massivefold": "",
+        "run_massivefold": "run_AFmassive.py",
         "run_massivefold_plots": "",
-        "data_dir": "/gpfsdswork/dataset/AlphaFold-2.3.1",
-        "jobfile_headers_dir": "./headers",
-        "jobfile_templates_dir": "./templates",
-        "output_dir": "../output_array",
-        "logs_dir": "../log_parallel",
-        "input_dir": "../input",
-        "predictions_to_relax": "5",
-        "models_to_use": ""
+        "data_dir": "",
+        "jobfile_headers_dir": "",
+        "jobfile_templates_dir": "",
+        "output_dir": "",
+        "logs_dir": "",
+        "input_dir": "",
+        "models_to_use": "",
+        "keep_pkl":"false"
     },
     "custom_params": {
     },
@@ -22,7 +22,6 @@
         "AFM_run_min_score": "0",
         "AFM_run_max_score": "1",
         "AFM_run_stop_recycling_below": "0",
-        "AFM_run_keep_pkl": "false",
         "AFM_run_max_recycles": "20",
         "AFM_run_db_preset": "full_dbs",
         "AFM_run_use_gpu_relax": "true",

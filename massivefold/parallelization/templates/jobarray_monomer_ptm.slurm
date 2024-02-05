@@ -22,7 +22,6 @@ max_template_date=2023-07-31
 use_precomputed_msas=true
 alignments_only=false
 
-
 # variable as MF_parallel parameters
 model_preset=$AFM_run_model_preset
 db_preset=$AFM_run_db_preset
@@ -41,7 +40,6 @@ templates=$AFM_run_templates
 min_score=$AFM_run_min_score
 max_batch_score=$AFM_run_max_batch_score
 max_score=$AFM_run_max_score
-keep_pkl=$AFM_run_keep_pkl
 stop_recycling_below=$AFM_run_stop_recycling_below
 
 # parameters for each task in the job array
@@ -71,7 +69,6 @@ echo "$${run_massivefold}
     --early_stop_tolerance=$${early_stop_tolerance}
     --min_score=$${min_score}
     --max_score=$${max_score}
-    --keep_pkl=$${keep_pkl}
     --stop_recycling_below=$${stop_recycling_below}
     --bfd_max_hits=$${bfd_max_hits}
     --mgnify_max_hits=$${mgnify_max_hits}
@@ -108,7 +105,6 @@ time $${run_massivefold} \
     --early_stop_tolerance=$${early_stop_tolerance} \
     --min_score=$${min_score} \
     --max_score=$${max_score} \
-    --keep_pkl=$${keep_pkl} \
     --stop_recycling_below=$${stop_recycling_below} \
     --bfd_max_hits=$${bfd_max_hits} \
     --mgnify_max_hits=$${mgnify_max_hits} \

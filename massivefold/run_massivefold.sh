@@ -2,7 +2,7 @@
 
 
 USAGE="\
-./run_massivefold.sh -s str -r str -p int -f str [-m str] [-n str] [-b int | [[-C str | -c] [-w int]] ]\n\
+./run_massivefold.sh -s str -r str -p int -f str [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]\n\
 ./run_massivefold.sh -h for more details "
 
 # help message
@@ -18,7 +18,7 @@ Usage: $USAGE\n\
   Facultative arguments:\n\
     -b| --batch_size: number of predictions per batch, should not be higher than -p (default: 25).\n\
     -m| --msas_precomputed: path to directory that contains computed msas.\n\
-    -n| --top_n_models: uses the 5 models with best ranking confidence from this run's path.\n\
+    -n| --top_n_models: uses the n neural network models with best ranking confidence from this run's path.\n\
     -w| --wall_time: total time available for calibration computations, unit is hours (default: 20).\n\
     -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).\n\
 \n\
@@ -26,7 +26,8 @@ Usage: $USAGE\n\
     -c| --calibrate: calibrate --batch_size value. Searches for this sequence previous runs and uses\n\
         the longest prediction time found to compute the maximal number of prediction per batch.\n\
         This maximal number depends on the total time given by --wall_time.\n\
-    -a| --recompute_msas: purges previous alignment step and recomputes msas."
+    -a| --recompute_msas: purges previous alignment step and recomputes msas.\n\
+    -o| --only_msas: only compute alignment, the first step of MassiveFold."
 
   exit 1
 fi
