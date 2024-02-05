@@ -13,9 +13,8 @@
 #SBATCH --gpus-per-node=1
 #SBATCH --array=0-$substitute_batch_number
 #SBATCH --time=$jeanzay_jobarray_time
-##SBATCH --qos=qos_gpu-dev             # Uncomment for job requiring less than 2 hours
-##SBATCH --qos=qos_gpu-t4         # Uncomment for job requiring more than 20h (max 16 GPUs)
-#SBATCH -C $jeanzay_gpu_with_memory             # Use gpu
+##SBATCH --qos=qos_gpu-t4               # Uncomment for job requiring more than 20h (max 16 GPUs)
+#SBATCH -C $jeanzay_gpu_with_memory     # Use gpu
 
 module purge
 module load massivefold/1.0.0
