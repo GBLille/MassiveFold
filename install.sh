@@ -40,6 +40,7 @@ runs=massivefold_runs
 mkdir -p $runs/input
 mkdir $runs/output
 mkdir $runs/log
+cp examples/H1144.fasta $runs/input
 
 # scripts and files for each pipeline (currently only AFmassive)
 cp massivefold/run_massivefold.sh $runs
