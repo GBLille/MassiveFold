@@ -494,7 +494,13 @@ Here is the list of available plots:
   ![header](imgs/plot_illustrations/PAEs.png)
   * coverage: ColabFold's plot for sequence alignment coverage
   ![header](imgs/plot_illustrations/coverage.png)
-  * score_distribution:
+  * score_distribution: perform 3 plots that summarizes the score's distribution on three levels: 
+    - an histogram of all scores indiscriminately
+    ![header](imgs/plot_illustrations/score_distribution.png)
+    - a density plot with each versions 
+    ![header](imgs/plot_illustrations/versions_density.png)
+    - and a boxplot with each neural network model
+    ![header](imgs/plot_illustrations/models_scores.png)
   * distribution_comparison: ranking confidence distribution comparison between various MassiveFold outputs, typically 
   useful for runs with different parameters sets on the same input sequence(s).
   ![header](imgs/plot_illustrations/distribution_comparison.png)
