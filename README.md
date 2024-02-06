@@ -4,7 +4,7 @@
 
 ## Table of contents
 <!-- TOC -->
-  * [MassiveFold: parallellize protein structure prediction](#massivefold-parallellize-protein-structure-prediction)
+* [MassiveFold](#massivefold)
   * [Installation](#installation)
     * [Steps](#steps)
     * [Jobfile's header](#jobfiles-header)
@@ -297,7 +297,7 @@ Then you can set the parameters of the **custom_params** section if necessary an
 
 Activate the conda environment, then launch MassiveFold.
 ```bash
-conda activate massivefold-1.1.0
+conda activate massivefold
 ./run_massivefold.sh -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> 
 ```
 **N.B.**: on the Jean Zay cluster, load the massivefold module instead of activating the conda environment
@@ -476,7 +476,7 @@ MassiveFold plotting module can be used on a MassiveFold output to evaluate its 
 
 Here is an example of a basic command you can run:
 ```bash
-conda activate massivefold-1.1.0
+conda activate massivefold
 massivefold_plots.py --input_path=<path_to_MF_output> --chosen_plots=DM_plddt_PAE
 ```
 
@@ -516,7 +516,7 @@ Here is the list of available plots:
 
 More help with
 ```bash
-conda activate massivefold-1.1.0
+conda activate massivefold
 massivefold_plots.py --help
 ```
 
