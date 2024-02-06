@@ -10,7 +10,7 @@
     * [Jobfile's header](#jobfiles-header)
       * [Building](#building)
       * [How to add a parameter](#how-to-add-a-parameter)
-    * [Install on Jean Zay](#install-on-jean-zay)
+    * [Installation on Jean Zay](#installation-on-jean-zay)
   * [Usage](#usage)
     * [Inference workflow](#inference-workflow)
     * [Parameters](#parameters)
