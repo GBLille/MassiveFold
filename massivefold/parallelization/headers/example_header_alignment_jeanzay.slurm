@@ -10,8 +10,7 @@
 #SBATCH --account=$jeanzay_project@cpu
 ##SBATCH --qos=qos_gpu-t4              # Uncomment for job requiring more than 20h (max 16 GPUs)
 
-module purge
-module load massivefold/1.0.0
-
+#tmp dir on Jean Zay
 export TMP=$$JOBSCRATCH
 export TMPDIR=$$JOBSCRATCH
+

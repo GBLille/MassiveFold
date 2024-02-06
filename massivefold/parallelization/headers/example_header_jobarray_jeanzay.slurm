@@ -16,11 +16,10 @@
 ##SBATCH --qos=qos_gpu-t4               # Uncomment for job requiring more than 20h (max 16 GPUs)
 #SBATCH -C $jeanzay_gpu_with_memory     # Use gpu
 
-module purge
-module load massivefold/1.0.0
-
+#for gpu memory
 export TF_FORCE_UNIFIED_MEMORY='1'
 export XLA_PYTHON_CLIENT_MEM_FRACTION='4.0'
 
+#tmp dir on Jean Zay
 export TMP=$$JOBSCRATCH
 export TMPDIR=$$JOBSCRATCH

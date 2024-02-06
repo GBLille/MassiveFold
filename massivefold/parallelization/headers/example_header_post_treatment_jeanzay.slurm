@@ -9,5 +9,3 @@
 #SBATCH --time=00:05:00      # Expected runtime HH:MM:SS (max 100h)
 #SBATCH --account=$jeanzay_project@cpu #
 
-module purge
-module load massivefold/1.0.0

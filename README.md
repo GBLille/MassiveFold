@@ -300,6 +300,8 @@ Activate the conda environment, then launch MassiveFold.
 conda activate massivefold-1.1.0
 ./run_massivefold.sh -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> 
 ```
+**N.B.**: on the Jean Zay cluster, load the massivefold module instead of activating the conda environment
+
 Example:
 ```bash
 ./run_massivefold.sh -s input/H1144.fasta -r default_run -p 5 -f AFmassive_params.json
