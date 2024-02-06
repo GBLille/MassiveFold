@@ -10,7 +10,7 @@ if [[ " ${@} " == *" -h "* ]] || [[ " ${@} " == *" --help "* ]]; then
   echo -e "\
 Usage: $USAGE\n\
   Required arguments:\n\
-    -s| --sequence: path of the sequence to infer, should be a 'fasta' file \n\
+    -s| --sequence: path of the sequence(s) to infer, should be a 'fasta' file \n\
     -r| --run: name chosen for the run to organize in outputs.\n\
     -p| --predictions_per_model: number of predictions computed for each neural network model.\n\
     -f| --parameters: json file's path containing the parameters used for this run.\n\
