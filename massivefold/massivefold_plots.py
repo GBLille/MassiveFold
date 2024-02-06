@@ -9,6 +9,7 @@ import json
 from absl import flags
 from absl import app
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 from plots.colabfold_plots import plot_msa_v2, plot_plddts, plot_confidence, plot_paes, plot_plddt_legend
 from scipy.stats import gaussian_kde
 import shutil
@@ -224,7 +225,6 @@ def MF_models_scores(scores:dict):
   elif s_type == 'plddts':
     ax.set_ylim(bottom=0, top=110)
   
-  plt.show()
   plt.tight_layout()
  
   if FLAGS.action == "save":
@@ -248,7 +248,10 @@ def MF_score_distribution():
   }
 
   for distrib in distribution_types:
-    DISTRIBUTION_MAP[distrib](scores)
+    try:
+      DISTRIBUTION_MAP[distrib](scores)
+    except:
+      print(f"Error while trying to plot {DISTRIBUTION_MAP[distrib].__name__}()")
 
 def MF_distribution_comparison():
   sequence_path = FLAGS.input_path
@@ -353,33 +356,35 @@ def MF_recycles():
    
     with open(log_file, 'r') as log:
       lines = log.readlines()
-    early_stop_tolerance = [line.split('=')[1].strip() for line in lines if 'early_stop_tolerance=' in line][0]
+    early_stop_tolerance = float([line.split('=')[1].strip() for line in lines if 'early_stop_tolerance=' in line][0])
     if pred_recycles:
       
       fig, ax1 = plt.subplots()
       
+      x_vals = np.linspace(0, len(scores_elements) - 1, len(scores_elements))
+
       color = 'tab:red'
       ax1.set_xlabel('recycle step')
       ax1.set_ylabel('ranking confidence', color=color)
       ax1.set_ylim(bottom=0, top=1.1)
-      x_vals = np.linspace(0, len(scores_elements) - 1, len(scores_elements))
       ax1.plot(x_vals, scores_elements, color=color)
       ax1.tick_params(axis='y', labelcolor=color)
-      ax1.set_xticks(np.arange(min(x_vals), max(x_vals)+1, 1))
-      ax.spines['top'].set_visible(False)
-      ax.spines['right'].set_visible(False)
 
       ax2 = ax1.twinx()
       color = 'tab:grey'
-      ax2.plot(x_vals, [float(early_stop_tolerance) for val in x_vals], color=color)
-      plt.text(x_vals[-2], 0.55, 'Early stop tolerance', color = color)
+      ax2.plot(x_vals, [early_stop_tolerance for val in x_vals], color=color)
+      est_pos_increment = max(distances_elements)/50
+      plt.text(x_vals[0], early_stop_tolerance + est_pos_increment, 'Early stop tolerance', color = color)
+      
       color = 'tab:blue'
       ax2.set_ylabel('distance with previous step structure', color=color)
       ax2.plot(x_vals, distances_elements, color=color)
       ax2.tick_params(axis='y', labelcolor=color)
-      
-      ax1_infos = ax1.get_legend_handles_labels()
-      ax2_infos = ax2.get_legend_handles_labels()
+
+      locator = ticker.MaxNLocator(integer=True)
+      ax1.xaxis.set_major_locator(locator)
+      ax2.xaxis.set_major_locator(locator)
+
       fig.suptitle(f"Recycling of {pred_model}_pred_{pred_nb}")
       fig.tight_layout() 
 
