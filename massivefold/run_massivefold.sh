@@ -10,7 +10,7 @@ if [[ " ${@} " == *" -h "* ]] || [[ " ${@} " == *" --help "* ]]; then
   echo -e "\
 Usage: $USAGE\n\
   Required arguments:\n\
-    -s| --sequence: name of the sequence to infer, same as input file without '.fasta'.\n\
+    -s| --sequence: path of the sequence to infer, should be a 'fasta' file \n\
     -r| --run: name chosen for the run to organize in outputs.\n\
     -p| --predictions_per_model: number of predictions computed for each neural network model.\n\
     -f| --parameters: json file's path containing the parameters used for this run.\n\
@@ -23,11 +23,11 @@ Usage: $USAGE\n\
     -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).\n\
 \n\
   Facultative options:\n\
-    -c| --calibrate: calibrate --batch_size value. Searches for this sequence previous runs and uses\n\
-        the longest prediction time found to compute the maximal number of prediction per batch.\n\
+    -c| --calibrate: calibrate --batch_size value. Searches from the previous runs for the same 'fasta' path given\n\
+        in --sequence and uses the longest prediction time found to compute the maximal number of predictions per batch.\n\
         This maximal number depends on the total time given by --wall_time.\n\
     -a| --recompute_msas: purges previous alignment step and recomputes msas.\n\
-    -o| --only_msas: only compute alignment, the first step of MassiveFold."
+    -o| --only_msas: only compute alignments, the first step of MassiveFold."
 
   exit 1
 fi

@@ -24,11 +24,11 @@ flags.DEFINE_integer('top_n_predictions', 10,
 flags.DEFINE_list('chosen_plots', [], 
                   'Specify the plots you want to get.'
                   'CF_plddt for plddt of each predictions, DM_plddt_PAE for plddt and PAE on the same plot for each prediction,'
-                  'CF_PAEs for all predictions PAEs on the plot and CF_plddts for all predictions plddt on the same plot.')
-flags.DEFINE_enum('action', "save", ["save", "show"], "Chose to save the plot or show them.")
+                  'CF_PAEs for PAEs of all predictions on the same plot and CF_plddts for plddt of all predictions on the same plot.')
+flags.DEFINE_enum('action', "save", ["save", "show"], "Choose to save the plot or show them.")
 flags.DEFINE_string('output_path', None, 
-                    'Path to directory that will store the plot, same as the input dir by default.')
-flags.DEFINE_list('runs_to_compare', [], 'Runs you want to compare on their distribution')
+                    'Path to directory that will store the plots, same as the input dir by default.')
+flags.DEFINE_list('runs_to_compare', [], 'Runs that you want to compare on a same distribution plot')
 
 def extract_top_predictions():
   with open(f'{FLAGS.input_path}/ranking_debug.json', 'r') as json_file:

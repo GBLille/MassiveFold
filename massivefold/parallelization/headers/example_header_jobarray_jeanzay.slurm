@@ -1,6 +1,5 @@
 #!/bin/bash
 
-##SBATCH --job-name=MF_inference
 #SBATCH --account=$jeanzay_account
 
 #SBATCH --error=${logs_dir}/${sequence_name}/${run_name}/jobarray_%a.log

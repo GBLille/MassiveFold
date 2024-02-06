@@ -4,7 +4,7 @@
 
 ## Table of contents
 <!-- TOC -->
-* [MassiveFold](#massivefold)
+  * [MassiveFold: parallellize protein structure prediction](#massivefold-parallellize-protein-structure-prediction)
   * [Installation](#installation)
     * [Steps](#steps)
     * [Jobfile's header](#jobfiles-header)
@@ -297,7 +297,7 @@ Then you can set the parameters of the **custom_params** section if necessary an
 
 Activate the conda environment, then launch MassiveFold.
 ```bash
-conda activate massivefold
+conda activate massivefold-1.1.0
 ./run_massivefold.sh -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> 
 ```
 **N.B.**: on the Jean Zay cluster, load the massivefold module instead of activating the conda environment
@@ -316,7 +316,7 @@ Here is the help message associated with this command:
 Usage: ./run_massivefold.sh -s str -r str -p int -f str [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]
 ./run_massivefold.sh -h for more details 
   Required arguments:
-    -s| --sequence: name of the sequence to infer, same as input file without '.fasta'.
+    -s| --sequence: path of the sequence to infer, should be a 'fasta' file 
     -r| --run: name chosen for the run to organize in outputs.
     -p| --predictions_per_model: number of predictions computed for each neural network model.
     -f| --parameters: json file's path containing the parameters used for this run.
@@ -329,11 +329,12 @@ Usage: ./run_massivefold.sh -s str -r str -p int -f str [ -b int | [[-C str | -c
     -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).
 
   Facultative options:
-    -c| --calibrate: calibrate --batch_size value. Searches for this sequence previous runs and uses
-        the longest prediction time found to compute the maximal number of prediction per batch.
+    -c| --calibrate: calibrate --batch_size value. Searches from the previous runs for the same 'fasta' path given
+        in --sequence and uses the longest prediction time found to compute the maximal number of predictions per batch.
         This maximal number depends on the total time given by --wall_time.
     -a| --recompute_msas: purges previous alignment step and recomputes msas.
-    -o| --only_msas: only compute alignment, the first step of MassiveFold.
+    -o| --only_msas: only compute alignments, the first step of MassiveFold.
+
 ```
 ### Inference workflow
 
@@ -476,7 +477,7 @@ MassiveFold plotting module can be used on a MassiveFold output to evaluate its 
 
 Here is an example of a basic command you can run:
 ```bash
-conda activate massivefold
+conda activate massivefold-1.1.0
 massivefold_plots.py --input_path=<path_to_MF_output> --chosen_plots=DM_plddt_PAE
 ```
 
@@ -516,7 +517,7 @@ Here is the list of available plots:
 
 More help with
 ```bash
-conda activate massivefold
+conda activate massivefold-1.1.0
 massivefold_plots.py --help
 ```
 

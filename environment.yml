@@ -1,4 +1,4 @@
-name: massivefold
+name: massivefold-1.1.0
 channels:
   - conda-forge
   - bioconda
@@ -37,5 +37,5 @@ dependencies:
       - tensorflow-cpu==2.11.0
       - matplotlib==3.7.2
       - seaborn==0.13.2
-      - git+https://github.com/GBLille/AFmassive
+      - git+https://github.com/GBLille/AFmassive@v1.1.0
       - https://storage.googleapis.com/jax-releases/cuda11/jaxlib-0.3.25+cuda11.cudnn805-cp38-cp38-manylinux2014_x86_64.whl
