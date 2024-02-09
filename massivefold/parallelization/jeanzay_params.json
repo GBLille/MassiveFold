@@ -13,6 +13,12 @@
         "scripts_dir": "../massivefold/parallelization"
     },
     "custom_params": {
+        "jeanzay_gpu": "v100",
+        "jeanzay_project": "<project>",
+        "jeanzay_account": "<project>@v100",
+        "jeanzay_gpu_with_memory": "v100", 
+        "jeanzay_alignment_time": "10:00:00",
+        "jeanzay_jobarray_time": "19:59:59"
     },
     "AFM_run": {
         "AFM_run_db_preset": "full_dbs",
