@@ -20,7 +20,8 @@ dependencies:
   - cudnn=8.1.0.77
   - hmmer=3.3.2
   - hhsuite=3.3.0
-  - kalign3=3.3.2
+  - kalign2
+  - colabfold=1.5.5
   - pip
   - pip:
       - absl-py==1.0.0
