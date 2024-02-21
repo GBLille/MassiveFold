@@ -350,7 +350,7 @@ parameter not as default).
 You can decide how the run will be divided by assigning `run_massivefold.sh` parameters *e.g.*:
 
 ```bash
-./run_massivefold.sh -s ..input/H1144.fasta -r 1005_preds -p 67 -b 25 -f AFmassive_params.json
+./run_massivefold.sh -s ./input/H1144.fasta -r 1005_preds -p 67 -b 25 -f AFmassive_params.json
 ```
 
 The predictions are computed individually for each neural network (NN) model,  **-p** or **--predictions_per_model** 
@@ -500,7 +500,7 @@ Here is the list of available plots:
   * score_distribution: performs 3 plots that summarize the score's distribution at three levels: 
     - an histogram of all scores indiscriminately  
     ![header](imgs/plot_illustrations/score_distribution.png)
-    - a density plot for each version of neural network model  
+    - a density plot for each neural network model version  
     ![header](imgs/plot_illustrations/versions_density.png)
     - a boxplot for each neural network model  
     ![header](imgs/plot_illustrations/models_scores.png)
