@@ -1,41 +1,18 @@
-name: massivefold
+name: massivefold-1.2.0
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - python=3.8
-  - compilers
-  - git
-  - patch
-  - pkg-config
-  - setuptools
-  - wget
-  - ipykernel
-  - py3dmol
-  - tqdm
-  - openmm=7.5.1
-  - cudatoolkit=11.2.2
-  - pdbfixer=1.7
-  - cudnn=8.1.0.77
+  - colabfold=1.5.5
   - hmmer=3.3.2
   - hhsuite=3.3.0
+  - openmm=7.7.0
   - kalign2
   - pip
   - pip:
       - absl-py==1.0.0
       - biopython==1.79
-      - chex==0.0.7
-      - dm-haiku==0.0.9
-      - dm-tree==0.1.6
-      - immutabledict==2.0.0
-      - jax==0.3.25
-      - ml-collections==0.1.0
-      - numpy==1.21.6
-      - pandas==1.3.4
-      - scipy==1.7.3
-      - tensorflow-cpu==2.11.0
       - matplotlib==3.7.2
       - seaborn==0.13.2
       - git+https://github.com/GBLille/AFmassive
-      - https://storage.googleapis.com/jax-releases/cuda11/jaxlib-0.3.25+cuda11.cudnn805-cp38-cp38-manylinux2014_x86_64.whl
