@@ -84,6 +84,10 @@ in the `AFmassive_params.json` parameters file.
 cd MassiveFold
 ./install.sh <DATA_DIR>
 ```
+
+***N.B.***: in function of your architecture, you may need to install [cuda-nvcc](https://anaconda.org/nvidia/cuda-nvcc) 
+in your conda environment.
+
 The <**DATA_DIR**> parameter is the path used in AlphaFold2 installation where the sequence databases are downloaded.
 <a id="tree"></a>  
 
