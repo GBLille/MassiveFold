@@ -84,10 +84,6 @@ in the `AFmassive_params.json` parameters file.
 cd MassiveFold
 ./install.sh <DATA_DIR>
 ```
-
-***N.B.***: in function of your infrastructure, you may need to install [cuda-nvcc](https://anaconda.org/nvidia/cuda-nvcc) 
-in your conda environment.
-
 The <**DATA_DIR**> parameter is the path used in AlphaFold2 installation where the sequence databases are downloaded.
 <a id="tree"></a>  
 
@@ -264,7 +260,11 @@ To use it on Jean Zay, the only installation steps are:
 git clone https://github.com/GBLille/MassiveFold.git
 ./install.sh
 ```
-The same [file architecture](#tree) is built, follow the [usage](#usage) section to use MassiveFold.
+The same [file architecture](#tree) is built.
+
+Edit the `AFmassive_params.json` and replace `<project>` by your project name. 
+
+Then follow the [usage](#usage) section to use MassiveFold.
 
 ## Usage
 
@@ -304,7 +304,7 @@ Activate the conda environment, then launch MassiveFold.
 conda activate massivefold
 ./run_massivefold.sh -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> 
 ```
-**N.B.**: on the Jean Zay cluster, load the massivefold module instead of activating the conda environment
+**N.B.**: on the Jean Zay cluster, load the `massivefold` module instead of activating the conda environment
 
 Example:
 ```bash
