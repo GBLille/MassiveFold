@@ -14,6 +14,7 @@ from plots.colabfold_plots import plot_msa_v2, plot_plddts, plot_confidence, plo
 from scipy.stats import gaussian_kde
 import shutil
 from matplotlib.lines import Line2D
+import seaborn as sns
 
 FLAGS = flags.FLAGS
 
@@ -48,7 +49,7 @@ def CF_PAEs():
     all_models_pae.append(np.asarray(data['predicted_aligned_error']))
   plot_paes(all_models_pae)
   if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/top_{FLAGS.top_n_predictions}_PAE.png")
+    plt.savefig(f"{FLAGS.output_path}/top_{FLAGS.top_n_predictions}_PAE.png", dpi=200)
     print(f"Saved as top_{FLAGS.top_n_predictions}_PAE.png")
     plt.close()
   if FLAGS.action == "show":
@@ -64,7 +65,7 @@ def CF_plddts():
     all_models_plddt.append(np.asarray(data['plddt']))
   plot_plddts(all_models_plddt)
   if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/top_{FLAGS.top_n_predictions}_plddt.png")
+    plt.savefig(f"{FLAGS.output_path}/top_{FLAGS.top_n_predictions}_plddt.png", dpi=200)
     print(f"Saved as top_{FLAGS.top_n_predictions}_plddt.png")
     plt.close()
   if FLAGS.action == "show":
@@ -96,7 +97,7 @@ def MF_DM_dual_plddt_PAE(prediction, rank):
   plt.ylabel('Aligned residue')
   
   if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/rank_{rank}_{prediction}_plddt_PAE.png")
+    plt.savefig(f"{FLAGS.output_path}/rank_{rank}_{prediction}_plddt_PAE.png", dpi=200)
     print(f"Saved as rank_{rank}_{prediction}_plddt_PAE.png")
     plt.close()
   if FLAGS.action == "show":
@@ -116,7 +117,7 @@ def MF_indiv_plddt():
     plot_confidence(data['plddt'])
     plt.title(f'rank_{i}_{pred} predicted lDDT')
     if FLAGS.action == "save":
-      plt.savefig(f"{FLAGS.output_path}/rank_{i}_{pred}_plddt.png")
+      plt.savefig(f"{FLAGS.output_path}/rank_{i}_{pred}_plddt.png", dpi=200)
       print(f"Saved as rank_{i}_{pred}_plddt.png")
       plt.close()
     if FLAGS.action == "show":
@@ -128,7 +129,7 @@ def MF_coverage():
     data = pickle.load(f)
   plot_msa_v2(data)
   if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/alignment_coverage.png")
+    plt.savefig(f"{FLAGS.output_path}/alignment_coverage.png", dpi=200)
     print(f"Saved as alignment_coverage.png")
     plt.close()
   elif FLAGS.action == "show":
@@ -144,11 +145,10 @@ def MF_score_histogram(scores:dict):
   all_scores = [scores[model] for model in scores]
   histogram, ax1 = plt.subplots()
   ax1.hist(all_scores, bins=50)
-  ax1.set(title=f"Histogram of {os.path.basename(FLAGS.input_path)}'s \
-{len(all_scores)} predictions score distribution", xlabel='Ranking confidence',
-ylabel='Prediction number')
+  histogram.suptitle('Global score distribution')
+  ax1.set(xlabel='Ranking confidence', ylabel='Number of predictions')
   if FLAGS.action == "save":
-    histogram.savefig(f"{FLAGS.output_path}/score_distribution.png")
+    histogram.savefig(f"{FLAGS.output_path}/score_distribution.png", dpi=200)
     print("Saved as score_distribution.png")
     plt.close(histogram)
 
@@ -160,25 +160,24 @@ def MF_versions_density(scores:dict):
     return None
 
   # Score distribution by NN model version
-  available_version = {model.split('multimer_')[1].split('_pred')[0] for model in scores}
-  scores_per_version = pd.DataFrame(
-    {
-    'v1': [scores[model] for model in scores if "v1" in model],
-    'v2': [scores[model] for model in scores if "v2" in model],
-    'v3': [scores[model] for model in scores if "v3" in model],
-    }
-  )
-  kde_versions, ax2 = plt.subplots()
+  versions = {prediction.split('multimer_')[1].split('_pred')[0]: [] for prediction in scores}
   
-  scores_per_version.plot(kind="kde", ax=ax2, bw_method=0.3)
+  for model in scores:
+    versions[model.split('multimer_')[1].split('_pred')[0]].append(scores[model])
+  scores_per_version = pd.DataFrame(versions)
+  scores_per_version = scores_per_version.sort_index(axis=1)
+  kde_versions, ax2 = plt.subplots()
+ 
+  kde_versions.suptitle('Score density')
+  sns.kdeplot(scores_per_version, ax=ax2)
+  #scores_per_version.plot(kind="kde", ax=ax2, bw_method=0.3)
   ax2.set(
-    title="Ranked confidence density per NN model version",
-    xlabel="Ranked confidence",
+    xlabel='Ranking confidence',
     ylabel="Density"
   )
 
   if FLAGS.action == "save":
-    kde_versions.savefig(f"{FLAGS.output_path}/versions_density.png")
+    kde_versions.savefig(f"{FLAGS.output_path}/versions_density.png",dpi=200)
     print("Saved as versions_density.png")
     plt.close(kde_versions)
 
@@ -206,14 +205,13 @@ def MF_models_scores(scores:dict):
 # Create a boxplot with inclined x-axis labels
   fig, ax = plt.subplots()
   ax = scores_per_model.boxplot(sym='g+', patch_artist=True, color = colors, flierprops=dict(markerfacecolor='red'))
-  
   for box, color in zip(ax.artists, pastel_colors):
     box.set_facecolor(color)
 
   plt.grid(False)
+  fig.suptitle("Score per NN model")
   
   ax.set(
-    title="Ranking confidence boxplot per NN model",
     xlabel="NN model",
     ylabel="Ranking confidence"
   )
@@ -228,7 +226,7 @@ def MF_models_scores(scores:dict):
   plt.tight_layout()
  
   if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/models_scores.png", dpi=100)
+    plt.savefig(f"{FLAGS.output_path}/models_scores.png", dpi=200)
     print("Saved as models_scores.png")
 
   if FLAGS.action == "show":
@@ -248,10 +246,11 @@ def MF_score_distribution():
   }
 
   for distrib in distribution_types:
-    try:
-      DISTRIBUTION_MAP[distrib](scores)
-    except:
-      print(f"Error while trying to plot {DISTRIBUTION_MAP[distrib].__name__}()")
+    DISTRIBUTION_MAP[distrib](scores)
+    #try:
+    #  DISTRIBUTION_MAP[distrib](scores)
+    #except:
+    #  print(f"Error while trying to plot {DISTRIBUTION_MAP[distrib].__name__}()")
 
 def MF_distribution_comparison():
   sequence_path = FLAGS.input_path
@@ -279,7 +278,7 @@ def MF_distribution_comparison():
   plt.title(f'Distribution comparison between {os.path.basename(sequence_path)} runs')
   plt.xlabel('Ranking confidence')
   plt.ylabel('Number of predictions')
-  plt.savefig(f'{sequence_path}/distribution_compa.png')
+  plt.savefig(f'{sequence_path}/distribution_compa.png', dpi=200)
   print('Saved as distribution_compa.png')
 
 def MF_extract_pred_recycle(log, relative_position):
@@ -363,33 +362,34 @@ def MF_recycles():
       
       x_vals = np.linspace(0, len(scores_elements) - 1, len(scores_elements))
 
-      color = 'tab:red'
-      ax1.set_xlabel('recycle step')
-      ax1.set_ylabel('ranking confidence', color=color)
-      ax1.set_ylim(bottom=0, top=1.1)
-      ax1.plot(x_vals, scores_elements, color=color)
-      ax1.tick_params(axis='y', labelcolor=color)
-
-      ax2 = ax1.twinx()
       color = 'tab:grey'
-      ax2.plot(x_vals, [early_stop_tolerance for val in x_vals], color=color)
+      ax1.plot(x_vals, [early_stop_tolerance for val in x_vals], color=color)
+      ax1.set_xlabel('Recycling step')
       est_pos_increment = max(distances_elements)/50
       plt.text(x_vals[0], early_stop_tolerance + est_pos_increment, 'Early stop tolerance', color = color)
-      
-      color = 'tab:blue'
-      ax2.set_ylabel('distance with previous step structure', color=color)
-      ax2.plot(x_vals, distances_elements, color=color)
+     
+      ax2 = ax1.twinx()
+      color = 'tab:red'
+      ax2.set_ylabel('Ranking confidence', color=color)
+      ax2.set_ylim(bottom=0, top=1.1)
+      ax2.plot(x_vals, scores_elements, color=color, alpha=0.8)
       ax2.tick_params(axis='y', labelcolor=color)
+
+      color = 'tab:blue'
+      ax1.set_ylabel('Distance with previous step structure', color=color)
+      ax1.plot(x_vals, distances_elements, color=color, alpha=0.8)
+      ax1.tick_params(axis='y', labelcolor=color)
 
       locator = ticker.MaxNLocator(integer=True)
       ax1.xaxis.set_major_locator(locator)
       ax2.xaxis.set_major_locator(locator)
 
-      fig.suptitle(f"Recycling of {pred_model}_pred_{pred_nb}")
+      fig.suptitle(f"{seq} - {run}")
+      plt.title(f"{pred_model}_pred_{pred_nb}")
       fig.tight_layout() 
 
       if FLAGS.action == "save":
-        plt.savefig(f"{recycle_dir}/{pred_model}_pred_{pred_nb}.png")
+        plt.savefig(f"{recycle_dir}/{pred_model}_pred_{pred_nb}.png", dpi=200)
         print(f"Saved as recycles/{pred_model}_pred_{pred_nb}.png")
         plt.close()
       if FLAGS.action == "show":
