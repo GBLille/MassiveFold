@@ -38,7 +38,6 @@ uniprot_max_hits=$AFM_run_uniprot_max_hits
 uniref_max_hits=$AFM_run_uniref_max_hits
 templates=$AFM_run_templates
 min_score=$AFM_run_min_score
-max_batch_score=$AFM_run_max_batch_score
 max_score=$AFM_run_max_score
 stop_recycling_below=$AFM_run_stop_recycling_below
 

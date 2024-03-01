@@ -6,7 +6,6 @@ export XLA_PYTHON_CLIENT_MEM_FRACTION='4.0'
 #variables to adapt
 sequence_name=$sequence_name
 run_name=$run_name
-echo "&${run_massivefold}&"
 fafile=${input_dir}/$${sequence_name}.fasta
 run_massivefold=$run_massivefold
 data_dir=$data_dir
@@ -22,7 +21,6 @@ ln -s $${output_dir}/$${sequence_name}/msas $${output_path}/$${sequence_name}
 max_template_date=2023-07-31
 use_precomputed_msas=true
 alignments_only=false
-
 
 # variable as MF_parallel parameters
 model_preset=$AFM_run_model_preset
