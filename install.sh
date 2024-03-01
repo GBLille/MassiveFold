@@ -24,7 +24,7 @@ if ! $host_is_jeanzay; then
   conda="$(conda info --base)/etc/profile.d/conda.sh"
   source $conda
   conda env create -f environment.yml
-  conda activate massivefold-1.1.1
+  conda activate massivefold
   wget -O ${CONDA_PREFIX}/lib/python3.8/site-packages/alphafold/common/stereo_chemical_props.txt https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
 
   # add run_AFmassive.py and massivefold_plots.py in path (python executables)
