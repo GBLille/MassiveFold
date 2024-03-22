@@ -1,7 +1,4 @@
 date
-# for memory
-export TF_FORCE_UNIFIED_MEMORY='1'
-export XLA_PYTHON_CLIENT_MEM_FRACTION='4.0'
 
 #variables to adapt
 sequence_name=$sequence_name
