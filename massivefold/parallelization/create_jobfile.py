@@ -6,11 +6,30 @@ from absl import app, flags
 import shutil
 
 FLAGS = flags.FLAGS
-flags.DEFINE_enum("job_type", 'all', ['all', 'alignment', 'jobarray', 'post_treatment'], 'Type of the jobfile to create')
-flags.DEFINE_string("sequence_name", "", 'name of the fasta sequence used for the run.')
-flags.DEFINE_string("run_name", '', 'name of the run, it can be anything and it will be the name of the output directory under the sequence name.')
+flags.DEFINE_enum(
+  "job_type",
+  'all',
+  ['all', 'alignment', 'jobarray', 'post_treatment'],
+  'Type of the jobfile to create')
+flags.DEFINE_string(
+  "sequence_name",
+  "",
+  'name of the fasta sequence used for the run.')
+flags.DEFINE_string(
+  "run_name",
+  '',
+  'name of the run, it can be anything and it will'
+  'be the name of the output directory under the sequence name.')
 flags.DEFINE_bool("create_files", True, '')
-flags.DEFINE_string("path_to_parameters", "", "Path to a json file were the jobfile parameters can be specified.")
+flags.DEFINE_string(
+  "path_to_parameters",
+  "",
+  "Path to a json file were the jobfile parameters can be specified.")
+flags.DEFINE_enum(
+  "tool",
+  "AFmassive",
+  ["AFmassive", "ColabFold"],
+  "Specify the tool used by MassiveFold for structure prediction.")
 
 def create_single_jobfile(jobfile_type, templates:dict, params):
   jobfile = Template(templates[jobfile_type]).substitute(params)
@@ -29,11 +48,16 @@ def group_templates(all_params, job_types:list):
   run = all_params['massivefold']['run_name']
   grouped_templates = {}
   
-  model_preset = all_params['AFM_run']['AFM_run_model_preset']
+  if FLAGS.tool == "AFmassive":
+    tool_code = "AFM"
+  elif FLAGS.tool == "ColabFold":
+    tool_code = "CF"
+  
+  model_preset = all_params[f'{tool_code}_run'][f'model_preset']
   for job_type in job_types:
     template_file = f"{job_type}_{model_preset}"
     header_path = f"{templates_paths['jobfile_headers_dir']}/{job_type}.slurm"
-    template_path = f"{templates_paths['jobfile_templates_dir']}/{template_file}.slurm"
+    template_path = f"{templates_paths['jobfile_templates_dir']}/{FLAGS.tool}/{template_file}.slurm"
     jobfile = f"{sequence}_{run}_{job_type}.slurm"
     merge_header_and_template(header_path, template_path, jobfile)
 
@@ -62,6 +86,11 @@ def main(argv):
   if not FLAGS.path_to_parameters:
     raise ValueError('Parameters files missing, use --path_to_parameters.')
 
+  if FLAGS.tool == "AFmassive":
+    tool_code = "AFM"
+  elif FLAGS.tool == "ColabFold":
+    tool_code = "CF"
+  
   with open(FLAGS.path_to_parameters, 'r') as parameters_json:
     all_params = json.load(parameters_json)
 
@@ -70,15 +99,15 @@ def main(argv):
 
   run_params.update(all_params['massivefold'])
   run_params.update(all_params['custom_params'])
-  run_params.update(all_params['AFM_run'])
+  run_params.update(all_params[f'{tool_code}_run'])
   run_params.update(all_params['plots'])
 
   if FLAGS.job_type == "jobarray":  
     print("Parameters of the run:")
     for i in all_params['custom_params']:
       print(f"{i}: {all_params['custom_params'][i]}")
-    for i in all_params['AFM_run']:
-      print(f"{i}: {all_params['AFM_run'][i]}")
+    for i in all_params[f'{tool_code}_run']:
+      print(f"{i}: {all_params[f'{tool_code}_run'][i]}")
     print()
   if FLAGS.job_type == "post_treatment":
     print("Parameters for plots:")
@@ -91,6 +120,5 @@ def main(argv):
   else:
     all_templates = group_templates(all_params, ['alignment', 'jobarray', 'post_treatment'])
     create_all_jobfile(all_templates, run_params)
-
 if __name__ == "__main__":
   app.run(main)

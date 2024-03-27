@@ -1,0 +1,38 @@
+{
+    "massivefold": {
+        "run_massivefold": "run_AFmassive.py",
+        "run_massivefold_plots": "",
+        "data_dir": "",
+        "jobfile_headers_dir": "",
+        "jobfile_templates_dir": "",
+        "output_dir": "",
+        "logs_dir": "",
+        "input_dir": "",
+        "models_to_use": "",
+        "keep_pkl":"false"
+    },
+    "custom_params": {
+    },
+    "AFM_run": {
+        "model_preset": "multimer",
+        "max_recycles": "20",
+        "templates": "true",
+        "dropout": "false",
+        "dropout_structure_module": "false",
+        "dropout_rates_filename": "",
+        "stop_recycling_below": "0",
+        "min_score": "0",
+        "max_score": "1",
+        "db_preset": "full_dbs",
+        "use_gpu_relax": "true",
+        "early_stop_tolerance": "0.5",
+        "bfd_max_hits": "100000",
+        "mgnify_max_hits": "501",
+        "uniprot_max_hits": "50000",
+        "uniref_max_hits": "10000"
+    },
+    "plots": {
+        "MF_plots_top_n_predictions": "10",
+        "MF_plots_chosen_plots": "coverage,DM_plddt_PAE,CF_PAEs,score_distribution,recycles"
+    }
+}

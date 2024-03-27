@@ -1,6 +1,32 @@
 #!/bin/bash
 
-alphafold_databases=$1
+setup_params () {
+  tool=$1
+  echo "$tool"
+}
+
+# argument parser
+while true; do
+  case "$1" in
+    --alphafold-db)
+      alphafold_databases=$2
+      db_af=true
+      shift 2
+      ;;
+    --colabfold-db)
+      colabfold_databases=$2
+      db_cf=true
+      shift 2
+      ;;
+    --no-env)
+      do_not_create_env=true
+      shift 1
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
 
 host=$(hostname | cut -c1-8)
 
@@ -12,30 +38,65 @@ else
 fi
 
 if ! $host_is_jeanzay; then
-  if [ -z $alphafold_databases ]; then
-    echo "Give a valid path for alphafold databases"
-    exit 1
-  elif [ ! -d $alphafold_databases ]; then
+  if [[ $db_af && ! -d $alphafold_databases ]]; then
     echo "$alphafold_databases doesn't exists"
     exit 1
+  elif [[ $db_cf && ! -d $colabfold_databases ]]; then
+    echo "$colabfold_databases doesn't exists"
+    exit 1
+  elif [[ ! $db_cf && ! $db_af ]]; then
+    echo "Use one of both or both --alphafold-db and --colabfold-db"
+    exit 1
   fi
-
+  
   # create massivefold env
   conda="$(conda info --base)/etc/profile.d/conda.sh"
   source $conda
-  conda env create -f environment.yml
-  conda activate massivefold
-  wget -O ${CONDA_PREFIX}/lib/python3.8/site-packages/alphafold/common/stereo_chemical_props.txt https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
+  
+  mf_env=$(conda env list | grep massivefold | wc -l)
+  mf_cf_env=$(conda env list | grep mf-colabfold | wc -l)
 
-  # add run_AFmassive.py and massivefold_plots.py in path (python executables)
-  wget -O $CONDA_PREFIX/bin/run_AFmassive.py https://raw.githubusercontent.com/GBLille/AFmassive/main/run_AFmassive.py
-  chmod +x $CONDA_PREFIX/bin/run_AFmassive.py
+  if (( mf_env > 0 )); then  
+    if [[ ! $db_af ]]; then
+      echo "massivefold env already installed, skipping this step."
+    fi
+  elif [[ ! $do_not_create_env ]]; then  
+    conda env create -f environment.yml
+    conda activate massivefold
+    wget -O ${CONDA_PREFIX}/lib/python3.8/site-packages/alphafold/common/stereo_chemical_props.txt https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
 
-  cp -r massivefold/plots $CONDA_PREFIX/bin/
-  cp massivefold/massivefold_plots.py $CONDA_PREFIX/bin/
-  chmod +x $CONDA_PREFIX/bin/massivefold_plots.py
+    # add run_AFmassive.py and massivefold_plots.py in path (python executables)
+    wget -O $CONDA_PREFIX/bin/run_AFmassive.py https://raw.githubusercontent.com/GBLille/AFmassive/main/run_AFmassive.py
+    chmod +x $CONDA_PREFIX/bin/run_AFmassive.py
+
+    cp -r massivefold/plots $CONDA_PREFIX/bin/
+    cp massivefold/massivefold_plots.py $CONDA_PREFIX/bin/
+    chmod +x $CONDA_PREFIX/bin/massivefold_plots.py
+  fi
+
+  if [[ $db_cf ]] && (( mf_cf_env > 0 )); then
+    echo "mf-colabfold env already installed, skipped"
+  elif [[ $db_cf ]] || [[ ! $do_not_create_env ]]; then
+    echo "mf-colabfold environment installation"
+    conda env create -f mf_colabfold.yml
+  elif $do_not_create_env; then
+    echo "No env asked, install skipped"
+  else
+    echo "ColabFold databases not provided, install skipped"
+  fi
 fi
 
+
+
+if $db_af; then
+  setup_params "afmassive"
+fi
+
+if $db_cv; then
+  setup_params "colabfold"
+fi
+
+exit 1
 # set file tree
 runs=massivefold_runs
 mkdir -p $runs/input
@@ -58,7 +119,7 @@ if $host_is_jeanzay; then
 fi
 
 param_file=$runs/AFmassive_params.json
-cp massivefold/parallelization/params.json $param_file
+cp massivefold/parallelization/AFmassive_params.json $param_file
 
 # parameters auto setting
 params_with_paths=$(cat $param_file | python3 -c "

@@ -17,6 +17,7 @@ flags.DEFINE_list('models_to_use', None, 'Select the models used for prediction 
 flags.DEFINE_string('sequence_name', '', 'Name of the sequence to predict.')
 flags.DEFINE_string('run_name', '', 'Name of the run.')
 flags.DEFINE_string('path_to_parameters', '', 'Parameters to use, contains models_to_use')
+flags.DEFINE_enum('tool', 'AFmassive', ['AFmassive', 'ColabFold'], 'Specify the tool that you want to use')
 FLAGS = flags.FLAGS
 
 def batches_per_model(pred_nb_per_model:int):
@@ -53,7 +54,12 @@ def main(argv):
     all_params = json.load(params)
   
   models = all_params['massivefold']['models_to_use']
-  model_preset = all_params['AFM_run']['AFM_run_model_preset']  
+  
+  if FLAGS.tool == "AFmassive":
+    tool_code = "AFM"
+  elif FLAGS.tool == "ColabFold":
+    tool_code = "CF"
+  model_preset = all_params[f'{tool_code}_run'][f'model_preset']  
 
   if model_preset == 'multimer':
     model_names = [
@@ -96,7 +102,7 @@ def main(argv):
   per_model_batches = batches_per_model(pred_nb_per_model=FLAGS.predictions_per_model)
   # Distribute the batches on all models
   all_model_batches = batches_all_models(per_model_batches, model_names)
-  
+
   with open(f"{FLAGS.sequence_name}_{FLAGS.run_name}_batches.json", "w") as json_output:
     json.dump(all_model_batches, json_output, indent=4)
       

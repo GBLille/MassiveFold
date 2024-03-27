@@ -25,23 +25,22 @@ alignments_only=false
 
 
 # variable as MF_parallel parameters
-model_preset=$AFM_run_model_preset
-db_preset=$AFM_run_db_preset
-use_gpu_relax=$AFM_run_use_gpu_relax
-models_to_relax=$AFM_run_models_to_relax
-dropout=$AFM_run_dropout
-dropout_structure_module=$AFM_run_dropout_structure_module
-dropout_rates_filename=$AFM_run_dropout_rates_filename
-max_recycles=$AFM_run_max_recycles
-early_stop_tolerance=$AFM_run_early_stop_tolerance
-bfd_max_hits=$AFM_run_bfd_max_hits
-mgnify_max_hits=$AFM_run_mgnify_max_hits
-uniprot_max_hits=$AFM_run_uniprot_max_hits
-uniref_max_hits=$AFM_run_uniref_max_hits
-templates=$AFM_run_templates
-min_score=$AFM_run_min_score
-max_score=$AFM_run_max_score
-stop_recycling_below=$AFM_run_stop_recycling_below
+model_preset=$model_preset
+db_preset=$db_preset
+use_gpu_relax=$use_gpu_relax
+dropout=$dropout
+dropout_structure_module=$dropout_structure_module
+dropout_rates_filename=$dropout_rates_filename
+max_recycles=$max_recycles
+early_stop_tolerance=$early_stop_tolerance
+bfd_max_hits=$bfd_max_hits
+mgnify_max_hits=$mgnify_max_hits
+uniprot_max_hits=$uniprot_max_hits
+uniref_max_hits=$uniref_max_hits
+templates=$templates
+min_score=$min_score
+max_score=$max_score
+stop_recycling_below=$stop_recycling_below
 
 # parameters for each task in the job array
 batches_path=${logs_dir}/${sequence_name}/${run_name}

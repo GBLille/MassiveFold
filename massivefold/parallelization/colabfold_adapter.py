@@ -26,6 +26,10 @@ flags.DEFINE_string(
   'batches_file',
   '',
   'Path to batches file. If --conversion=output, this file is necessary.')
+flags.DEFINE_bool(
+  'do_rename',
+  True,
+  'To rename file or not')
 
 def convert_fasta(fasta_path:str):
   records = list(SeqIO.parse(fasta_path, "fasta"))
@@ -49,8 +53,9 @@ def rename_pkl(pkl_files:list, output_path:str, pred_shift:int):
 _pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift}.pkl"
   new_names = list(map(rename, pkl_files))
   
-  for old, new in zip(pkl_files, new_names):
-    mv(f"{output_path}/{old}", f"{output_path}/{new}")
+  if FLAGS.do_rename:
+    for old, new in zip(pkl_files, new_names):
+      mv(f"{output_path}/{old}", f"{output_path}/{new}")
 
   return new_names
 
@@ -58,17 +63,22 @@ def rename_pdb(pdb_files:list, output_path:str, pred_shift:int):
   rename = lambda x: f"unrelaxed_model_{x.split('model_')[1][0]}\
 _multimer_v{x.split('multimer_v')[1][0]}_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift}.pdb"
   new_names = list(map(rename, pdb_files))
-  for old, new in zip(pdb_files, new_names):
-    mv(f"{output_path}/{old}", f"{output_path}/{new}")
+    
+  if FLAGS.do_rename:
+    for old, new in zip(pdb_files, new_names):
+      mv(f"{output_path}/{old}", f"{output_path}/{new}")
 
   return new_names
 
 def create_ranking(predictions_to_rank:pd.core.frame.DataFrame, output_path:str):
   for score in ['ptm', 'iptm', 'iptm+ptm']:
-    df = predictions_to_rank.sort_values(score, ascending=False)
+    try:
+      df = predictions_to_rank.sort_values(score, ascending=False)
+    except KeyError:
+      print(predictions_to_rank)
+      sys.exit()
     metric_name = score if score != 'iptm+ptm' else 'debug'
     ranking_file_name = f"{output_path}/ranking_{metric_name}.json"
-    print(ranking_file_name)
     scores_dict = df.set_index('prediction').to_dict(orient='dict')[score]
     if score != 'iptm+ptm':
       scores_dict = {key: value.item() for key, value in scores_dict.items()}
@@ -80,7 +90,8 @@ def create_ranking(predictions_to_rank:pd.core.frame.DataFrame, output_path:str)
 def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list):
   jobname = [ name for name in os.listdir(output_path) if name.endswith('a3m') ]
   jobname = jobname[0].split('.')[0]
-  pickle_files = map(lambda x: f"{jobname}_all_{'_'.join(x.replace('.pdb', '.pickle').split('_')[2:])}", pdb_files)
+
+  pickle_files = map(lambda x: f"{jobname}_all_{x.replace('.pdb', '.pickle').split('_unrelaxed_')[1]}", pdb_files)
   all_preds = pd.DataFrame()
 
   for pickle_name, pdb_name in zip(list(pickle_files), new_pdb_names):
@@ -115,12 +126,14 @@ def move_output(output_path:str, batch):
   batch_path = f"{whole_path}/{batch}"
   destination_path = f"{whole_path}/{batch}/{sequence}"
   to_move = os.listdir(batch_path)
-  os.makedirs(destination_path)
+  if FLAGS.do_rename:
+    os.makedirs(destination_path)
 
   for element in to_move:
     source = os.path.join(batch_path, element)
     destination = os.path.join(destination_path, element)
-    shutil.move(source, destination)
+    if FLAGS.do_rename:
+      shutil.move(source, destination)
 
 def main(argv):
   if not FLAGS.conversion or not FLAGS.to_convert:
@@ -144,9 +157,7 @@ def main(argv):
     batches = [ batch for batch in os.listdir(FLAGS.to_convert) if batch.startswith('batch_') ]
     batches = sorted(batches, key=lambda x: int(x.split('_')[1]))
 
-  
     for batch in batches:
-      print(batch)
       batch_number = batch.split('_')[1]
       batch_shift = int(all_batches_infos[batch_number]['start'])
       convert_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
