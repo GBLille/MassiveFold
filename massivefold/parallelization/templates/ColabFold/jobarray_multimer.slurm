@@ -1,3 +1,10 @@
+
+source $$(conda info --base)/etc/profile.d/conda.sh
+conda activate mf-colabfold
+
+export TMP=$$JOBSCRATCH 
+export TMPDIR=$$JOBSCRATCH
+
 sequence_name=$sequence_name
 run_name=$run_name
 fafile=${input_dir}/$${sequence_name}.fasta
@@ -51,7 +58,7 @@ stop_at_score=$stop_at_score
 echo "colabfold_batch
 	$${path_to_msas}
   $${output_path}/batch_$${SLURM_ARRAY_TASK_ID}
-  --data $${data_dir}/params/
+  --data $${data_dir}
   --save-all
   --num-seeds $$num_seeds
   --model-type $$model_type
@@ -66,7 +73,7 @@ echo "colabfold_batch
 time colabfold_batch \
 	$${path_to_msas} \
   $${output_path}/batch_$${SLURM_ARRAY_TASK_ID} \
-  --data $${data_dir}/params/ \
+  --data $${data_dir} \
   --save-all \
   --num-seeds $$num_seeds \
   --model-type $$model_type \

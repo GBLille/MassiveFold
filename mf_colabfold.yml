@@ -2,9 +2,11 @@ name: mf-colabfold
 channels:
   - bioconda
   - conda-forge
+  - nvidia
   - defaults
 dependencies:
   - colabfold=1.5.5
+  - cuda-nvcc
   - pip
   - pip:
       - absl-py==1.0.0

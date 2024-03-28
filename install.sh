@@ -5,6 +5,30 @@ setup_params () {
   echo "$tool"
 }
 
+install_env () {
+  env=$1
+  source $(conda info --base)/etc/profile.d/conda.sh
+  if [[ $env == "massivefold" ]]; then
+    echo "Installing MassiveFold environment"
+    CONDA_OVERRIDE_CUDA="11.8" conda env create -f environment.yml
+    
+    conda activate massivefold
+    wget -O ${CONDA_PREFIX}/lib/python3.10/site-packages/alphafold/common/stereo_chemical_props.txt https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
+
+    # add run_AFmassive.py and massivefold_plots.py in path (python executables)
+    wget -O $CONDA_PREFIX/bin/run_AFmassive.py https://raw.githubusercontent.com/GBLille/AFmassive/main/run_AFmassive.py
+    chmod +x $CONDA_PREFIX/bin/run_AFmassive.py
+
+    cp -r massivefold/plots $CONDA_PREFIX/bin/
+    cp massivefold/massivefold_plots.py $CONDA_PREFIX/bin/
+    chmod +x $CONDA_PREFIX/bin/massivefold_plots.py
+
+  elif [[ $env == "colabfold" ]]; then
+    echo "Installing ColabFold environment"
+    CONDA_OVERRIDE_CUDA="11.8" conda env create -f mf_colabfold.yml
+  fi
+}
+
 # argument parser
 while true; do
   case "$1" in
@@ -22,6 +46,10 @@ while true; do
       do_not_create_env=true
       shift 1
       ;;
+    --only-env)
+      only_create_env=true
+      shift 1
+      ;;
     *)
       break
       ;;
@@ -30,12 +58,21 @@ done
 
 host=$(hostname | cut -c1-8)
 
+if $only_create_env; then
+  install_env "massivefold"
+  install_env "colabfold"
+  
+  echo "Both environments installed, exiting."
+  exit 1
+fi
+
 if [ "$host" == 'jean-zay' ]; then
   host_is_jeanzay=true
   echo "Currently on Jean Zay cluster, using prebuilt headers and json parameter files."
 else
   host_is_jeanzay=false
 fi
+
 
 if ! $host_is_jeanzay; then
   if [[ $db_af && ! -d $alphafold_databases ]]; then
@@ -49,36 +86,22 @@ if ! $host_is_jeanzay; then
     exit 1
   fi
   
-  # create massivefold env
+  # Install envs only if they are not yet installed
   conda="$(conda info --base)/etc/profile.d/conda.sh"
   source $conda
-  
   mf_env=$(conda env list | grep massivefold | wc -l)
   mf_cf_env=$(conda env list | grep mf-colabfold | wc -l)
 
   if (( mf_env > 0 )); then  
-    if [[ ! $db_af ]]; then
-      echo "massivefold env already installed, skipping this step."
-    fi
+    echo "massivefold env already installed, skipping this step."
   elif [[ ! $do_not_create_env ]]; then  
-    conda env create -f environment.yml
-    conda activate massivefold
-    wget -O ${CONDA_PREFIX}/lib/python3.8/site-packages/alphafold/common/stereo_chemical_props.txt https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
-
-    # add run_AFmassive.py and massivefold_plots.py in path (python executables)
-    wget -O $CONDA_PREFIX/bin/run_AFmassive.py https://raw.githubusercontent.com/GBLille/AFmassive/main/run_AFmassive.py
-    chmod +x $CONDA_PREFIX/bin/run_AFmassive.py
-
-    cp -r massivefold/plots $CONDA_PREFIX/bin/
-    cp massivefold/massivefold_plots.py $CONDA_PREFIX/bin/
-    chmod +x $CONDA_PREFIX/bin/massivefold_plots.py
+    install_env "massivefold"
   fi
 
   if [[ $db_cf ]] && (( mf_cf_env > 0 )); then
     echo "mf-colabfold env already installed, skipped"
   elif [[ $db_cf ]] || [[ ! $do_not_create_env ]]; then
-    echo "mf-colabfold environment installation"
-    conda env create -f mf_colabfold.yml
+    install_env "colabfold"
   elif $do_not_create_env; then
     echo "No env asked, install skipped"
   else
@@ -86,8 +109,7 @@ if ! $host_is_jeanzay; then
   fi
 fi
 
-
-
+: '
 if $db_af; then
   setup_params "afmassive"
 fi
@@ -95,8 +117,8 @@ fi
 if $db_cv; then
   setup_params "colabfold"
 fi
+'
 
-exit 1
 # set file tree
 runs=massivefold_runs
 mkdir -p $runs/input
@@ -119,7 +141,7 @@ if $host_is_jeanzay; then
 fi
 
 param_file=$runs/AFmassive_params.json
-cp massivefold/parallelization/AFmassive_params.json $param_file
+cp massivefold/parallelization/params.json $param_file
 
 # parameters auto setting
 params_with_paths=$(cat $param_file | python3 -c "
@@ -144,3 +166,4 @@ with open('$param_file', 'w') as params_output:
 )
 
 cat $param_file
+
