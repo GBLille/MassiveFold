@@ -44,12 +44,16 @@ echo "from version version $$model_type"
 num_seeds=$$(($$batch_end - $$batch_start + 1))
 echo "predictions computed in the batch: $$num_seeds"
 
+random_seed=$$(shuf -i 0-1000000 -n 1)
+echo "Batch random seed: $$random_seed"
+
 echo "
 time colabfold_batch
 	$${path_to_msas}
   ../output/$${name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID}
   --data /shared/databases2/2024-01-18/params/
   --save-all
+  --random-seed $$random_seed
   --num-seeds $$num_seeds
   --model-type $$model_type
   --model-order $$num_models
@@ -59,6 +63,7 @@ time colabfold_batch \
 	$${path_to_msas} \
   ../output/$${name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID} \
   --data /shared/databases2/2024-01-18/params/ \
+  --random-seed $$random_seed \
   --save-all \
   --num-seeds $$num_seeds \
   --model-type $$model_type \

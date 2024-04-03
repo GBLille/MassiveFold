@@ -51,6 +51,10 @@ echo "from version version $$model_type"
 num_seeds=$$(($$batch_end - $$batch_start + 1))
 echo "predictions computed in the batch: $$num_seeds"
 
+
+random_seed=$$(shuf -i 0-1000000 -n 1)
+echo "Batch random seed: $$random_seed"
+
 num_recycle=$num_recycle
 recycle_early_stop_tolerance=$recycle_early_stop_tolerance
 stop_at_score=$stop_at_score
@@ -60,6 +64,7 @@ echo "colabfold_batch
   $${output_path}/batch_$${SLURM_ARRAY_TASK_ID}
   --data $${data_dir}
   --save-all
+  --random-seed $$random_seed
   --num-seeds $$num_seeds
   --model-type $$model_type
   --model-order $$num_models
@@ -75,6 +80,7 @@ time colabfold_batch \
   $${output_path}/batch_$${SLURM_ARRAY_TASK_ID} \
   --data $${data_dir} \
   --save-all \
+  --random-seed $$random_seed \
   --num-seeds $$num_seeds \
   --model-type $$model_type \
   --model-order $$num_models \
