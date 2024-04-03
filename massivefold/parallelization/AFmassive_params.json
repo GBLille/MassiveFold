@@ -1,13 +1,5 @@
 {
     "massivefold": {
-        "run_massivefold": "run_AFmassive.py",
-        "run_massivefold_plots": "",
-        "data_dir": "",
-        "jobfile_headers_dir": "",
-        "jobfile_templates_dir": "",
-        "output_dir": "",
-        "logs_dir": "",
-        "input_dir": "",
         "models_to_use": "",
         "keep_pkl":"false"
     },

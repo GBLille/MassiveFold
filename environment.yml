@@ -2,6 +2,7 @@ name: massivefold
 channels:
   - conda-forge
   - bioconda
+  - nvidia
   - defaults
 dependencies:
   - colabfold=1.5.5
@@ -9,6 +10,7 @@ dependencies:
   - hhsuite=3.3.0
   - openmm=7.7.0
   - kalign2
+  - cuda-nvcc
   - pip
   - pip:
       - absl-py==1.0.0

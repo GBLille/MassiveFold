@@ -2,7 +2,46 @@
 
 setup_params () {
   tool=$1
-  echo "$tool"
+  param_file=$runs/${tool}_params.json
+  cp massivefold/parallelization/${tool}_params.json $param_file
+  if [ $tool == "AFmassive" ]; then
+    db=$alphafold_databases
+  elif [ $tool == "ColabFold" ]; then
+    db=$colabfold_databases
+  fi
+
+  # parameters auto setting
+  params_with_paths=$(cat $param_file | python3 -c "
+import json
+import sys
+
+params = json.load(sys.stdin)
+
+if '$tool' == 'AFmassive':
+  params['massivefold']['run_massivefold'] = 'run_AFmassive.py'
+params['massivefold']['run_massivefold_plots'] = '$CONDA_PREFIX/bin/massivefold_plots.py'
+#params['massivefold']['run_massivefold_plots'] = '$(realpath ./massivefold/massivefold_plots.py)'
+params['massivefold']['data_dir'] = '$(realpath $db)'
+params['massivefold']['jobfile_templates_dir'] = '../massivefold/parallelization/templates'
+params['massivefold']['scripts_dir'] = '../massivefold/parallelization'
+params['massivefold']['jobfile_headers_dir'] = './headers'
+params['massivefold']['output_dir'] = './output'
+params['massivefold']['logs_dir'] = './log'
+params['massivefold']['input_dir'] = './input'
+
+key_order = ['run_massivefold', 'run_massivefold_plots', 'data_dir', 'jobfile_headers_dir', \
+'jobfile_templates_dir', 'scripts_dir', 'output_dir', 'logs_dir', 'input_dir', \
+'models_to_use', 'keep_pkl']
+sorted_keys = sorted(params['massivefold'], key=lambda x: key_order.index(x))
+mf_params_ordered = {key: params['massivefold'][key] for key in sorted_keys}
+
+params['massivefold'] = mf_params_ordered
+with open('$param_file', 'w') as params_output:
+    json.dump(params, params_output, indent=4)")
+
+  cat $param_file
+    tool=$1
+    echo "$tool"
 }
 
 install_env () {
@@ -28,6 +67,8 @@ install_env () {
     CONDA_OVERRIDE_CUDA="11.8" conda env create -f mf_colabfold.yml
   fi
 }
+
+only_create_env=false
 
 # argument parser
 while true; do
@@ -109,15 +150,6 @@ if ! $host_is_jeanzay; then
   fi
 fi
 
-: '
-if $db_af; then
-  setup_params "afmassive"
-fi
-
-if $db_cv; then
-  setup_params "colabfold"
-fi
-'
 
 # set file tree
 runs=massivefold_runs
@@ -133,37 +165,19 @@ cp -r massivefold/parallelization/headers $runs
 if $host_is_jeanzay; then
   cp massivefold/parallelization/jeanzay_params.json $runs/AFmassive_params.json
   cat $runs/AFmassive_params.json
-  echo "Taking Jean Zay's prebuilt header and renaming them."
+  echo "Taking Jean Zay's prebuilt headers and renaming them."
   mv $runs/headers/example_header_alignment_jeanzay.slurm $runs/headers/alignment.slurm
   mv $runs/headers/example_header_jobarray_jeanzay.slurm $runs/headers/jobarray.slurm
   mv $runs/headers/example_header_post_treatment_jeanzay.slurm $runs/headers/post_treatment.slurm
   exit 1
 fi
 
-param_file=$runs/AFmassive_params.json
-cp massivefold/parallelization/params.json $param_file
+if $db_af; then
+  setup_params "AFmassive"
+fi
 
-# parameters auto setting
-params_with_paths=$(cat $param_file | python3 -c "
-import json
-import sys
+if $db_cv; then
+  setup_params "ColabFold"
+fi
 
-params = json.load(sys.stdin)
-
-params['massivefold']['run_massivefold'] = 'run_AFmassive.py'
-params['massivefold']['run_massivefold_plots'] = '$CONDA_PREFIX/bin/massivefold_plots.py'
-#params['massivefold']['run_massivefold_plots'] = '$(realpath ./massivefold/massivefold_plots.py)'
-params['massivefold']['data_dir'] = '$(realpath $alphafold_databases)'
-params['massivefold']['jobfile_templates_dir'] = '../massivefold/parallelization/templates'
-params['massivefold']['scripts_dir'] = '../massivefold/parallelization'
-params['massivefold']['jobfile_headers_dir'] = './headers'
-params['massivefold']['output_dir'] = './output'
-params['massivefold']['logs_dir'] = './log'
-params['massivefold']['input_dir'] = './input'
-with open('$param_file', 'w') as params_output:
-  json.dump(params, params_output, indent=4)
-"
-)
-
-cat $param_file
-
+exit 1

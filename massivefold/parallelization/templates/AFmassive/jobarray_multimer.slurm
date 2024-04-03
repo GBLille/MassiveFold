@@ -41,6 +41,7 @@ templates=$templates
 min_score=$min_score
 max_score=$max_score
 stop_recycling_below=$stop_recycling_below
+models_to_relax=none
 
 # parameters for each task in the job array
 batches_path=${logs_dir}/${sequence_name}/${run_name}
