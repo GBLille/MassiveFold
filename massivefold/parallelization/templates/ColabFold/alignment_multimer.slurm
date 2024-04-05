@@ -3,18 +3,18 @@ sequence_name=$sequence_name
 run_name=$run_name
 output=$output_dir
 fafile=${input_dir}/$${sequence_name}.fasta
-data_dir=$data_dir/colabfold_db/
+data_dir=$data_dir
 scripts_dir=$scripts_dir
 
 pair_strategy=$pair_strategy
 templates=$templates
 custom_template_path=$custom_template_path
 
-echo "./$${scripts_dir}/colabfold_adapter.py
+echo "./$${scripts_dir}/unifier.py
   --conversion input
   --to_convert $$fafile"
 
-./$${scripts_dir}/colabfold_adapter.py \
+./$${scripts_dir}/unifier.py \
   --conversion input \
   --to_convert $$fafile
 

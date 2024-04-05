@@ -2,13 +2,9 @@
 source $$(conda info --base)/etc/profile.d/conda.sh
 conda activate mf-colabfold
 
-export TMP=$$JOBSCRATCH 
-export TMPDIR=$$JOBSCRATCH
-
 sequence_name=$sequence_name
 run_name=$run_name
 fafile=${input_dir}/$${sequence_name}.fasta
-run_massivefold=$run_massivefold
 data_dir=$data_dir
 scripts_dir=$scripts_dir
 
