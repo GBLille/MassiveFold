@@ -44,10 +44,10 @@ stop_recycling_below=$stop_recycling_below
 models_to_relax=none
 
 # parameters for each task in the job array
-batches_path=${logs_dir}/${sequence_name}/${run_name}
-batch_model=$$($${scripts_dir}/get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element model)
-batch_start=$$($${scripts_dir}/get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element start)
-batch_end=$$($${scripts_dir}/get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element end)
+batches_path=${logs_dir}/${sequence_name}/${run_name}/$${sequence_name}_$${run_name}_batches.json
+batch_model=$$($${scripts_dir}/get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path} --element model)
+batch_start=$$($${scripts_dir}/get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path} --element start)
+batch_end=$$($${scripts_dir}/get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path} --element end)
 
 echo Model used is $$batch_model, batch computed between prediction $$batch_start and $$batch_end
 

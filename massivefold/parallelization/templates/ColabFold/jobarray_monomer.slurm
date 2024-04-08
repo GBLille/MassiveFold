@@ -49,7 +49,7 @@ echo "Batch random seed: $$random_seed"
 
 echo "
 time colabfold_batch
-	$${path_to_msas}
+  $${path_to_msas}
   ../output/$${name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID}
   --data /shared/databases2/2024-01-18/params/
   --save-all
@@ -60,7 +60,7 @@ time colabfold_batch
   --num-models 1"
 
 time colabfold_batch \
-	$${path_to_msas} \
+  $${path_to_msas} \
   ../output/$${name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID} \
   --data /shared/databases2/2024-01-18/params/ \
   --random-seed $$random_seed \

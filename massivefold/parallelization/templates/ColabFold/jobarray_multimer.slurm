@@ -56,7 +56,7 @@ recycle_early_stop_tolerance=$recycle_early_stop_tolerance
 stop_at_score=$stop_at_score
 
 echo "colabfold_batch
-	$${path_to_msas}
+  $${path_to_msas}
   $${output_path}/batch_$${SLURM_ARRAY_TASK_ID}
   --data $${data_dir}
   --save-all
@@ -72,7 +72,7 @@ echo "colabfold_batch
   $$disable_cluster_profile"
 
 time colabfold_batch \
-	$${path_to_msas} \
+  $${path_to_msas} \
   $${output_path}/batch_$${SLURM_ARRAY_TASK_ID} \
   --data $${data_dir} \
   --save-all \

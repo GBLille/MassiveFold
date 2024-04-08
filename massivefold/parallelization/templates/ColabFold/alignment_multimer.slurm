@@ -30,8 +30,8 @@ echo "colabfold_search
   $${msas_output}"
 
 time colabfold_search \
-	$${fafile} \
+  $${fafile} \
   $${data_dir} \
-	$${msas_output}
+  $${msas_output}
 
 date

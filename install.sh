@@ -150,7 +150,6 @@ if ! $host_is_jeanzay; then
   fi
 fi
 
-
 # set file tree
 runs=massivefold_runs
 mkdir -p $runs/input
@@ -175,7 +174,6 @@ fi
 if $db_af; then
   setup_params "AFmassive"
 fi
-
 if $db_cv; then
   setup_params "ColabFold"
 fi

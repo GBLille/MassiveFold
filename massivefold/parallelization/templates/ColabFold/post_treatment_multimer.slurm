@@ -25,14 +25,14 @@ time $${scripts_dir}/organize_outputs.py --batches_path $$output
 echo "Generating plots"
 
 echo "python3 $${mf_plots_path}
-        --input_path=$${output} 
-        --top_n_predictions=$MF_plots_top_n_predictions
-        --chosen_plots=$MF_plots_chosen_plots"
+  --input_path=$${output} 
+  --top_n_predictions=$MF_plots_top_n_predictions
+  --chosen_plots=$MF_plots_chosen_plots"
 
 time python3 $${mf_plots_path} \
-        --input_path=$${output} \
-        --top_n_predictions=$MF_plots_top_n_predictions \
-        --chosen_plots=$MF_plots_chosen_plots \
+  --input_path=$${output} \
+  --top_n_predictions=$MF_plots_top_n_predictions \
+  --chosen_plots=$MF_plots_chosen_plots \
 
 if ! $$keep_pkl; then
   rm $${output}/*pkl
