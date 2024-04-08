@@ -1,8 +1,7 @@
 {
     "massivefold": {
-        "run_massivefold": "run_AFmassive.py",
         "run_massivefold_plots": "../massivefold/massivefold_plots.py",
-        "data_dir": "/gpfsdswork/dataset/AlphaFold-2.3.1",
+        "data_dir": "/gpfsdswork/dataset/ColabFold/",
         "jobfile_headers_dir": "./headers",
         "jobfile_templates_dir": "../massivefold/parallelization/templates",
         "output_dir": "./output",
@@ -20,24 +19,13 @@
         "jeanzay_alignment_time": "10:00:00",
         "jeanzay_jobarray_time": "19:59:59"
     },
-    "AFM_run": {
-        "AFM_run_db_preset": "full_dbs",
-        "AFM_run_use_gpu_relax": "true",
-        "AFM_run_models_to_relax": "none",
-        "AFM_run_dropout": "false",
-        "AFM_run_dropout_structure_module": "false",
-        "AFM_run_dropout_rates_filename": "",
-        "AFM_run_max_recycles": "20",
-        "AFM_run_early_stop_tolerance": "0.5",
-        "AFM_run_bfd_max_hits": "100000",
-        "AFM_run_mgnify_max_hits": "501",
-        "AFM_run_uniprot_max_hits": "50000",
-        "AFM_run_uniref_max_hits": "10000",
-        "AFM_run_model_preset": "multimer",
-        "AFM_run_templates": "true",
-        "AFM_run_stop_recycling_below": "0",
-        "AFM_run_min_score": "0",
-        "AFM_run_max_score": "1"
+    "CF_run": {
+        "model_preset": "multimer",
+        "use_dropout": "false",
+        "num_recycle": "20",
+        "recycle_early_stop_tolerance": "0.5",
+        "stop_at_score": "1",
+        "disable_cluster_profile": "false"
     },
     "plots": {
         "MF_plots_top_n_predictions": "10",

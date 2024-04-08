@@ -162,15 +162,18 @@ cp massivefold/run_massivefold.sh $runs
 cp -r massivefold/parallelization/headers $runs
 
 if $host_is_jeanzay; then
+  cp massivefold/parallelization/jeanzay_AFmassive_params.json $runs/AFmassive_params.json
+  cp massivefold/parallelization/jeanzay_ColabFold_params.json $runs/ColabFold_params.json
   echo "Taking Jean Zay's prebuilt headers and renaming them."
   mv $runs/headers/example_header_alignment_jeanzay.slurm $runs/headers/alignment.slurm
   mv $runs/headers/example_header_jobarray_jeanzay.slurm $runs/headers/jobarray.slurm
   mv $runs/headers/example_header_post_treatment_jeanzay.slurm $runs/headers/post_treatment.slurm
+  exit 1
 fi
 
 if $db_af; then
   setup_params "AFmassive"
 fi
-if $db_cv; then
+if $db_cf; then
   setup_params "ColabFold"
 fi

@@ -1,0 +1,46 @@
+{
+    "massivefold": {
+        "run_massivefold": "run_AFmassive.py",
+        "run_massivefold_plots": "../massivefold/massivefold_plots.py",
+        "data_dir": "/gpfsdswork/dataset/AlphaFold-2.3.1",
+        "jobfile_headers_dir": "./headers",
+        "jobfile_templates_dir": "../massivefold/parallelization/templates",
+        "output_dir": "./output",
+        "logs_dir": "./log",
+        "input_dir": "./input",
+        "models_to_use": "",
+        "keep_pkl": "false",
+        "scripts_dir": "../massivefold/parallelization"
+    },
+    "custom_params": {
+        "jeanzay_gpu": "v100",
+        "jeanzay_project": "<project>",
+        "jeanzay_account": "<project>@v100",
+        "jeanzay_gpu_with_memory": "v100", 
+        "jeanzay_alignment_time": "10:00:00",
+        "jeanzay_jobarray_time": "19:59:59"
+    },
+    "AFM_run": {
+        "db_preset": "full_dbs",
+        "use_gpu_relax": "true",
+        "models_to_relax": "none",
+        "dropout": "false",
+        "dropout_structure_module": "false",
+        "dropout_rates_filename": "",
+        "max_recycles": "20",
+        "early_stop_tolerance": "0.5",
+        "bfd_max_hits": "100000",
+        "mgnify_max_hits": "501",
+        "uniprot_max_hits": "50000",
+        "uniref_max_hits": "10000",
+        "model_preset": "multimer",
+        "templates": "true",
+        "stop_recycling_below": "0",
+        "min_score": "0",
+        "max_score": "1"
+    },
+    "plots": {
+        "MF_plots_top_n_predictions": "10",
+        "MF_plots_chosen_plots": "coverage,DM_plddt_PAE,CF_PAEs,score_distribution,recycles"
+    }
+}
