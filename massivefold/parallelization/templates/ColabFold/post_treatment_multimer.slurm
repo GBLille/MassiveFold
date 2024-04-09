@@ -7,12 +7,12 @@ keep_pkl=$keep_pkl
 batches_file=${logs_dir}/$${sequence_name}/$${run_name}/$${sequence_name}_$${run_name}_batches.json
 
 # adapt colabfold output for massivefold
-echo "$${scripts_dir}/colabfold_adapter.py
+echo "$${scripts_dir}/unifier.py
   --batches_file $${batches_file}
   --conversion output
   --to_convert $$output"
 
-time $${scripts_dir}/colabfold_adapter.py \
+time $${scripts_dir}/unifier.py \
   --batches_file $${batches_file} \
   --conversion output \
   --to_convert $$output
