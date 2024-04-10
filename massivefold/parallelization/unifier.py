@@ -48,9 +48,15 @@ def convert_fasta(fasta_path:str):
   with open(f"{fasta_dir}/converted_for_colabfold/{fasta_file}.fasta", 'w') as output:
     output.write(converted)
 
-def rename_pkl(pkl_files:list, output_path:str, pred_shift:int):
-  rename = lambda x: f"result_model_{x.split('model_')[1][0]}_multimer_v{x.split('multimer_v')[1][0]}\
-_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift}.pkl"
+def rename_pkl(pkl_files:list, output_path:str, pred_shift:int, sep:str):
+  extract = lambda x: int(x.split('_')[-1].replace('.pickle', ''))
+  seed = sorted(list(map(extract, pkl_files)))[0]
+  if sep == 'multimer':
+    rename = lambda x: f"result_model_{x.split('model_')[1][0]}_multimer_v{x.split('multimer_v')[1][0]}\
+_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pkl"
+  elif sep == 'ptm':
+    rename = lambda x: f"result_model_{x.split('model_')[1][0]}_ptm\
+_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pkl"
   new_names = list(map(rename, pkl_files))
   
   if FLAGS.do_rename:
@@ -59,25 +65,36 @@ _pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift}.pkl"
 
   return new_names
 
-def rename_pdb(pdb_files:list, output_path:str, pred_shift:int):
-  rename = lambda x: f"unrelaxed_model_{x.split('model_')[1][0]}\
-_multimer_v{x.split('multimer_v')[1][0]}_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift}.pdb"
-  new_names = list(map(rename, pdb_files))
+def rename_pdb(pdb_files:list, output_path:str, pred_shift:int, sep:str):
+  extract = lambda x: int(x.split('_')[-1].replace('.pdb', ''))
+  seed = sorted(list(map(extract, pdb_files)))[0]
+  print(f"Seed used: {seed}")
+  if sep == 'multimer':
+    rename = lambda x: f"unrelaxed_model_{x.split('model_')[1][0]}\
+_multimer_v{x.split('multimer_v')[1][0]}_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pdb"
+  elif sep == 'ptm':
+    rename = lambda x: f"unrelaxed_model_{x.split('model_')[1][0]}\
+_ptm_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pdb"
     
+  new_names = list(map(rename, pdb_files))
   if FLAGS.do_rename:
     for old, new in zip(pdb_files, new_names):
       mv(f"{output_path}/{old}", f"{output_path}/{new}")
-
   return new_names
 
-def create_ranking(predictions_to_rank:pd.core.frame.DataFrame, output_path:str):
+def create_ranking(predictions_to_rank:pd.core.frame.DataFrame, output_path:str, preset:str):
   for score in ['ptm', 'iptm', 'iptm+ptm']:
     try:
       df = predictions_to_rank.sort_values(score, ascending=False)
     except KeyError:
-      print(predictions_to_rank)
-      sys.exit()
+      if score == 'ptm':
+        print(predictions_to_rank)
+        print('No "ptm" found')
+        sys.exit()
+      continue
     metric_name = score if score != 'iptm+ptm' else 'debug'
+    if preset == 'ptm':
+      metric_name = 'debug'
     ranking_file_name = f"{output_path}/ranking_{metric_name}.json"
     scores_dict = df.set_index('prediction').to_dict(orient='dict')[score]
     if score != 'iptm+ptm':
@@ -87,7 +104,7 @@ def create_ranking(predictions_to_rank:pd.core.frame.DataFrame, output_path:str)
     with open(ranking_file_name, 'w') as json_scores:
       json.dump({ score: scores_dict, 'order': order }, json_scores, indent=4)
 
-def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list):
+def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset):
   jobname = [ name for name in os.listdir(output_path) if name.endswith('a3m') ]
   jobname = jobname[0].split('.')[0]
 
@@ -100,24 +117,38 @@ def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list):
     pred_name = f"model_{pdb_name.split('_model_')[1].split('.')[0]}"
     with open(f"{output_path}/{pickle_name}", 'rb') as pickle_scores:
       scores = pickle.load(pickle_scores)
-      new_pred = pd.DataFrame([{
+      if preset == 'multimer':
+        new_pred = pd.DataFrame([{
           'prediction': pred_name,
           'iptm': scores['iptm'],
           'ptm': scores['ptm'],
           'iptm+ptm': 0.8 * scores['iptm'] + 0.2 * scores['ptm']
           }])
+      elif preset == 'ptm':
+        new_pred = pd.DataFrame([{
+          'prediction': pred_name,
+          'ptm': scores['ptm'],
+          }])
+        
       all_preds = pd.concat([all_preds, new_pred], ignore_index=True)
   
-  create_ranking(all_preds, output_path)
+  create_ranking(all_preds, output_path, preset)
 
 def convert_output(output_path:str, pred_shift:int):
   pkls = [ file for file in os.listdir(output_path) if file.endswith('.pickle') ]
   pdbs = [ file for file in os.listdir(output_path) if file.endswith('.pdb') and 'rank' in file ]
-  
+  print(pdbs) 
+  if 'multimer' in pdbs[0]:
+    sep = 'multimer'
+  elif 'ptm' in pdbs[0]:
+    sep = 'ptm'
+  else:
+    raise ValueError('Neither multimer nor monomer_ptm, an error occured somewhere')
+
   # rename files
-  renamed_pdbs = rename_pdb(pdbs, output_path, pred_shift)
-  rank_predictions(output_path, pdbs, renamed_pdbs)
-  rename_pkl(pkls, output_path, pred_shift)
+  renamed_pdbs = rename_pdb(pdbs, output_path, pred_shift, sep=sep)
+  rank_predictions(output_path, pdbs, renamed_pdbs, preset=sep)
+  rename_pkl(pkls, output_path, pred_shift, sep=sep)
     
 
 def move_output(output_path:str, batch):
