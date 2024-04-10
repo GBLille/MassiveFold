@@ -11,8 +11,6 @@ scripts_dir=$scripts_dir
 num_recycle=$num_recycle
 recycle_early_stop_tolerance=$recycle_early_stop_tolerance
 stop_at_score=$stop_at_score
-#max_seq=$max_seq
-#max_extra_seq=$max_extra_seq
 BOOL_disable_cluster_profile=$disable_cluster_profile
 BOOL_use_dropout=$use_dropout
 if $$BOOL_disable_cluster_profile; then

@@ -7,8 +7,14 @@ data_dir=$data_dir
 scripts_dir=$scripts_dir
 
 pair_strategy=$pair_strategy
-templates=$templates
-custom_template_path=$custom_template_path
+if [[ $$pair_strategy == "greedy" ]]; then
+  pairing_strategy=0
+elif [[ $$pair_strategy == "complete" ]]; then
+  pairing_strategy=1
+else
+  echo "ValueError: --pair_strategy\n'$$pair_strategy'"
+  exit 1
+fi
 
 echo "./$${scripts_dir}/unifier.py
   --conversion input
@@ -27,11 +33,13 @@ date
 echo "colabfold_search
   $${fafile}
   $${data_dir}
-  $${msas_output}"
+  $${msas_output}
+  --pairng_strategy $${pairing_strategy}"
 
 time colabfold_search \
   $${fafile} \
   $${data_dir} \
-  $${msas_output}
+  $${msas_output} \
+  --pairing_strategy $${pairing_strategy}"
 
 date

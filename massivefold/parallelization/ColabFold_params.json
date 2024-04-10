@@ -8,14 +8,10 @@
     "CF_run": {
         "model_preset": "multimer",
         "pair_strategy": "",
-        "templates": "true",
-        "custom_template_path": "",
         "use_dropout": "false",
         "num_recycle": "20",
         "recycle_early_stop_tolerance": "0.5",
         "stop_at_score": "1",
-        "max_seq": "",
-        "max_extra_seq": "",
         "disable_cluster_profile": "false"
     },
     "plots": {
