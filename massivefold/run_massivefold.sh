@@ -2,7 +2,7 @@
 
 
 USAGE="\
-./run_massivefold.sh -s str -r str -p int -f str [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]\n\
+./run_massivefold.sh -s str -r str -p int -f str [-t str] [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]\n\
 ./run_massivefold.sh -h for more details "
 
 # help message
@@ -16,19 +16,19 @@ Usage: $USAGE\n\
     -f| --parameters: json file's path containing the parameters used for this run.\n\
 \n\
   Facultative arguments:\n\
-    -b| --batch_size: number of predictions per batch, should not be higher than -p (default: 25).\n\
+    -b| --batch_size: (default: 25) number of predictions per batch, should not be higher than -p.\n\
+    -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).\n\
+    -w| --wall_time: (default: 20) total time available for calibration computations, unit is hours.\n\
     -m| --msas_precomputed: path to directory that contains computed msas.\n\
     -n| --top_n_models: uses the n neural network models with best ranking confidence from this run's path.\n\
-    -w| --wall_time: total time available for calibration computations, unit is hours (default: 20).\n\
-    -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).\n\
 \n\
   Facultative options:\n\
+    -t| --tool_to_use: (default: 'AFmassive') Use either AFmassive or ColabFold in structure prediction for MassiveFold\n\
+    -o| --only_msas: only compute alignments, the first step of MassiveFold\n\
     -c| --calibrate: calibrate --batch_size value. Searches from the previous runs for the same 'fasta' path given\n\
         in --sequence and uses the longest prediction time found to compute the maximal number of predictions per batch.\n\
         This maximal number depends on the total time given by --wall_time.\n\
-    -a| --recompute_msas: purges previous alignment step and recomputes msas.\n\
-    -o| --only_msas: only compute alignments, the first step of MassiveFold."
-
+    -a| --recompute_msas: purges previous alignment step and recomputes msas."
   exit 1
 fi
 
@@ -42,6 +42,7 @@ batch_size=25
 wall_time=20
 force_msas_computation=false
 only_msas=false
+tool=AFmassive
 
 # argument parser
 while true; do
@@ -95,6 +96,10 @@ while true; do
       force_msas_computation=true
       shift
       ;;
+    -t|--tool_to_use)
+      tool=$2
+      shift 2
+      ;;
     *)
       break
       ;;
@@ -108,6 +113,10 @@ if
   [ -z "$parameters_file" ]; then
   echo -e "Usage: $USAGE"
   exit 1
+fi
+
+if [[ $tool != "AFmassive" && $tool != "ColabFold" ]]; then
+  echo "-t|--tool_to_use value is either 'AFmassive' or 'ColabFold'"
 fi
 
 output_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['massivefold']['output_dir'])")
@@ -235,7 +244,8 @@ ${scripts_dir}/batching.py \
   --predictions_per_model=${predictions_per_model} \
   --batch_size=${batch_size} \
   --models_to_use=${models_to_use} \
-  --path_to_parameters=${parameters_file}
+  --path_to_parameters=${parameters_file} \
+  --tool $tool
 
 # in case jobarrays start before the end of the script
 mkdir -p ${logs_dir}/${sequence_name}/${run_name}/
@@ -243,19 +253,29 @@ cp ${sequence_name}_${run_name}_batches.json ${logs_dir}/${sequence_name}/${run_
 
 
 # align when forcing or no precomputed and detected msas
-
 if [ ! -z $msas_precomputed ]; then
   echo "Using precomputed msas at $msas_precomputed"
-elif [ -d ${output_dir}/${sequence_name}/msas/ ]; then
-  echo -e "Detected msas for ${sequence_name} at ${output_dir}/${sequence_name}/msas/, \
+elif [[ $tool == "AFmassive" ]] && [ -d ${output_dir}/${sequence_name}/msas/ ]; then
+  echo -e "Detected msas compatible with AFmassive for ${sequence_name} at ${output_dir}/${sequence_name}/msas/, \
+  using them.\n"
+  msas_precomputed="${output_dir}/${sequence_name}"
+elif [[ $tool == "ColabFold" ]] && [ -d ${output_dir}/${sequence_name}/msas_colabfold/ ]; then
+  echo -e "Detected msas compatible with ColabFold for ${sequence_name} at ${output_dir}/${sequence_name}/msas/, \
   using them.\n"
   msas_precomputed="${output_dir}/${sequence_name}"
 fi
 
 waiting_for_alignment=false
-conditions_to_align="[[ \$force_msas_computation = true ]] || \
-                     ( [[ ! -d \${output_dir}/\${sequence_name}/msas/ ]] && \
-                       [[ -z \$msas_precomputed ]] )"
+
+if [[ $tool == "AFmassive" ]]; then
+  conditions_to_align="[[ \$force_msas_computation = true ]] || \
+                       ( [[ ! -d \${output_dir}/\${sequence_name}/msas/ ]] && \
+                         [[ -z \$msas_precomputed ]] )"
+elif [[ $tool == "ColabFold" ]]; then
+  conditions_to_align="[[ \$force_msas_computation = true ]] || \
+                       ( [[ ! -d \${output_dir}/\${sequence_name}/msas_colabfold/ ]] && \
+                         [[ -z \$msas_precomputed ]] )"
+fi
 
 if eval $conditions_to_align; then
   echo "Running alignment for $sequence_name"
@@ -263,7 +283,8 @@ if eval $conditions_to_align; then
   --job_type=alignment \
   --sequence_name=${sequence_name} \
   --run_name=${run_name} \
-  --path_to_parameters=${parameters_file}
+  --path_to_parameters=${parameters_file} \
+  --tool $tool
 
   ALIGNMENT_ID=$(sbatch --parsable ${sequence_name}_${run_name}_alignment.slurm)
   waiting_for_alignment=true
@@ -271,12 +292,15 @@ if eval $conditions_to_align; then
     echo "Only run sequence alignment."
     exit 1
   fi
-elif [ -d  $msas_precomputed/msas ]; then
+elif [[ -d  $msas_precomputed/msas ]]; then
   echo "$msas_precomputed are valid."
-  mkdir -p ${output_dir}/${sequence_name}/
-  ln -s $(realpath $msas_precomputed/msas) ${output_dir}/${sequence_name}/
+  if [[ $tool == "AFmassive" ]]; then
+    echo "Using AFmassive"
+    mkdir -p ${output_dir}/${sequence_name}/
+    ln -s $(realpath $msas_precomputed/msas) ${output_dir}/${sequence_name}/
+  fi
 else
-  echo "Directory $msas_precomputed does not exit or does not contain msas."
+  echo "Directory $msas_precomputed does not exits or does not contain msas."
   exit 1
 fi
 
@@ -285,7 +309,8 @@ ${scripts_dir}/create_jobfile.py \
   --job_type=jobarray \
   --sequence_name=${sequence_name} \
   --run_name=${run_name} \
-  --path_to_parameters=${parameters_file} 
+  --path_to_parameters=${parameters_file} \
+  --tool $tool
 
 # Only wait for alignment if not precomputed
 if [[ $waiting_for_alignment = true  ]]; then
@@ -300,7 +325,8 @@ ${scripts_dir}/create_jobfile.py \
   --job_type=post_treatment \
   --sequence_name=${sequence_name} \
   --run_name=${run_name} \
-  --path_to_parameters=${parameters_file}
+  --path_to_parameters=${parameters_file} \
+  --tool $tool
 
 sbatch --dependency=afterok:$ARRAY_ID ${sequence_name}_${run_name}_post_treatment.slurm
 

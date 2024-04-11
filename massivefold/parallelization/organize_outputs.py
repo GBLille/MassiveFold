@@ -29,6 +29,7 @@ def create_global_ranking(all_batches_path, jobname, ranking_type="debug"):
   global_ranking = {ranking_key_score: iptm_ptm, 'order': order}
   with open(f"{FLAGS.batches_path}/ranking_{ranking_type}.json", 'w') as fileout:
     fileout.write(json.dumps(global_ranking, indent=4)) 
+
   return map_pred_batch
 
 def move_and_rename(all_batches_path, pred_batch_map, jobname):
@@ -37,7 +38,10 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
   for i, prediction in enumerate(global_rank_order):
     # copy the features
     if i == 0:
-      cp(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, "features.pkl"), os.path.join(all_batches_path, "features.pkl"))
+      try:
+        cp(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, "features.pkl"), os.path.join(all_batches_path, "features.pkl"))
+      except FileNotFoundError:
+        print('Either using colabfold or error encountered')
     
     # copy the predictions
     if os.path.exists(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, f"relaxed_{prediction}.pdb")):
