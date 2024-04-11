@@ -253,19 +253,29 @@ cp ${sequence_name}_${run_name}_batches.json ${logs_dir}/${sequence_name}/${run_
 
 
 # align when forcing or no precomputed and detected msas
-
 if [ ! -z $msas_precomputed ]; then
   echo "Using precomputed msas at $msas_precomputed"
-elif [ -d ${output_dir}/${sequence_name}/msas/ ]; then
-  echo -e "Detected msas for ${sequence_name} at ${output_dir}/${sequence_name}/msas/, \
+elif [[ $tool == "AFmassive" ]] && [ -d ${output_dir}/${sequence_name}/msas/ ]; then
+  echo -e "Detected msas compatible with AFmassive for ${sequence_name} at ${output_dir}/${sequence_name}/msas/, \
+  using them.\n"
+  msas_precomputed="${output_dir}/${sequence_name}"
+elif [[ $tool == "ColabFold" ]] && [ -d ${output_dir}/${sequence_name}/msas_colabfold/ ]; then
+  echo -e "Detected msas compatible with ColabFold for ${sequence_name} at ${output_dir}/${sequence_name}/msas/, \
   using them.\n"
   msas_precomputed="${output_dir}/${sequence_name}"
 fi
 
 waiting_for_alignment=false
-conditions_to_align="[[ \$force_msas_computation = true ]] || \
-                     ( [[ ! -d \${output_dir}/\${sequence_name}/msas/ ]] && \
-                       [[ -z \$msas_precomputed ]] )"
+
+if [[ $tool == "AFmassive" ]]; then
+  conditions_to_align="[[ \$force_msas_computation = true ]] || \
+                       ( [[ ! -d \${output_dir}/\${sequence_name}/msas/ ]] && \
+                         [[ -z \$msas_precomputed ]] )"
+elif [[ $tool == "ColabFold" ]]; then
+  conditions_to_align="[[ \$force_msas_computation = true ]] || \
+                       ( [[ ! -d \${output_dir}/\${sequence_name}/msas_colabfold/ ]] && \
+                         [[ -z \$msas_precomputed ]] )"
+fi
 
 if eval $conditions_to_align; then
   echo "Running alignment for $sequence_name"
@@ -290,7 +300,7 @@ elif [[ -d  $msas_precomputed/msas ]]; then
     ln -s $(realpath $msas_precomputed/msas) ${output_dir}/${sequence_name}/
   fi
 else
-  echo "Directory $msas_precomputed does not exit or does not contain msas."
+  echo "Directory $msas_precomputed does not exits or does not contain msas."
   exit 1
 fi
 

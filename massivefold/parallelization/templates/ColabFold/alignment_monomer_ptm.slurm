@@ -18,7 +18,7 @@ fi
 
 echo "Pairing strategy used: $$pairing_strategy"
 
-msas_output="$${output}/$${sequence_name}/msas/"
+msas_output="$${output}/$${sequence_name}/msas_colabfold/"
 
 date
 

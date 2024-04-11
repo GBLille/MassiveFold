@@ -26,7 +26,7 @@ output_dir=$$(realpath ${output_dir})
 output_path="$${output_dir}/$${sequence_name}/$${run_name}/"
 echo output_path is $$output_path
 mkdir -vp $${output_path}/
-path_to_msas=${output_dir}/$${sequence_name}/msas
+path_to_msas=${output_dir}/$${sequence_name}/msas_colabfold
 
 date
 
