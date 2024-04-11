@@ -1,7 +1,7 @@
 {
     "massivefold": {
         "models_to_use": "",
-        "keep_pkl":"true"
+        "pkl_format":"full"
     },
     "custom_params": {
     },

@@ -34,8 +34,17 @@ time python3 $${mf_plots_path} \
   --top_n_predictions=$MF_plots_top_n_predictions \
   --chosen_plots=$MF_plots_chosen_plots \
 
-if ! $$keep_pkl; then
+if [[ $$pkl_format == "light" ]]; then
+  echo "Reducing pkl size"
+  $${script_dir}/lighten_pkl.py ${output}
   rm $${output}/*pkl
+elif [[ $$pkl_format == "none" ]]; then
+  echo "Not keeping pkl files"
+  rm $${output}/*pkl
+elif [[ $$pkl_format == "full" ]]; then
+  echo "Keeping pkl files as in AlphaFold2 output"
+else
+  echo "$$pkl_format is an invalid value for pkl_format, doing nothing"
 fi
 
 date
