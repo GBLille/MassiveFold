@@ -68,6 +68,7 @@ install_env () {
   fi
 }
 
+do_help=false
 only_create_env=false
 
 # argument parser
@@ -87,8 +88,12 @@ while true; do
       do_not_create_env=true
       shift 1
       ;;
-    --only-env)
+    --only-envs)
       only_create_env=true
+      shift 1
+      ;;
+    -h|--help)
+      do_help=true
       shift 1
       ;;
     *)
@@ -97,6 +102,27 @@ while true; do
   esac
 done
 
+USAGE="\
+On Jean Zay cluster:\n\
+  ./install.sh\n\
+Otherwise:\n\
+  ./install.sh [--only-envs] || --alphafold-db str --colabfold-db str [--no-env]\n\n\
+./install -h for more details"
+
+# help message
+if $do_help; then
+  echo -e "\
+Usage:
+------
+$USAGE
+  Arguments:
+    --alphafold-db <str>: path to AlphaFold database
+    --colabfold-db <str>: path to ColabFold database
+  Options:
+    --no-env: do not install the environments, only the set up the files and parameters
+    --only-envs: only install the environments (other arguments are not needed)"
+  exit 1
+fi
 host=$(hostname | cut -c1-8)
 
 if $only_create_env; then
@@ -123,7 +149,7 @@ if ! $host_is_jeanzay; then
     echo "$colabfold_databases doesn't exists"
     exit 1
   elif [[ ! $db_cf && ! $db_af ]]; then
-    echo "Use one of both or both --alphafold-db and --colabfold-db"
+    echo -e "$USAGE"
     exit 1
   fi
   
