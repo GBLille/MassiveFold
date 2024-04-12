@@ -83,11 +83,13 @@ _ptm_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pdb"
   return new_names
 
 def create_ranking(predictions_to_rank:pd.core.frame.DataFrame, output_path:str, preset:str):
-  for score in ['ptm', 'iptm', 'iptm+ptm']:
+  for score in ['plddts', 'ptm', 'iptm', 'iptm+ptm']:
+    if preset == 'multimer' and score == 'plddts':
+      continue
     try:
       df = predictions_to_rank.sort_values(score, ascending=False)
     except KeyError:
-      if score == 'ptm':
+      if score == 'plddts':
         print(predictions_to_rank)
         print('No "ptm" found')
         sys.exit()
@@ -127,7 +129,7 @@ def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset
       elif preset == 'ptm':
         new_pred = pd.DataFrame([{
           'prediction': pred_name,
-          'ptm': scores['ptm'],
+          'plddts': scores['mean_plddt'],
           }])
         
       all_preds = pd.concat([all_preds, new_pred], ignore_index=True)
@@ -137,7 +139,6 @@ def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset
 def convert_output(output_path:str, pred_shift:int):
   pkls = [ file for file in os.listdir(output_path) if file.endswith('.pickle') ]
   pdbs = [ file for file in os.listdir(output_path) if file.endswith('.pdb') and 'rank' in file ]
-  print(pdbs) 
   if 'multimer' in pdbs[0]:
     sep = 'multimer'
   elif 'ptm' in pdbs[0]:

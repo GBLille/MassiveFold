@@ -115,12 +115,12 @@ if $do_help; then
 Usage:
 ------
 $USAGE
-  Arguments:
+  Options:
     --alphafold-db <str>: path to AlphaFold database
     --colabfold-db <str>: path to ColabFold database
-  Options:
-    --no-env: do not install the environments, only the set up the files and parameters
-    --only-envs: only install the environments (other arguments are not needed)"
+    --no-env: do not install the environments, only sets up the files and parameters.
+      At least one of --alphafold-db or colabfold-db is required with this option.
+    --only-envs: only install the environments (other arguments are not used)"
   exit 1
 fi
 host=$(hostname | cut -c1-8)

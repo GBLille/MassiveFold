@@ -38,13 +38,22 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
   for i, prediction in enumerate(global_rank_order):
     # copy the features
     if i == 0:
-      try:
-        cp(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, "features.pkl"), os.path.join(all_batches_path, "features.pkl"))
-      except FileNotFoundError:
-        os.mkdir(os.path.join(all_batches_path, "./plots/"))
-        cp(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, "0_coverage.png"), os.path.join(all_batches_path, "./plots/alignment_coverage.png"))
-        print('Either using colabfold or error encountered')
-    
+      features = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, "features.pkl")
+      if os.path.isfile(features):
+        cp(features, os.path.join(all_batches_path, "features.pkl"))
+      else:
+        print('Either using colabfold or error encountered while copying features.pkl')
+      files = os.path.join(all_batches_path, pred_batch_map[prediction], jobname)
+      print(files)
+      print(os.listdir(files))
+      for file in os.listdir(files):
+        if file.endswith('coverage.png'):
+          coverage_plot = os.path.join(files, file)
+          os.mkdir(os.path.join(all_batches_path, "./plots"))
+          cp(coverage_plot, os.path.join(all_batches_path, "./plots/alignment_coverage.png"))
+      else:
+        print('Either not using colabfold, or coverage plot not found')
+
     # copy the predictions
     if os.path.exists(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, f"relaxed_{prediction}.pdb")):
       pred_new_name = f"relaxed_{prediction}.pdb"
