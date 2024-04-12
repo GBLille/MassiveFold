@@ -348,8 +348,12 @@ def MF_recycles():
     batch_size = len(all_preds_in_batch)
 
     relative_position = (position_in_batch, batch_size)
-
-    pred_recycles = MF_extract_pred_recycle(log_file, relative_position)
+    
+    try:
+      pred_recycles = MF_extract_pred_recycle(log_file, relative_position)
+    except UnboundLocalError:
+      print(f"Crashed on recycling plot for prediction {pred} (./log/{seq}/{run}/jobarray_{batch_number}.log)")
+      continue
     scores_elements = pred_recycles['scores']
     distances_elements = pred_recycles['distances']
    
