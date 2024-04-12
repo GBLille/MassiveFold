@@ -41,6 +41,8 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
       try:
         cp(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, "features.pkl"), os.path.join(all_batches_path, "features.pkl"))
       except FileNotFoundError:
+        os.mkdir(os.path.join(all_batches_path, "./plots/"))
+        cp(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, "0_coverage.png"), os.path.join(all_batches_path, "./plots/alignment_coverage.png"))
         print('Either using colabfold or error encountered')
     
     # copy the predictions
