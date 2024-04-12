@@ -51,7 +51,7 @@ install_env () {
     echo "Installing MassiveFold environment"
     CONDA_OVERRIDE_CUDA="11.8" conda env create -f environment.yml
     
-    conda activate massivefold
+    conda activate massivefold-1.2.1
     wget -O ${CONDA_PREFIX}/lib/python3.10/site-packages/alphafold/common/stereo_chemical_props.txt https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
 
     # add run_AFmassive.py and massivefold_plots.py in path (python executables)

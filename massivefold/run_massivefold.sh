@@ -260,7 +260,7 @@ elif [[ $tool == "AFmassive" ]] && [ -d ${output_dir}/${sequence_name}/msas/ ]; 
   using them.\n"
   msas_precomputed="${output_dir}/${sequence_name}"
 elif [[ $tool == "ColabFold" ]] && [ -d ${output_dir}/${sequence_name}/msas_colabfold/ ]; then
-  echo -e "Detected msas compatible with ColabFold for ${sequence_name} at ${output_dir}/${sequence_name}/msas/, \
+  echo -e "Detected msas compatible with ColabFold for ${sequence_name} at ${output_dir}/${sequence_name}/msas_colabfold/, \
   using them.\n"
   msas_precomputed="${output_dir}/${sequence_name}"
 fi
@@ -292,13 +292,15 @@ if eval $conditions_to_align; then
     echo "Only run sequence alignment."
     exit 1
   fi
-elif [[ -d  $msas_precomputed/msas ]]; then
+elif [[ $tool == "AFmassive" ]] && [[ -d  $msas_precomputed/msas ]]; then
   echo "$msas_precomputed are valid."
-  if [[ $tool == "AFmassive" ]]; then
-    echo "Using AFmassive"
-    mkdir -p ${output_dir}/${sequence_name}/
-    ln -s $(realpath $msas_precomputed/msas) ${output_dir}/${sequence_name}/
-  fi
+  echo "Using AFmassive"
+  mkdir -p ${output_dir}/${sequence_name}/
+  ln -s $(realpath $msas_precomputed/msas) ${output_dir}/${sequence_name}/
+elif [[ $tool == "ColabFold" ]] && [[ -d  $msas_precomputed/msas_colabfold ]]; then
+  echo "$msas_precomputed are valid."
+  echo "Using ColabFold"
+  
 else
   echo "Directory $msas_precomputed does not exits or does not contain msas."
   exit 1
