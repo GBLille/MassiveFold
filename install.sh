@@ -20,7 +20,7 @@ params = json.load(sys.stdin)
 if '$tool' == 'AFmassive':
   params['massivefold']['run_massivefold'] = 'run_AFmassive.py'
 
-params['massivefold']['run_massivefold_plots'] = '$CONDA_PREFIX/bin/massivefold_plots.py'
+params['massivefold']['run_massivefold_plots'] = 'massivefold_plots.py'
 params['massivefold']['data_dir'] = '$(realpath $db)'
 params['massivefold']['jobfile_templates_dir'] = '../massivefold/parallelization/templates'
 params['massivefold']['scripts_dir'] = '../massivefold/parallelization'

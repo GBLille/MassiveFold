@@ -24,12 +24,12 @@ time $${scripts_dir}/organize_outputs.py --batches_path $$output
 # plots
 echo "Generating plots"
 
-echo "python3 $${mf_plots_path}
+echo "python3 $$(which $${mf_plots_path})
   --input_path=$${output} 
   --top_n_predictions=$MF_plots_top_n_predictions
   --chosen_plots=$MF_plots_chosen_plots"
 
-time python3 $${mf_plots_path} \
+time python3 $$(which $${mf_plots_path}) \
   --input_path=$${output} \
   --top_n_predictions=$MF_plots_top_n_predictions \
   --chosen_plots=$MF_plots_chosen_plots \
