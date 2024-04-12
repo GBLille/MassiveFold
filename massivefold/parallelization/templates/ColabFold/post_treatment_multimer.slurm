@@ -3,8 +3,8 @@ run_name=$run_name
 output=${output_dir}/$${sequence_name}/$${run_name}/
 mf_plots_path=$run_massivefold_plots
 scripts_dir=$scripts_dir
-keep_pkl=$keep_pkl
 batches_file=${logs_dir}/$${sequence_name}/$${run_name}/$${sequence_name}_$${run_name}_batches.json
+pkl_format=$pkl_format
 
 # adapt colabfold output for massivefold
 echo "$${scripts_dir}/unifier.py
@@ -36,7 +36,7 @@ time python3 $${mf_plots_path} \
 
 if [[ $$pkl_format == "light" ]]; then
   echo "Reducing pkl size"
-  $${script_dir}/lighten_pkl.py ${output}
+  $${scripts_dir}/lighten_pkl.py $${output}
   rm $${output}/*pkl
 elif [[ $$pkl_format == "none" ]]; then
   echo "Not keeping pkl files"

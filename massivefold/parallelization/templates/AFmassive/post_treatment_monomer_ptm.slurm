@@ -3,6 +3,7 @@ run_name=$run_name
 output=${output_dir}/$${sequence_name}/$${run_name}/
 mf_plots_path=$run_massivefold_plots
 scripts_dir=$scripts_dir
+pkl_format=$pkl_format
 
 # rename and move files
 echo "time $${scripts_dir}/organize_outputs.py --batches_path $$output"
@@ -23,7 +24,7 @@ time python3 $${mf_plots_path} \
 
 if [[ $$pkl_format == "light" ]]; then
   echo "Reducing pkl size"
-  $${script_dir}/lighten_pkl.py ${output}
+  $${scripts_dir}/lighten_pkl.py $${output}
   rm $${output}/*pkl
 elif [[ $$pkl_format == "none" ]]; then
   echo "Not keeping pkl files"
