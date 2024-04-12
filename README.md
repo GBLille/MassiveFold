@@ -324,7 +324,7 @@ or in the `ColabFold_params.json` file, for instance:
     "use_dropout": "false",
     "num_recycle": "20",
     "recycle_early_stop_tolerance": "0.5",
-    "stop_at_score": "1",
+    "stop_at_score": "100",
     "disable_cluster_profile": "false"
  }
 }
