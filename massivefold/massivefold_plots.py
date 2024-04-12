@@ -125,15 +125,15 @@ def MF_indiv_plddt():
             
 def MF_coverage():
   jobname = FLAGS.input_path
-  with open(f'{jobname}/features.pkl', 'rb') as f:
+  if os.path.isfile(f'{jobname}/features.pkl'):
     data = pickle.load(f)
-  plot_msa_v2(data)
-  if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/alignment_coverage.png", dpi=200)
-    print(f"Saved as alignment_coverage.png")
-    plt.close()
-  elif FLAGS.action == "show":
-    plt.show()
+    plot_msa_v2(data)
+    if FLAGS.action == "save":
+      plt.savefig(f"{FLAGS.output_path}/alignment_coverage.png", dpi=200)
+      print(f"Saved as alignment_coverage.png")
+      plt.close()
+    elif FLAGS.action == "show":
+      plt.show()
 
 def MF_score_histogram(scores:dict):
   try:
