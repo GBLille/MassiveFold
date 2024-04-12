@@ -4,7 +4,7 @@
 
 ## Table of contents
 <!-- TOC -->
-  * [MassiveFold: parallellize protein structure prediction](#massivefold-parallellize-protein-structure-prediction)
+  * [MassiveFold: parallelize protein structure prediction](#massivefold-parallelize-protein-structure-prediction)
   * [Installation](#installation)
     * [Steps](#steps)
     * [Jobfile's header](#jobfiles-header)
@@ -29,10 +29,11 @@ It optimizes the parallelization of the structure inference by splitting the com
 automatically batches of structure predictions on GPU, finally gathering all the results in one global output directory, 
 with a global ranking and various plots.
 
-MassiveFold uses [AFmassive](https://github.com/GBLille/AFmassive), a modified AlphaFold version that integrates diversity 
-parameters for massive sampling, as an updated version of Björn Wallner's [AFsample](https://github.com/bjornwallner/alphafoldv2.2.0/).
+MassiveFold uses [AFmassive](https://github.com/GBLille/AFmassive) as inference engine, 
+a modified AlphaFold version that integrates diversity parameters for massive sampling as an updated version of 
+Björn Wallner's [AFsample](https://github.com/bjornwallner/alphafoldv2.2.0/), and [ColabFold](https://github.com/sokrypton/ColabFold).
 
-## MassiveFold: parallellize protein structure prediction
+## MassiveFold: parallelize protein structure prediction
 MassiveFold's design (see schematic below) is optimized for GPU cluster usage. It allows fast computing for massive 
 sampling by automatically splitting a large run of numerous predictions into several jobs. Each of these individual 
 jobs are computed on a single GPU node and their results are then gathered as a single output with each prediction 
@@ -40,8 +41,8 @@ ranked on a global level instead of the level of each individual job.
 
 This automatic splitting is also convenient for massive sampling on a single GPU server to manage jobs priorities.  
 
-MassiveFold is only available with **SLURM** (Simple Linux Utility for Resource Management) as it relies heavily on 
-its features (job array, job dependency, etc...).
+MassiveFold is only available with the **SLURM** workload manager (Simple Linux Utility for Resource Management) as 
+it relies heavily on its features (job array, job dependency, etc...).
 
 ![header](imgs/massivefold_diagram.svg)
 
@@ -53,12 +54,13 @@ of predictions is divided into smaller batches and each of them is distributed o
 alignment job to be over, if the alignments are not provided by the user.
 
 3. **post_treatment**: on CPU, it finishes the job by gathering all batches outputs and produces plots with the 
-[MF_plots module](#massivefold_plots-output-representation) to visualize the run's performances. This job is executed only once 
+[plots module](#massivefold_plots-output-representation) to visualize the run's performances. This job is executed only once 
 all the structure predictions are over. 
 
 ## Installation
 
-MassiveFold was initially developed to run massive sampling with [AFmassive](https://github.com/GBLille/AFmassive) and relies on it for its installation.
+MassiveFold was developed to run massive sampling with [AFmassive](https://github.com/GBLille/AFmassive) and 
+[ColabFold](https://github.com/sokrypton/ColabFold) and relies on them for its installation.
 
 ### Steps
 
@@ -69,32 +71,52 @@ MassiveFold was initially developed to run massive sampling with [AFmassive](htt
 git clone https://github.com/GBLille/MassiveFold.git
 ```
 
-For AFmassive runs:   
-Two additional installation steps are required to use MassiveFold for AFmassive runs:
+For AFmassive runs, two additional installation steps are required to use MassiveFold for AFmassive runs:
 - Download [sequence databases](https://github.com/GBLille/AFmassive?tab=readme-ov-file#sequence-databases)
 - Retrieve the [neural network (NN) models parameters](https://github.com/GBLille/AFmassive?tab=readme-ov-file#alphafold-neural-network-model-parameters)
 
+For ColabFold runs, two additional installation steps are required to use MassiveFold for AFmassive runs:
+- Download [sequence databases](https://github.com/sokrypton/ColabFold?tab=readme-ov-file#generating-msas-for-large-scale-structurecomplex-predictions)
+- Retrieve the neural network (NN) models parameters](https://github.com/GBLille/AFmassive?tab=readme-ov-file#alphafold-neural-network-model-parameters)
+and move them to a 'params' folder in the sequence databases folder
+
 2. **Install MassiveFold**
 
-We use an installation based on conda. The **install.sh** script we provide installs the conda environment using the 
-`environment.yml` file. It also creates the file's organization and set paths according to this organization 
-in the `AFmassive_params.json` parameters file.
+We use an installation based on conda. The **install.sh** script we provide installs the conda environments using the 
+`environment.yml` and `mf-colabfold.yml` files. One is created for MassiveFold and AFmassive, and another one is created 
+for ColabFold. It also creates the files architecture and set paths according to this architecture in the 
+`AFmassive_params.json` and/or `ColabFold_params.json` parameters file.  
 
+Help with:
 ```bash
 cd MassiveFold
-./install.sh <DATA_DIR>
+./install.sh -h
 ```
-The <**DATA_DIR**> parameter is the path used in AlphaFold2 installation where the sequence databases are downloaded.
-<a id="tree"></a>  
 
-This file tree displays the files' organization after running `./install.sh`.
+Installation with:
+```bash
+./install.sh [--only-envs] || --alphafold-db str --colabfold-db str [--no-env]
 
+Options:
+  --alphafold-db <str>: path to AlphaFold database
+  --colabfold-db <str>: path to ColabFold database
+  --no-env: do not install the environments, only sets up the files and parameters.
+    At least one of --alphafold-db or colabfold-db is required with this option.
+  --only-envs: only install the environments (other arguments are not used)
+```
+
+This file tree displays the files' architecture after running `./install.sh`.
+
+<a id="tree"></a> 
 ```txt
 MassiveFold
 ├── install.sh
+├── ...
+├── examples
 ├── massivefold
 └── massivefold_runs
     ├── AFmassive_params.json
+    ├── ColabFold_params.json
     ├── headers/
         ├── example_header_alignment_jeanzay.slurm
         ├── example_header_jobarray_jeanzay.slurm
@@ -105,7 +127,8 @@ MassiveFold
     └── run_massivefold.sh
 ```
 The directory `massivefold_runs` is created, which contains:
-- `AFmassive_params.json` to set the run parameters,
+- `AFmassive_params.json` to set the run parameters for AFmassive,
+- `ColabFold_params.json` to set the run parameters for ColabFold,
 - `headers`' directory, containing the headers that must be created to use MassiveFold. Examples are given for the Jean 
 Zay national CNRS French cluster (ready to use, see the [installation on Jean Zay](#install-on-jean-zay) to run 
 MassiveFold directly on Jean Zay),
@@ -122,7 +145,8 @@ To run MassiveFold in parallel on your cluster/server, it is **required** to bui
 They are three and should be named as follows: `{step}.slurm` (`alignment.slurm`, `jobarray.slurm` and 
 `post_treatment.slurm`). The headers contain the parameters to give to SLURM for the jobs running (#SBATCH parameters). 
 They have to be added in `MassiveFold/massivefold_runs/headers/` directory. Depending on your installation it can be 
-another path, this path has to be set in the `AFmassive_params.json` as `jobfile_headers_dir` parameter.
+another path, this path has to be set in the `AFmassive_params.json` and/or `ColabFold_params.json` as 
+`jobfile_headers_dir` parameter.
 
 Headers for Jean Zay cluster are provided as examples to follow (named `example_header_<step>_jeanzay.slurm`), to use 
 them, rename each one following the previously mentioned naming convention.  
@@ -130,17 +154,17 @@ them, rename each one following the previously mentioned naming convention.
 4. **Set custom parameters**
 
 Each cluster has its own specifications in parameterizing job files. For flexibility needs, you can add your custom 
-parameters in your headers, and then in the `AFmassive_params.json` file so that you can dynamically change their values
-in the json file.  
+parameters in your headers, and then in the `AFmassive_params.json` and/or `ColabFold_params.json` file so that you can 
+dynamically change their values in the json file.  
 
 To illustrate these "special needs", here is an example of parameters that can be used on the French national Jean Zay 
 cluster to specify GPU type, time limits or the project on which the hours are used:
 
-Go to `AFmassive_params.json` location:
+Go to `AFmassive_params.json` and/or `ColabFold_params.json` location:
 ```bash
 cd MassiveFold/massivefold_runs
 ```
-Modify `AFmassive_params.json`:
+Modify `AFmassive_params.json` and/or `ColabFold_params.json`:
 ```json
 {
  "custom_params":
@@ -177,12 +201,14 @@ Their names should be identical to:
 * **jobarray.slurm**
 * **post_treatment.slurm**
 
-The templates work with the parameters provided in `AFmassive_params.json` file, given as a parameter to the 
-**run_massivefold.sh** script.  
+The templates work with the parameters provided in `AFmassive_params.json` and/or `ColabFold_params.json` file, given 
+as a parameter to the **run_massivefold.sh** script.  
 These parameters are substituted in the template job files thanks to the python library [string.Template](https://docs.python.org/3.8/library/string.html#template-strings).  
 Refer to [How to add a parameter](#how-to-add-a-parameter) for parameters substitution.
 
-- **Requirement:** In the jobarray's jobfile header (*massivefold_runs/scripts/headers/jobarray.slurm*) should be stated that it is a job array and the number of tasks in it has to be given. The task number argument is substituted with the *$substitute_batch_number* parameter.  
+- **Requirement:** In the jobarray's jobfile header (*massivefold_runs/headers/jobarray.slurm*) should be stated that 
+it is a job array and the number of tasks in it has to be given. The task number argument is substituted with the 
+*$substitute_batch_number* parameter.  
 It should be expressed as:
 ```
 #SBATCH --array=0-$substitute_batch_number
@@ -215,8 +241,8 @@ that can also be used as examples for your own infrastructure.
 #### How to add a parameter
 
 - Add **\$new_parameter** or **\$\{new_parameter\}** in the template's header where you want its value to be set and 
-in the "custom_params" section of `AFmassive_params.json` where its value can be specified and modified conveniently 
-for each run.
+in the "custom_params" section of `AFmassive_params.json` and/or `ColabFold_params.json` where its value can be 
+specified and modified conveniently for each run.
 
 **Example** in the json parameters file for Jean Zay headers:
 ```json
@@ -246,8 +272,8 @@ Where "project" is your 3 letter project with allocated hours on Jean Zay.
 #SBATCH --gpus-per-node=1
 #SBATCH --array=0-$substitute_batch_number
 #SBATCH --time=$jeanzay_jobarray_time
-##SBATCH --qos=qos_gpu-t4              # Uncomment for job requiring more than 20h (max 16 GPUs)
-#SBATCH -C $jeanzay_gpu_with_memory    # GPU type+memory
+##SBATCH --qos=qos_gpu-t4               # Uncomment for job requiring more than 20h (max 16 GPUs)
+#SBATCH -C $jeanzay_gpu_with_memory     # GPU type+memory
 ```
 - Never use single \$ symbol for other uses than parameter/value substitution from the json file.\
 To use $ inside the template files (bash variables or other uses), use instead $$ as an escape following 
@@ -260,42 +286,50 @@ To use it on Jean Zay, the only installation steps are:
 git clone https://github.com/GBLille/MassiveFold.git
 ./install.sh
 ```
-The same [file architecture](#tree) is built.
-
-Edit the `AFmassive_params.json` and replace `<project>` by your project name. 
-
-Then follow the [usage](#usage) section to use MassiveFold.
+The same [file architecture](#tree) is built, follow the [usage](#usage) section to use MassiveFold.
 
 ## Usage
 
-Edit the `AFmassive_params.json` parameters file (see [file architecture](#tree)).  
-Set first the [parameters of your run](https://github.com/GBLille/AFmassive?tab=readme-ov-file#running-afmassive) in the **AFM_run** section. 
-
-For instance:
+Edit the `AFmassive_params.json` or `ColabFold_params.json` parameters file (see [file architecture](#tree)).  
+Set first the [parameters of your run](https://github.com/GBLille/AFmassive?tab=readme-ov-file#running-afmassive) in the 
+**AFM_run** section of the `AFmassive_params.json`, for instance:
 ```json
 {
-  "AFM_run":
-  {
-    "AFM_run_db_preset": "full_dbs",
-    "AFM_run_use_gpu_relax": "true",
-    "AFM_run_models_to_relax": "none",
-    "AFM_run_dropout": "false",
-    "AFM_run_dropout_structure_module": "false",
-    "AFM_run_dropout_rates_filename": "",
-    "AFM_run_max_recycles": "20",
-    "AFM_run_early_stop_tolerance": "0.5",
-    "AFM_run_bfd_max_hits": "100000",
-    "AFM_run_mgnify_max_hits": "501",
-    "AFM_run_uniprot_max_hits": "50000",
-    "AFM_run_uniref_max_hits": "10000",
-    "AFM_run_model_preset": "multimer",
-    "AFM_run_templates": "true",
-    "AFM_run_stop_recycling_below": "0",
-    "AFM_run_min_score": "0",
-    "AFM_run_max_score": "1"
-  }
+ "AFM_run": {
+    "db_preset": "full_dbs",
+    "use_gpu_relax": "true",
+    "models_to_relax": "none",
+    "dropout": "false",
+    "dropout_structure_module": "false",
+    "dropout_rates_filename": "",
+    "max_recycles": "20",
+    "early_stop_tolerance": "0.5",
+    "bfd_max_hits": "100000",
+    "mgnify_max_hits": "501",
+    "uniprot_max_hits": "50000",
+    "uniref_max_hits": "10000",
+    "model_preset": "multimer",
+    "templates": "true",
+    "stop_recycling_below": "0",
+    "min_score": "0",
+    "max_score": "1"
+ }
 }
 ```
+or in the `ColabFold_params.json` file, for instance:
+```json
+{
+ "CF_run": {
+    "model_preset": "multimer",
+    "use_dropout": "false",
+    "num_recycle": "20",
+    "recycle_early_stop_tolerance": "0.5",
+    "stop_at_score": "1",
+    "disable_cluster_profile": "false"
+ }
+}
+```
+
 Then you can set the parameters of the **custom_params** section if necessary and the 
 [plots section](#massivefold_plots-output-representation).
 
@@ -304,20 +338,37 @@ Activate the conda environment, then launch MassiveFold.
 conda activate massivefold
 ./run_massivefold.sh -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> 
 ```
-**N.B.**: on the Jean Zay cluster, load the `massivefold` module instead of activating the conda environment
+**N.B.**: on the Jean Zay cluster, load the massivefold module instead of activating the conda environment
 
-Example:
+Example for AFmassive:
 ```bash
 ./run_massivefold.sh -s input/H1144.fasta -r default_run -p 5 -f AFmassive_params.json
 ```
+Example for ColabFold:
+```bash
+./run_massivefold.sh -s input/H1144.fasta -r default_run -p 5 -f ColabFold_params.json -t ColabFold
+```
+If the multiple sequence alignments have already been run and are present in the output folder, they won't be computed, 
+but you can force their recomputation with:
+```bash
+./run_massivefold.sh -s input/H1144.fasta -r default_run -p 5 -f AFmassive_params.json -a
+```
+Example to only run the alignments with AFmassive (JackHMMer and HHblits):
+```bash
+./run_massivefold.sh -s input/H1144.fasta -r default_run -p 1 -f AFmassive_params.json -o
+```
+or with ColabFold(MMseqs2):
+```bash
+./run_massivefold.sh -s input/H1144.fasta -r default_run -p 1 -f ColabFold_params.json -t ColabFold -o
+```
+
 For more help and list of required and facultative parameters, run:
 ```bash
 ./run_massivefold.sh -h
 ```
-Here is the help message associated with this command:
-
+Here is the help message given by this command:
 ```txt
-Usage: ./run_massivefold.sh -s str -r str -p int -f str [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]
+Usage: ./run_massivefold.sh -s str -r str -p int -f str [-t str] [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]
 ./run_massivefold.sh -h for more details 
   Required arguments:
     -s| --sequence: path of the sequence(s) to infer, should be a 'fasta' file 
@@ -326,30 +377,30 @@ Usage: ./run_massivefold.sh -s str -r str -p int -f str [ -b int | [[-C str | -c
     -f| --parameters: json file's path containing the parameters used for this run.
 
   Facultative arguments:
-    -b| --batch_size: number of predictions per batch, should not be higher than -p (default: 25).
+    -b| --batch_size: (default: 25) number of predictions per batch, should not be higher than -p.
+    -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).
+    -w| --wall_time: (default: 20) total time available for calibration computations, unit is hours.
     -m| --msas_precomputed: path to directory that contains computed msas.
     -n| --top_n_models: uses the n neural network models with best ranking confidence from this run's path.
-    -w| --wall_time: total time available for calibration computations, unit is hours (default: 20).
-    -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).
 
   Facultative options:
+    -t| --tool_to_use: (default: 'AFmassive') Use either AFmassive or ColabFold in structure prediction for MassiveFold
+    -o| --only_msas: only compute alignments, the first step of MassiveFold
     -c| --calibrate: calibrate --batch_size value. Searches from the previous runs for the same 'fasta' path given
         in --sequence and uses the longest prediction time found to compute the maximal number of predictions per batch.
         This maximal number depends on the total time given by --wall_time.
     -a| --recompute_msas: purges previous alignment step and recomputes msas.
-    -o| --only_msas: only compute alignments, the first step of MassiveFold.
-
 ```
 ### Inference workflow
 
-It launches MassiveFold with the same parameters introduced above but instead of running AFmassive a single time, it 
-divides it into multiple batches.
+It launches MassiveFold with the same parameters introduced above but instead of running AFmassive or ColabFold a single 
+time, it divides it into multiple batches.
 
 For the following examples, we assume that **--model_preset=multimer** as it is the majority of cases to run MassiveFold
 in parallel.
 
 However, **--model_preset=monomer_ptm** works too and needs to be adapted accordingly, at least the models to use (if 
-parameter not as default).
+parameter not set as default).
 
 You can decide how the run will be divided by assigning `run_massivefold.sh` parameters *e.g.*:
 
@@ -380,16 +431,25 @@ neural network models are used.
 
 The prediction number per model can be adjusted, here with 67 per model and 15 models, it amounts to **1005 predictions in total divided into 45 batches**, these batches can therefore be run in parallel on a GPU cluster infrastructure.
 
+The batch size can also be auto calibrated with the `-c` or `-C` parameters if at least one basic run has already been 
+performed. The `-c` parameter will automatically search in the output folder that corresponds to the input sequence for 
+the longest prediction duration. These options have to be coupled with the `-w` walltime parameter (it is advised to 
+adapt this walltime value to the one of the job). For instance:
+
+```bash
+./run_massivefold.sh -s ./input/H1144.fasta -r 1005_preds -p 67 -f AFmassive_params.json -c -w 10
+```
+
 ### Parameters
 
 #### Parameters in run_massivefold.sh
 
 In addition to the parameters displayed with **-h** option, the json parameters file set with **-f** or **--parameters** 
-should be organized like the `AFmassive_params.json` file.
+should be organized like the `AFmassive_params.json` or `ColabFold_params.json` file.
 
 #### Parameters in the json file
 
-Each section of `AFmassive_params.json` is used for a different purpose.
+Each section of `AFmassive_params.json` or `ColabFold_params.json` is used for a different purpose.
 
 The **massivefold** section designates the whole run parameters.  
 
@@ -398,15 +458,16 @@ The **massivefold** section designates the whole run parameters.
 "massivefold": 
   {
     "run_massivefold": "run_AFmassive.py",
-    "run_massivefold_plots": "massivefold_plots.py",
+    "run_massivefold_plots": "../massivefold/massivefold_plots.py",
     "data_dir": "/gpfsdswork/dataset/AlphaFold-2.3.1",
     "jobfile_headers_dir": "./headers",
-    "jobfile_templates_dir": "./templates",
-    "output_dir": "../output_array",
-    "logs_dir": "../log_parallel",
-    "input_dir": "../input",
+    "jobfile_templates_dir": "../massivefold/parallelization/templates",
+    "output_dir": "./output",
+    "logs_dir": "./log",
+    "input_dir": "./input",
     "models_to_use": "",
-    "keep_pkl":"false"
+    "keep_pkl": "false",
+    "scripts_dir": "../massivefold/parallelization"
   }
 }
 ```
@@ -415,8 +476,12 @@ Headers (**jobfile_headers_dir**) are specified to setup the run, in order to gi
 run the jobs on your cluster/server. 
 Build your own according to the [Jobfile's header building](#jobfiles-header-building) section.   
 **models_to_use** is the list of NN models to use. To select which NN models are used, separate them with a comma *e.g.*:
-"model_3_multimer_v1,model_3_multimer_v3"  
-**keep_pkl** allows to keep or not the pickle files
+"model_3_multimer_v1,model_3_multimer_v3", by default all are used  
+**pkl_format**: how to manage pickle files  
+    - ‘full’ to keep the pickle files generated by the inference engine,  
+    - ‘light’ to reduce its size by selecting main components, which are: number of recycles, PAE values, max PAE, 
+plddt scores, ptm scores, iptm scores and ranking confidence values (stored in ./light_pkl directory)  
+    - ‘none’ to remove them  
 
 - The **custom_params** section is relative to the personalized parameters that you want to add for your own cluster. 
 For instance, for the Jean Zay GPU cluster:
@@ -435,38 +500,39 @@ For instance, for the Jean Zay GPU cluster:
 As explained in [How to add a parameter](#how-to-add-a-parameter), these variables are substituted by their value when 
 the jobfiles are created.
 
-- The **AFM_run** section gathers all the parameters used by MassiveFold for the run (see [AFmassive parameters](https://github.com/GBLille/AFmassive?tab=readme-ov-file#running-afmassive) 
+- For AFmassive, the **AFM_run** section gathers all the parameters used by MassiveFold for the run 
+(see [AFmassive parameters](https://github.com/GBLille/AFmassive?tab=readme-ov-file#running-afmassive) 
 section). All parameters except *--keep_pkl*, *--models_to_relax*, *--use_precomputed_msas*, *--alignment_only*, 
-- *--start_prediction*, *--end_prediction*, *--fasta_path* and *--output_dir* are exposed in this section.  
-You can adapt the parameters values in function of your needs.  
+*--start_prediction*, *--end_prediction*, *--fasta_path* and *--output_dir* are exposed in this section.  
+You can adapt the parameter values in function of your needs.  
 The non exposed parameters mentioned before are set internally by the Massivefold's pipeline or in the **massivefold**  
-section (**models_to_use** and **keep_pkl**).  
+section (**models_to_use** and **pkl_format**).  
 
 ```json
 {
 "AFM_run": 
   {
-    "AFM_run_db_preset": "full_dbs",
-    "AFM_run_use_gpu_relax": "true",
-    "AFM_run_models_to_relax": "none",
-    "AFM_run_dropout": "false",
-    "AFM_run_dropout_structure_module": "false",
-    "AFM_run_dropout_rates_filename": "",
-    "AFM_run_max_recycles": "20",
-    "AFM_run_early_stop_tolerance": "0.5",
-    "AFM_run_bfd_max_hits": "100000",
-    "AFM_run_mgnify_max_hits": "501",
-    "AFM_run_uniprot_max_hits": "50000",
-    "AFM_run_uniref_max_hits": "10000",
-    "AFM_run_model_preset": "multimer",
-    "AFM_run_templates": "true",
-    "AFM_run_stop_recycling_below": "0",
-    "AFM_run_min_score": "0",
-    "AFM_run_max_score": "1"
+    "db_preset": "full_dbs",
+    "use_gpu_relax": "true",
+    "models_to_relax": "none",
+    "dropout": "false",
+    "dropout_structure_module": "false",
+    "dropout_rates_filename": "",
+    "max_recycles": "20",
+    "early_stop_tolerance": "0.5",
+    "bfd_max_hits": "100000",
+    "mgnify_max_hits": "501",
+    "uniprot_max_hits": "50000",
+    "uniref_max_hits": "10000",
+    "model_preset": "multimer",
+    "templates": "true",
+    "stop_recycling_below": "0",
+    "min_score": "0",
+    "max_score": "1"
   }
 }
 ```
-Lastly, the **MF_plots** section is used for the MassiveFold plotting module.
+Lastly, the **plots** section is used for the MassiveFold plotting module.
 
 ```json
   "plots":
@@ -477,7 +543,7 @@ Lastly, the **MF_plots** section is used for the MassiveFold plotting module.
 ```
 ## massivefold_plots: output representation
 
-MassiveFold plotting module can be used on a MassiveFold output to evaluate its predictions visually.  
+MassiveFold plotting module can be used on a MassiveFold output to evaluate visually its predictions.  
 
 Here is an example of a basic command you can run:
 ```bash
