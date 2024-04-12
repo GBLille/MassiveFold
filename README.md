@@ -342,24 +342,24 @@ conda activate massivefold
 
 Example for AFmassive:
 ```bash
-./run_massivefold.sh -s input/H1144.fasta -r default_run -p 5 -f AFmassive_params.json
+./run_massivefold.sh -s input/H1140.fasta -r default_run -p 5 -f AFmassive_params.json
 ```
 Example for ColabFold:
 ```bash
-./run_massivefold.sh -s input/H1144.fasta -r default_run -p 5 -f ColabFold_params.json -t ColabFold
+./run_massivefold.sh -s input/H1140.fasta -r default_run -p 5 -f ColabFold_params.json -t ColabFold
 ```
 If the multiple sequence alignments have already been run and are present in the output folder, they won't be computed, 
 but you can force their recomputation with:
 ```bash
-./run_massivefold.sh -s input/H1144.fasta -r default_run -p 5 -f AFmassive_params.json -a
+./run_massivefold.sh -s input/H1140.fasta -r default_run -p 5 -f AFmassive_params.json -a
 ```
 Example to only run the alignments with AFmassive (JackHMMer and HHblits):
 ```bash
-./run_massivefold.sh -s input/H1144.fasta -r default_run -p 1 -f AFmassive_params.json -o
+./run_massivefold.sh -s input/H1140.fasta -r default_run -p 1 -f AFmassive_params.json -o
 ```
 or with ColabFold(MMseqs2):
 ```bash
-./run_massivefold.sh -s input/H1144.fasta -r default_run -p 1 -f ColabFold_params.json -t ColabFold -o
+./run_massivefold.sh -s input/H1140.fasta -r default_run -p 1 -f ColabFold_params.json -t ColabFold -o
 ```
 
 For more help and list of required and facultative parameters, run:
@@ -405,7 +405,7 @@ parameter not set as default).
 You can decide how the run will be divided by assigning `run_massivefold.sh` parameters *e.g.*:
 
 ```bash
-./run_massivefold.sh -s ./input/H1144.fasta -r 1005_preds -p 67 -b 25 -f AFmassive_params.json
+./run_massivefold.sh -s ./input/H1140.fasta -r 1005_preds -p 67 -b 25 -f AFmassive_params.json
 ```
 
 The predictions are computed individually for each neural network (NN) model,  **-p** or **--predictions_per_model** 
@@ -437,7 +437,7 @@ the longest prediction duration. These options have to be coupled with the `-w` 
 adapt this walltime value to the one of the job). For instance:
 
 ```bash
-./run_massivefold.sh -s ./input/H1144.fasta -r 1005_preds -p 67 -f AFmassive_params.json -c -w 10
+./run_massivefold.sh -s ./input/H1140.fasta -r 1005_preds -p 67 -f AFmassive_params.json -c -w 10
 ```
 
 ### Parameters
