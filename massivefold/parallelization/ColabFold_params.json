@@ -7,7 +7,7 @@
     },
     "CF_run": {
         "model_preset": "multimer",
-        "pair_strategy": "",
+        "pair_strategy": "greedy",
         "use_dropout": "false",
         "num_recycle": "20",
         "recycle_early_stop_tolerance": "0.5",

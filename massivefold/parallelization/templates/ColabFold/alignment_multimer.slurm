@@ -12,7 +12,7 @@ if [[ $$pair_strategy == "greedy" ]]; then
 elif [[ $$pair_strategy == "complete" ]]; then
   pairing_strategy=1
 else
-  echo "ValueError: --pair_strategy\n'$$pair_strategy'"
+  echo "ValueError: pair_strategy should be 'greedy' or 'complete'"
   exit 1
 fi
 
@@ -34,12 +34,12 @@ echo "colabfold_search
   $${fafile}
   $${data_dir}
   $${msas_output}
-  --pairng_strategy $${pairing_strategy}"
+  --pairing_strategy $${pairing_strategy}"
 
 time colabfold_search \
   $${fafile} \
   $${data_dir} \
   $${msas_output} \
-  --pairing_strategy $${pairing_strategy}"
+  --pairing_strategy $${pairing_strategy}
 
 date
