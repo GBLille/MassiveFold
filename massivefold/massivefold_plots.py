@@ -126,7 +126,8 @@ def MF_indiv_plddt():
 def MF_coverage():
   jobname = FLAGS.input_path
   if os.path.isfile(f'{jobname}/features.pkl'):
-    data = pickle.load(f)
+    with open(f'{jobname}/features.pkl', 'rb') as f:
+      data = pickle.load(f)
     plot_msa_v2(data)
     if FLAGS.action == "save":
       plt.savefig(f"{FLAGS.output_path}/alignment_coverage.png", dpi=200)
