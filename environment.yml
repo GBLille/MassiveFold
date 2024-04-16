@@ -6,6 +6,8 @@ channels:
   - defaults
 dependencies:
   - colabfold=1.5.5
+  - jax=0.4.23
+  - jaxlib=*=cuda*
   - hmmer=3.3.2
   - hhsuite=3.3.0
   - openmm=7.7.0

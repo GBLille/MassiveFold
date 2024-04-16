@@ -6,6 +6,8 @@ channels:
   - defaults
 dependencies:
   - colabfold=1.5.5
+  - jax=0.4.23
+  - jaxlib=*=cuda*
   - cuda-nvcc
   - pip
   - pip:

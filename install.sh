@@ -69,7 +69,10 @@ install_env () {
 }
 
 do_help=false
+db_af=false
+db_cf=false
 only_create_env=false
+do_not_create_env=false
 
 # argument parser
 while true; do
@@ -138,10 +141,6 @@ if [ "$host" == 'jean-zay' ]; then
   echo "Currently on Jean Zay cluster, using prebuilt headers and json parameter files."
 else
   host_is_jeanzay=false
-fi
-
-
-if ! $host_is_jeanzay; then
   if [[ $db_af && ! -d $alphafold_databases ]]; then
     echo "$alphafold_databases doesn't exists"
     exit 1
@@ -156,18 +155,8 @@ if ! $host_is_jeanzay; then
   # Install envs only if they are not yet installed
   conda="$(conda info --base)/etc/profile.d/conda.sh"
   source $conda
-  mf_env=$(conda env list | grep massivefold | wc -l)
-  mf_cf_env=$(conda env list | grep mf-colabfold | wc -l)
-
-  if (( mf_env > 0 )); then  
-    echo "massivefold env already installed, skipping this step."
-  elif [[ ! $do_not_create_env ]]; then  
-    install_env "massivefold"
-  fi
-
-  if [[ $db_cf ]] && (( mf_cf_env > 0 )); then
-    echo "mf-colabfold env already installed, skipped"
-  elif [[ $db_cf ]] || [[ ! $do_not_create_env ]]; then
+  install_env "massivefold"
+  if [[ $db_cf ]]; then
     install_env "colabfold"
   elif $do_not_create_env; then
     echo "No env asked, install skipped"

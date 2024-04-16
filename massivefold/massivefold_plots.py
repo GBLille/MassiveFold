@@ -43,8 +43,14 @@ def CF_PAEs():
   all_models_pae = []
   jobname = FLAGS.input_path
   preds_to_plot = extract_top_predictions()
+
+  pkl_dir = jobname
+  light_pkl = f'{jobname}/light_pkl'
+  if os.path.isdir(light_pkl) and len(os.listdir(light_pkl)) != 0:
+    pkl_dir = light_pkl
+
   for pred in preds_to_plot:
-    with open(f'{jobname}/result_{pred}.pkl', "rb") as pkl_file:
+    with open(f'{pkl_dir}/result_{pred}.pkl', "rb") as pkl_file:
       data = pickle.load(pkl_file)
     all_models_pae.append(np.asarray(data['predicted_aligned_error']))
   plot_paes(all_models_pae)
@@ -73,7 +79,13 @@ def CF_plddts():
 
 def MF_DM_dual_plddt_PAE(prediction, rank):
   jobname = FLAGS.input_path
-  with open(f'{jobname}/result_{prediction}.pkl', "rb") as results_file:
+
+  pkl_dir = jobname
+  light_pkl = f'{jobname}/light_pkl'
+  if os.path.isdir(light_pkl) and len(os.listdir(light_pkl)) != 0:
+    pkl_dir = light_pkl
+
+  with open(f'{pkl_dir}/result_{prediction}.pkl', "rb") as results_file:
     results = pickle.load(results_file)
 
   pae_outputs = {}
