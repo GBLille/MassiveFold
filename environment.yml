@@ -19,4 +19,4 @@ dependencies:
       - biopython==1.79
       - matplotlib==3.7.2
       - seaborn==0.13.2
-      - git+https://github.com/GBLille/AFmassive@v1.1.2
+      - git+https://github.com/GBLille/AFmassive@v1.1.3
