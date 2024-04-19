@@ -25,7 +25,8 @@
         "num_recycle": "20",
         "recycle_early_stop_tolerance": "0.5",
         "stop_at_score": "100",
-        "disable_cluster_profile": "false"
+        "disable_cluster_profile": "false",
+        "pair_strategy": "greedy"
     },
     "plots": {
         "MF_plots_top_n_predictions": "10",
