@@ -22,7 +22,6 @@
     },
     "AFM_run": {
         "db_preset": "full_dbs",
-        "use_gpu_relax": "true",
         "models_to_relax": "none",
         "dropout": "false",
         "dropout_structure_module": "false",

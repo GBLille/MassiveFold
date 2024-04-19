@@ -22,7 +22,6 @@ alignments_only=false
 # variable as MF_parallel parameters
 model_preset=$model_preset
 db_preset=$db_preset
-use_gpu_relax=$use_gpu_relax
 dropout=$dropout
 dropout_structure_module=$dropout_structure_module
 dropout_rates_filename=$dropout_rates_filename

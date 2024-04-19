@@ -16,7 +16,6 @@
         "min_score": "0",
         "max_score": "1",
         "db_preset": "full_dbs",
-        "use_gpu_relax": "true",
         "early_stop_tolerance": "0.5",
         "bfd_max_hits": "100000",
         "mgnify_max_hits": "501",
