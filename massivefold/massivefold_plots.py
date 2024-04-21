@@ -43,12 +43,12 @@ def CF_PAEs():
   all_models_pae = []
   jobname = FLAGS.input_path
   preds_to_plot = extract_top_predictions()
-
+  
   pkl_dir = jobname
   light_pkl = f'{jobname}/light_pkl'
   if os.path.isdir(light_pkl) and len(os.listdir(light_pkl)) != 0:
     pkl_dir = light_pkl
-
+  
   for pred in preds_to_plot:
     with open(f'{pkl_dir}/result_{pred}.pkl', "rb") as pkl_file:
       data = pickle.load(pkl_file)
@@ -79,12 +79,10 @@ def CF_plddts():
 
 def MF_DM_dual_plddt_PAE(prediction, rank):
   jobname = FLAGS.input_path
-
   pkl_dir = jobname
   light_pkl = f'{jobname}/light_pkl'
   if os.path.isdir(light_pkl) and len(os.listdir(light_pkl)) != 0:
     pkl_dir = light_pkl
-
   with open(f'{pkl_dir}/result_{prediction}.pkl', "rb") as results_file:
     results = pickle.load(results_file)
 
@@ -294,52 +292,78 @@ def MF_distribution_comparison():
   plt.savefig(f'{sequence_path}/distribution_compa.png', dpi=200)
   print('Saved as distribution_compa.png')
 
-def MF_extract_pred_recycle(log, relative_position):
-  with open(log, 'r') as log_file:
-    lines = log_file.readlines()
-  
-  start_symbol = 'Starts recycling'
-  end_symbol = 'Ends recycling'
-  
-  recycle_logs = []
-  for line in lines:
-    if line.startswith(start_symbol):
-      pred = {
-        'scores': [],
-        'distances': []
-      }
-    elif line.startswith(end_symbol):
-      pred['distances'] = [distance for i, distance in enumerate(pred['distances']) if i != 1]
-      recycle_logs.append(pred)
-    
-    elif line.startswith('Distance for') or line.startswith("Last step's distance"):
-      distance = float(line.split(': ')[1])
-      pred['distances'].append(distance)
-    elif line.startswith('Score for') or line.startswith("Last step's score"):
-      score = float(line.split(': ')[1])
-      pred['scores'].append(score)
-  
-  return recycle_logs[relative_position[0]]
+def MF_decode_array(encoded_pred:str):
+  encoded_lst = [ int(i) for i in encoded_pred.replace('[', '').replace(']', '').split(' ') ]
+  if encoded_lst[0]:
+    decoded_name = f"model_{encoded_lst[1]}_multimer_v{encoded_lst[2]}_pred_{encoded_lst[3]}"
+  else:
+    decoded_name = f"model_{encoded_lst[1]}_ptm_pred_{encoded_lst[3]}"
 
-def MF_recycles():
-  all_models_pae = []
-  jobname = FLAGS.input_path
-  run = os.path.basename(jobname)
-  seq = os.path.basename(os.path.dirname(jobname))
-  print('Starting recycle logs retrieving')
-  #logs_dir = os.path.join(jobname, '../../../log_parallel/', seq, run)
-  logs_dir = os.path.join(jobname, '../../../log/', seq, run)
-  batches_file = os.path.join(logs_dir, f'{seq}_{run}_batches.json')
-  
-  preds_to_plot = extract_top_predictions()
-  
-  recycle_dir = f'{FLAGS.output_path}/recycles/'
-  if not shutil.os.path.exists(recycle_dir):
-    shutil.os.makedirs(recycle_dir)
+  return decoded_name
+
+def MF_recycling_parser(log_file, prediction):
+  with open(log_file, 'r') as log_recycle:
+    lines = log_recycle.readlines()
+  logs = []
+  # get recycle nb and its lines from log file
+  for line in lines:
+    if '--max_recycles=' in line:
+      max_recycles = int(line.split('--max_recycles=')[1].strip())
+    if line.startswith('['):
+      logs.append(line.strip())
+
+  encoded_recycles = {}
+  for log in logs:
+    pred_encoded = log.split('] ')[0][1:]
+    pred_name = MF_decode_array(pred_encoded)
+    if pred_name not in encoded_recycles:
+      encoded_recycles[pred_name] = {
+        'scores': [ None for _ in range(max_recycles) ],
+        'distances': [ None for _ in range(max_recycles) ],
+        'last': {}
+        }
+    if 'recycle' in log:
+      n_recycle = int(log.split('recycle=')[1].split(' ')[0])
+    elif 'last step' in log:
+      n_recycle = 'last'
+    else:
+      print(log)
+      print('Unexpected log')
+      sys.exit()
+
+    if 'distance' in log:
+      distance = log.split('distance=')[1].split(' ')[0]
+      if n_recycle == 0:
+        encoded_recycles[pred_name]['distances'][0] = 0
+      elif n_recycle != 1:
+        try:
+          encoded_recycles[pred_name]['distances'][n_recycle - 1] = float(distance)
+        except TypeError:
+          encoded_recycles[pred_name]['last']['distance'] = float(distance)
+    elif 'confidence' in log:
+      score = log.split('confidence=')[1].split(' ')[0]
+      try:
+        encoded_recycles[pred_name]['scores'][n_recycle] = float(score)
+      except TypeError:
+        encoded_recycles[pred_name]['last']['score'] = float(score)
+  return encoded_recycles
+
+def MF_recycling_export(all_predictions, file):
+  for pred in all_predictions:
+    single_pred = all_predictions[pred]
+    lasts = single_pred['last']
     
+    none_index = single_pred['scores'].index(None) if None in single_pred['scores'] else len(single_pred['scores'])
+    single_pred['scores'].insert(none_index, lasts['score'])
+    none_index = single_pred['distances'].index(None) if None in single_pred['distances'] else len(single_pred['distances'])
+    single_pred['distances'].insert(none_index, lasts['distance'])
+    del single_pred['last']
+  with open(file, 'w') as json_output:
+    json.dump(all_predictions, json_output, indent=4)
+
+def MF_recycling_pred_to_batch(batches_file):
   with open(batches_file, 'r') as batches:
     batches_to_model = json.load(batches)
-
   model_to_batch = {}
   for batch in batches_to_model:
     start = int(batches_to_model[batch]['start'])
@@ -349,70 +373,95 @@ def MF_recycles():
       model_to_batch[model] = {}
     pred_to_batch = {pred: batch for pred in range(start, end + 1)}
     model_to_batch[model].update(pred_to_batch)
+  return model_to_batch
 
+def MF_recycling_plot(
+    seq:str,
+    run:str,
+    all_values:dict,
+    prediction_to_plot:str,
+    rank:int, 
+    tol:float):
+ 
+  recycle_dir = f'{FLAGS.output_path}/recycles/'
+  if not shutil.os.path.exists(recycle_dir):
+    shutil.os.makedirs(recycle_dir)
+
+  fig, ax1 = plt.subplots()
+  scores_elements = all_values[prediction_to_plot]['scores']
+  distances_elements = all_values[prediction_to_plot]['distances']
+  n_recycling = np.linspace(0, len(scores_elements) - 1, len(scores_elements))
+
+  color = 'tab:grey'
+  ax1.plot(n_recycling, [tol for val in n_recycling], color=color)
+  ax1.set_xlabel('Recycling steps')
+  tol_pos_increment = max([ i for i in distances_elements if i ])/50
+  plt.text(n_recycling[0], tol + tol_pos_increment, 'Early stop tolerance', color = color)
+ 
+  ax2 = ax1.twinx()
+  color = 'tab:red'
+  ax2.set_ylabel('Ranking confidence', color=color)
+  ax2.set_ylim(bottom=0, top=1.1)
+  ax2.plot(n_recycling, scores_elements, color=color, alpha=0.8)
+  ax2.tick_params(axis='y', labelcolor=color)
+
+  color = 'tab:blue'
+  ax1.set_ylabel('Distance with previous step structure', color=color)
+  ax1.plot(n_recycling, distances_elements, color=color, alpha=0.8)
+  ax1.tick_params(axis='y', labelcolor=color)
+
+  locator = ticker.MaxNLocator(integer=True)
+  ax1.xaxis.set_major_locator(locator)
+  ax2.xaxis.set_major_locator(locator)
+
+  fig.suptitle(f"{seq} - {run}")
+  plt.title(f"ranked_{rank}_{prediction_to_plot}")
+  fig.tight_layout()
+
+  if FLAGS.action == "save":
+    plt.savefig(f"{recycle_dir}/ranked_{rank}_unrelaxed_{prediction_to_plot}.png", dpi=200)
+    print(f"Saved as recycles/ranked_{rank}_unrelaxed_{prediction_to_plot}.png")
+    plt.close()
+  if FLAGS.action == "show":
+    plt.show()
+
+def MF_recycling():
+  all_models_pae = []
+  jobname = FLAGS.input_path 
+  run, seq = os.path.basename(jobname), os.path.basename(os.path.dirname(jobname))
+  logs_dir = os.path.join(jobname, '../../../log/', seq, run)
+  batches_file = os.path.join(logs_dir, f'{seq}_{run}_batches.json')
+  
+  preds_to_plot = extract_top_predictions()
+  model_to_batch = MF_recycling_pred_to_batch(batches_file) 
+  
+  all_recycling_values = {}
   for pred in preds_to_plot:
-    pred_model, pred_nb = pred.split('_pred_')
-    
-    model_preds = model_to_batch[pred_model]
-    batch_number = model_preds[int(pred_nb)]
-    log_file = os.path.join(logs_dir, f"jobarray_{batch_number}.log")
-    all_preds_in_batch = sorted([ pred for pred in model_preds if model_preds[pred] == batch_number ])
-    position_in_batch = all_preds_in_batch.index(int(pred_nb))
-    batch_size = len(all_preds_in_batch)
-
-    relative_position = (position_in_batch, batch_size)
-    
-    try:
-      pred_recycles = MF_extract_pred_recycle(log_file, relative_position)
-    except UnboundLocalError:
-      print(f"Crashed on recycling plot for prediction {pred} (./log/{seq}/{run}/jobarray_{batch_number}.log)")
-      continue
-    scores_elements = pred_recycles['scores']
-    distances_elements = pred_recycles['distances']
-   
-    with open(log_file, 'r') as log:
-      lines = log.readlines()
-    early_stop_tolerance = float([line.split('=')[1].strip() for line in lines if 'early_stop_tolerance=' in line][0])
-    if pred_recycles:
-      
-      fig, ax1 = plt.subplots()
-      
-      x_vals = np.linspace(0, len(scores_elements) - 1, len(scores_elements))
-
-      color = 'tab:grey'
-      ax1.plot(x_vals, [early_stop_tolerance for val in x_vals], color=color)
-      ax1.set_xlabel('Recycling step')
-      est_pos_increment = max(distances_elements)/50
-      plt.text(x_vals[0], early_stop_tolerance + est_pos_increment, 'Early stop tolerance', color = color)
-     
-      ax2 = ax1.twinx()
-      color = 'tab:red'
-      ax2.set_ylabel('Ranking confidence', color=color)
-      ax2.set_ylim(bottom=0, top=1.1)
-      ax2.plot(x_vals, scores_elements, color=color, alpha=0.8)
-      ax2.tick_params(axis='y', labelcolor=color)
-
-      color = 'tab:blue'
-      ax1.set_ylabel('Distance with previous step structure', color=color)
-      ax1.plot(x_vals, distances_elements, color=color, alpha=0.8)
-      ax1.tick_params(axis='y', labelcolor=color)
-
-      locator = ticker.MaxNLocator(integer=True)
-      ax1.xaxis.set_major_locator(locator)
-      ax2.xaxis.set_major_locator(locator)
-
-      fig.suptitle(f"{seq} - {run}")
-      plt.title(f"{pred_model}_pred_{pred_nb}")
-      fig.tight_layout() 
-
-      if FLAGS.action == "save":
-        plt.savefig(f"{recycle_dir}/{pred_model}_pred_{pred_nb}.png", dpi=200)
-        print(f"Saved as recycles/{pred_model}_pred_{pred_nb}.png")
-        plt.close()
-      if FLAGS.action == "show":
-        plt.show()
-    else:
-      print(f'Recycles are broken for {os.path.basename(log_file)}')
+    if pred not in all_recycling_values:
+      pred_model, pred_nb = pred.split('_pred_')
+      model_preds = model_to_batch[pred_model]
+      batch_number = model_preds[int(pred_nb)]
+      log_file = os.path.join(logs_dir, f"jobarray_{batch_number}.log")
+      pred_recycling = MF_recycling_parser(log_file, pred)
+      all_recycling_values.update(pred_recycling)
+  
+  with open(os.path.join(logs_dir, 'jobarray_0.log'), 'r') as logfile:
+    lines = logfile.readlines()
+  early_stop_tolerance = float([line.split('=')[1].strip() for line in lines if 'early_stop_tolerance=' in line][0])
+  
+  recycling_file = os.path.join(jobname, 'recycling_log.json')
+  MF_recycling_export(all_recycling_values, recycling_file)
+  with open(recycling_file, 'r') as recycling_json:
+    recycling = json.load(recycling_json)
+  
+  for i, pred in enumerate(preds_to_plot):
+    MF_recycling_plot(
+      seq,
+      run,
+      recycling,
+      pred,
+      i,
+      early_stop_tolerance)
 
 def main(argv):
   FLAGS.input_path = os.path.realpath(FLAGS.input_path)
@@ -424,7 +473,7 @@ def main(argv):
     "coverage": MF_coverage,
     "score_distribution": MF_score_distribution,
     "distribution_comparison": MF_distribution_comparison,
-    "recycles": MF_recycles
+    "recycles": MF_recycling
     }
 
   # Flags checking
