@@ -301,6 +301,43 @@ def MF_decode_array(encoded_pred:str):
 
   return decoded_name
 
+def MF_cf_recycling_parser(log_file, prediction, cf_name_map):
+  with open(log_file, 'r') as log_recycle:
+    lines = log_recycle.readlines()
+  with open(cf_name_map, 'r') as json_file:
+    name_map = json.load(json_file)
+  logs = []
+  for line in lines:
+    if "--num-recycle" in line:
+      max_recycles = int(line.split('--num-recycle')[1].strip())
+    if "recycle=" in line:
+      recycle_line = line.split(' ')
+      for i, elem in enumerate(recycle_line):
+        if elem.startswith('alphafold2'):
+          recycle_line = recycle_line[i:]
+          break
+      logs.append(' '.join(recycle_line).strip())
+
+  recycling = {}
+  for log in logs:
+    elements = log.split(' ')
+    pred_name = name_map[elements[0]]
+    if pred_name not in recycling:
+      recycling[pred_name] = {
+        'scores': [ None for _ in range(max_recycles + 1) ],
+        'distances': [ None for _ in range(max_recycles + 1) ]
+        }
+    n_recycle = int(elements[1].split('recycle=')[1])
+    if n_recycle == 0:
+       recycling[pred_name]['distances'][0] = 0
+    else:
+      distance = float((elements[-1].split('tol=')[1]))
+      recycling[pred_name]['distances'][n_recycle] = distance
+
+    ptm, iptm = float(elements[3].split('pTM=')[1]), float(elements[4].split('ipTM=')[1])
+    recycling[pred_name]['scores'][n_recycle] = 0.8*iptm + 0.2*ptm
+  return recycling
+
 def MF_recycling_parser(log_file, prediction):
   with open(log_file, 'r') as log_recycle:
     lines = log_recycle.readlines()
@@ -346,18 +383,21 @@ def MF_recycling_parser(log_file, prediction):
         encoded_recycles[pred_name]['scores'][n_recycle] = float(score)
       except TypeError:
         encoded_recycles[pred_name]['last']['score'] = float(score)
-  return encoded_recycles
 
-def MF_recycling_export(all_predictions, file):
-  for pred in all_predictions:
-    single_pred = all_predictions[pred]
+  for pred in encoded_recycles:
+    single_pred = encoded_recycles[pred]
     lasts = single_pred['last']
     
     none_index = single_pred['scores'].index(None) if None in single_pred['scores'] else len(single_pred['scores'])
     single_pred['scores'].insert(none_index, lasts['score'])
+
     none_index = single_pred['distances'].index(None) if None in single_pred['distances'] else len(single_pred['distances'])
     single_pred['distances'].insert(none_index, lasts['distance'])
     del single_pred['last']
+
+  return encoded_recycles
+
+def MF_recycling_export(all_predictions, file):
   with open(file, 'w') as json_output:
     json.dump(all_predictions, json_output, indent=4)
 
@@ -442,13 +482,20 @@ def MF_recycling():
       model_preds = model_to_batch[pred_model]
       batch_number = model_preds[int(pred_nb)]
       log_file = os.path.join(logs_dir, f"jobarray_{batch_number}.log")
-      pred_recycling = MF_recycling_parser(log_file, pred)
+      # parse logs depending on inference engine specificity
+      colabfold_name_map = os.path.join(jobname, 'unified_map.json')
+      if os.path.isfile(colabfold_name_map):
+        pred_recycling = MF_cf_recycling_parser(log_file, pred, colabfold_name_map)
+      else:
+        pred_recycling = MF_recycling_parser(log_file, pred)
       all_recycling_values.update(pred_recycling)
-  
+
   with open(os.path.join(logs_dir, 'jobarray_0.log'), 'r') as logfile:
     lines = logfile.readlines()
-  early_stop_tolerance = float([line.split('=')[1].strip() for line in lines if 'early_stop_tolerance=' in line][0])
-  
+  try:
+    early_stop_tolerance = float([line.split('=')[1].strip() for line in lines if 'early_stop_tolerance=' in line][0])
+  except IndexError:
+    early_stop_tolerance= float([line.split('tolerance')[1].strip() for line in lines if '--recycle-early-stop-tolerance' in line][0])
   recycling_file = os.path.join(jobname, 'recycling_log.json')
   MF_recycling_export(all_recycling_values, recycling_file)
   with open(recycling_file, 'r') as recycling_json:

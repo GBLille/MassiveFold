@@ -31,6 +31,7 @@ flags.DEFINE_bool(
   True,
   'To rename file or not')
 
+
 def convert_fasta(fasta_path:str):
   records = list(SeqIO.parse(fasta_path, "fasta"))
   fasta_dir = os.path.dirname(fasta_path)
@@ -57,10 +58,11 @@ _pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pkl"
   elif sep == 'ptm':
     rename = lambda x: f"result_model_{x.split('model_')[1][0]}_ptm\
 _pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pkl"
-  new_names = list(map(rename, pkl_files))
   
+  new_names = { old: rename(old) for old in pkl_files }
   if FLAGS.do_rename:
-    for old, new in zip(pkl_files, new_names):
+    for old in pkl_files:
+      new = new_names[old]
       mv(f"{output_path}/{old}", f"{output_path}/{new}")
 
   return new_names
@@ -76,10 +78,28 @@ _multimer_v{x.split('multimer_v')[1][0]}_pred_{int(x.split('seed_')[1].split('.'
     rename = lambda x: f"unrelaxed_model_{x.split('model_')[1][0]}\
 _ptm_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pdb"
     
-  new_names = list(map(rename, pdb_files))
+  new_names = { old: rename(old) for old in pdb_files }
   if FLAGS.do_rename:
-    for old, new in zip(pdb_files, new_names):
+    for old in pdb_files:
+      new = new_names[old]
       mv(f"{output_path}/{old}", f"{output_path}/{new}")
+
+  map_old_to_new = {
+    f"alphafold2{old.split('alphafold2')[1].replace('.pdb', '')}": f"model{new_names[old].split('model')[1].replace('.pdb', '')}"
+    for old in new_names
+  }
+
+  if FLAGS.do_rename:
+    map_file = os.path.join(FLAGS.to_convert, 'unified_map.json')
+    if os.path.isfile(map_file):
+      with open(map_file, 'r') as map_json:
+        name_map = json.load(map_json)
+      name_map.update(map_old_to_new)
+      with open(map_file, 'w') as map_json:
+        json.dump(name_map, map_json, indent=4)
+    else:
+      with open(map_file, 'w') as map_json:
+        json.dump(map_old_to_new, map_json, indent=4)
   return new_names
 
 def create_ranking(predictions_to_rank:pd.core.frame.DataFrame, output_path:str, preset:str):
@@ -148,7 +168,7 @@ def convert_output(output_path:str, pred_shift:int):
 
   # rename files
   renamed_pdbs = rename_pdb(pdbs, output_path, pred_shift, sep=sep)
-  rank_predictions(output_path, pdbs, renamed_pdbs, preset=sep)
+  rank_predictions(output_path, pdbs, renamed_pdbs.values(), preset=sep)
   rename_pkl(pkls, output_path, pred_shift, sep=sep)
     
 
