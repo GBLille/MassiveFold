@@ -4,6 +4,8 @@
 
 ## Table of contents
 <!-- TOC -->
+* [MassiveFold](#massivefold)
+  * [Table of contents](#table-of-contents)
   * [MassiveFold: parallelize protein structure prediction](#massivefold-parallelize-protein-structure-prediction)
   * [Installation](#installation)
     * [Steps](#steps)
@@ -16,6 +18,7 @@
     * [Parameters](#parameters)
       * [Parameters in run_massivefold.sh](#parameters-in-run_massivefoldsh)
       * [Parameters in the json file](#parameters-in-the-json-file)
+    * [Relaxation](#relaxation)
   * [massivefold_plots: output representation](#massivefold_plots-output-representation)
     * [Required arguments](#required-arguments)
     * [Facultative arguments](#facultative-arguments)
@@ -429,7 +432,8 @@ By default (if **--models_to_use** is not assigned), all NN models are used: wit
 15 models in total = 5 neural network models $\times$ 3 AlphaFold2 versions; with **--model_preset=monomer_ptm**, 5 
 neural network models are used.
 
-The prediction number per model can be adjusted, here with 67 per model and 15 models, it amounts to **1005 predictions in total divided into 45 batches**, these batches can therefore be run in parallel on a GPU cluster infrastructure.
+The prediction number per model can be adjusted, here with 67 per model and 15 models, it amounts to **1005 predictions 
+in total divided into 45 batches**, these batches can therefore be run in parallel on a GPU cluster infrastructure.
 
 The batch size can also be auto calibrated with the `-c` or `-C` parameters if at least one basic run has already been 
 performed. The `-c` parameter will automatically search in the output folder that corresponds to the input sequence for 
@@ -541,6 +545,15 @@ Lastly, the **plots** section is used for the MassiveFold plotting module.
         "MF_plots_chosen_plots": "coverage,DM_plddt_PAE,CF_PAEs,score_distribution,recycles"
     }
 ```
+
+### Relaxation
+
+`colabfold_relax` developed by the ColabFold team can be used to relax selected predictions. For help, type:  
+```bash
+colabfold_relax -h
+```
+
+
 ## massivefold_plots: output representation
 
 MassiveFold plotting module can be used on a MassiveFold output to evaluate visually its predictions.  
