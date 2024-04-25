@@ -24,7 +24,7 @@
 <!-- TOC -->
 
 
-MassiveFold (https://github.com/GBLille/MassiveFold) is a tool that allows to massively expand the sampling of structure 
+MassiveFold is a tool that allows to massively expand the sampling of structure 
 predictions by improving the computing of [AlphaFold](https://github.com/google-deepmind/alphafold) based predictions.
 
 It optimizes the parallelization of the structure inference by splitting the computing on CPU for alignments, running 
