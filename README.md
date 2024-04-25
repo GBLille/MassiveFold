@@ -23,16 +23,16 @@
 * [Authors](#authors)
 <!-- TOC -->
 
-MassiveFold aims at massively expanding the sampling of structure predictions by improving the computing of 
-[AlphaFold](https://github.com/google-deepmind/alphafold) based predictions.  
+
+MassiveFold (https://github.com/GBLille/MassiveFold) is a tool that allows to massively expand the sampling of structure 
+predictions by improving the computing of [AlphaFold](https://github.com/google-deepmind/alphafold) based predictions.
 
 It optimizes the parallelization of the structure inference by splitting the computing on CPU for alignments, running 
-automatically batches of structure predictions on GPU, finally gathering all the results in one global output directory, 
-with a global ranking and various plots.
+automatically batches of structure predictions on GPU, and gathering the results in one global output directory, with a 
+global ranking and a variety of plots.
 
-MassiveFold uses [AFmassive](https://github.com/GBLille/AFmassive) as inference engine, 
-a modified AlphaFold version that integrates diversity parameters for massive sampling as an updated version of 
-Björn Wallner's [AFsample](https://github.com/bjornwallner/alphafoldv2.2.0/), and [ColabFold](https://github.com/sokrypton/ColabFold).
+MassiveFold uses [AFmassive](https://github.com/GBLille/AFmassive) or [ColabFold](https://github.com/sokrypton/ColabFold). as inference engine; AFmassive is an updated version of Björn 
+Wallner's [AFsample](https://github.com/bjornwallner/alphafoldv2.2.0/) that offers additional diversity parameters for massive sampling.
 
 ## MassiveFold: parallelize protein structure prediction
 MassiveFold's design (see schematic below) is optimized for GPU cluster usage. It allows fast computing for massive 
