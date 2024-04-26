@@ -321,7 +321,9 @@ def MF_cf_recycling_parser(log_file, prediction, cf_name_map):
   recycling = {}
   for log in logs:
     elements = log.split(' ')
-    pred_name = name_map[elements[0]]
+    prediction = elements[0]
+    preset = prediction.split('_')[1]
+    pred_name = name_map[prediction]
     if pred_name not in recycling:
       recycling[pred_name] = {
         'scores': [ None for _ in range(max_recycles + 1) ],
@@ -334,8 +336,12 @@ def MF_cf_recycling_parser(log_file, prediction, cf_name_map):
       distance = float((elements[-1].split('tol=')[1]))
       recycling[pred_name]['distances'][n_recycle] = distance
 
-    ptm, iptm = float(elements[3].split('pTM=')[1]), float(elements[4].split('ipTM=')[1])
-    recycling[pred_name]['scores'][n_recycle] = 0.8*iptm + 0.2*ptm
+    if preset == 'multimer':
+      ptm, iptm = float(elements[3].split('pTM=')[1]), float(elements[4].split('ipTM=')[1])
+      recycling[pred_name]['scores'][n_recycle] = 0.8*iptm + 0.2*ptm
+    elif preset == 'ptm':
+      plddt, ptm = float(elements[2].split('pLDDT=')[1]), float(elements[3].split('pTM=')[1])
+      recycling[pred_name]['scores'][n_recycle] = ptm
   return recycling
 
 def MF_recycling_parser(log_file, prediction):
@@ -421,7 +427,8 @@ def MF_recycling_plot(
     all_values:dict,
     prediction_to_plot:str,
     rank:int, 
-    tol:float):
+    tol:float,
+    preset:str):
  
   recycle_dir = f'{FLAGS.output_path}/recycles/'
   if not shutil.os.path.exists(recycle_dir):
@@ -440,7 +447,11 @@ def MF_recycling_plot(
  
   ax2 = ax1.twinx()
   color = 'tab:red'
-  ax2.set_ylabel('Ranking confidence', color=color)
+  if preset == 'multimer':
+    metric = 'Ranking confidence'
+  elif preset == 'ptm':
+    metric = 'pTM'
+  ax2.set_ylabel(metric, color=color)
   ax2.set_ylim(bottom=0, top=1.1)
   ax2.plot(n_recycling, scores_elements, color=color, alpha=0.8)
   ax2.tick_params(axis='y', labelcolor=color)
@@ -492,10 +503,15 @@ def MF_recycling():
 
   with open(os.path.join(logs_dir, 'jobarray_0.log'), 'r') as logfile:
     lines = logfile.readlines()
+
+  # parse tol and preset depending on AFmassive or ColabFold
   try:
     early_stop_tolerance = float([line.split('=')[1].strip() for line in lines if 'early_stop_tolerance=' in line][0])
+    preset = 'multimer'
   except IndexError:
     early_stop_tolerance= float([line.split('tolerance')[1].strip() for line in lines if '--recycle-early-stop-tolerance' in line][0])
+    preset = [ line.split('alphafold2_')[1].split('_')[0] for line in lines if 'alphafold2_' in line ][0].strip()
+
   recycling_file = os.path.join(jobname, 'recycling_log.json')
   MF_recycling_export(all_recycling_values, recycling_file)
   with open(recycling_file, 'r') as recycling_json:
@@ -508,7 +524,8 @@ def MF_recycling():
       recycling,
       pred,
       i,
-      early_stop_tolerance)
+      early_stop_tolerance,
+      preset)
 
 def main(argv):
   FLAGS.input_path = os.path.realpath(FLAGS.input_path)
@@ -533,7 +550,7 @@ def main(argv):
     print('Flag --runs_to_compare is required for --chosen_plots=distribution_comparison')
     FLAGS.chosen_plots = [ plot for plot in FLAGS.chosen_plots if plot != 'distribution_comparison' ]
 
-  if not shutil.os.path.exists(FLAGS.output_path):
+  if not shutil.os.path.exists(FLAGS.output_path) and 'distribution_comparison' not in FLAGS.chosen_plots:
     shutil.os.makedirs(FLAGS.output_path)
   for chosen_plot in FLAGS.chosen_plots:
     MF_plots[chosen_plot]()
