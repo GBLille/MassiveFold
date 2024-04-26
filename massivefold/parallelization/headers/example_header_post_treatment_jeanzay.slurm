@@ -6,6 +6,6 @@
 #SBATCH --hint=nomultithread # Disable hyperthreading
 #SBATCH --output=${logs_dir}/${sequence_name}/${run_name}/post_treatment_%j.log
 #SBATCH --error=${logs_dir}/${sequence_name}/${run_name}/post_treatment_%j.log
-#SBATCH --time=00:10:00      # Expected runtime HH:MM:SS (max 100h)
+#SBATCH --time=01:59:00      # Expected runtime HH:MM:SS (max 100h)
 #SBATCH --account=$jeanzay_project@cpu #
 
