@@ -293,7 +293,7 @@ def MF_distribution_comparison():
   print('Saved as distribution_compa.png')
 
 def MF_decode_array(encoded_pred:str):
-  encoded_lst = [ int(i) for i in encoded_pred.replace('[', '').replace(']', '').split(' ') ]
+  encoded_lst = [ int(i) for i in encoded_pred.replace('[', '').replace(']', '').split() ]
   if encoded_lst[0]:
     decoded_name = f"model_{encoded_lst[1]}_multimer_v{encoded_lst[2]}_pred_{encoded_lst[3]}"
   else:

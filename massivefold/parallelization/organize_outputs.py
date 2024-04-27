@@ -14,9 +14,9 @@ def create_global_ranking(all_batches_path, jobname, ranking_type="debug"):
   map_pred_batch = {}
   whole_ranking = {}
   ranking_key_score = ''
-  for batch in os.listdir(FLAGS.batches_path):
+  for batch in os.listdir(all_batches_path):
     if batch.startswith('batch'):
-      ranking_path = os.path.join(FLAGS.batches_path, batch, jobname, f'ranking_{ranking_type}.json')
+      ranking_path = os.path.join(all_batches_path, batch, jobname, f'ranking_{ranking_type}.json')
       with open(ranking_path, 'r') as local_ranking_file:
         local_rank = json.load(local_ranking_file)
         if not ranking_key_score:
@@ -27,7 +27,7 @@ def create_global_ranking(all_batches_path, jobname, ranking_type="debug"):
   iptm_ptm = dict(sorted_predictions)
   order = sorted(whole_ranking, reverse=True, key=whole_ranking.get)
   global_ranking = {ranking_key_score: iptm_ptm, 'order': order}
-  with open(f"{FLAGS.batches_path}/ranking_{ranking_type}.json", 'w') as fileout:
+  with open(f"{all_batches_path}/ranking_{ranking_type}.json", 'w') as fileout:
     fileout.write(json.dumps(global_ranking, indent=4)) 
 
   return map_pred_batch
@@ -44,8 +44,6 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
       else:
         print('Either using colabfold or error encountered while copying features.pkl')
       files = os.path.join(all_batches_path, pred_batch_map[prediction], jobname)
-      print(files)
-      print(os.listdir(files))
       for file in os.listdir(files):
         if file.endswith('coverage.png'):
           coverage_plot = os.path.join(files, file)
@@ -83,21 +81,22 @@ def remove_batch_dirs(all_batches_path):
     rm(os.path.join(all_batches_path, batch_dir))
     
 def main(argv):
-  FLAGS.batches_path = os.path.abspath(FLAGS.batches_path)
-  sequence_name = os.path.basename(FLAGS.batches_path)
-  if os.path.dirname(FLAGS.batches_path) != "output_array":
-    sequence_name = os.path.basename(os.path.dirname(FLAGS.batches_path))
-
+  batches_path = os.path.normpath(FLAGS.batches_path)
+  sequence_name = os.path.basename(batches_path)
+  
+  massivefold_output_dir = "output"
+  if os.path.dirname(batches_path) != massivefold_output_dir:
+    sequence_name = os.path.basename(os.path.dirname(batches_path))
   # create ranking json files
-  pred_batch_map = create_global_ranking(FLAGS.batches_path, sequence_name)
-  if os.path.isfile(f"{FLAGS.batches_path}/batch_0/{sequence_name}/ranking_ptm.json"):
-    create_global_ranking(FLAGS.batches_path, sequence_name, 'iptm')
-  if os.path.isfile(f"{FLAGS.batches_path}/batch_0/{sequence_name}/ranking_iptm.json"):
-    create_global_ranking(FLAGS.batches_path, sequence_name, 'ptm')
+  pred_batch_map = create_global_ranking(batches_path, sequence_name)
+  if os.path.isfile(f"{batches_path}/batch_0/{sequence_name}/ranking_ptm.json"):
+    create_global_ranking(batches_path, sequence_name, 'iptm')
+  if os.path.isfile(f"{batches_path}/batch_0/{sequence_name}/ranking_iptm.json"):
+    create_global_ranking(batches_path, sequence_name, 'ptm')
 
   # organize output directory
-  move_and_rename(FLAGS.batches_path, pred_batch_map, sequence_name)
-  remove_batch_dirs(FLAGS.batches_path)
+  move_and_rename(batches_path, pred_batch_map, sequence_name)
+  remove_batch_dirs(batches_path)
 
 if __name__ == "__main__":
   app.run(main)     

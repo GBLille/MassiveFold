@@ -18,6 +18,8 @@ ln -s $${output_dir}/$${sequence_name}/msas $${output_path}/$${sequence_name}
 max_template_date=2023-07-31
 use_precomputed_msas=true
 alignments_only=false
+use_gpu_relax=false
+models_to_relax=none
 
 # variable as MF_parallel parameters
 model_preset=$model_preset
@@ -35,7 +37,6 @@ templates=$templates
 min_score=$min_score
 max_score=$max_score
 stop_recycling_below=$stop_recycling_below
-models_to_relax=none
 
 # parameters for each task in the job array
 batches_path=${logs_dir}/${sequence_name}/${run_name}/$${sequence_name}_$${run_name}_batches.json
