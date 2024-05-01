@@ -5,10 +5,7 @@ USAGE="\
 ./run_massivefold.sh -s str -r str -p int -f str [-t str] [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]\n\
 ./run_massivefold.sh -h for more details "
 
-# help message
-if [[ " ${@} " == *" -h "* ]] || [[ " ${@} " == *" --help "* ]]; then
-  echo -e "\
-Usage: $USAGE\n\
+HELP="Usage: $USAGE\n\
   Required arguments:\n\
     -s| --sequence: path of the sequence(s) to infer, should be a 'fasta' file \n\
     -r| --run: name chosen for the run to organize in outputs.\n\
@@ -26,14 +23,10 @@ Usage: $USAGE\n\
     -t| --tool_to_use: (default: 'AFmassive') Use either AFmassive or ColabFold in structure prediction for MassiveFold\n\
     -o| --only_msas: only compute alignments, the first step of MassiveFold\n\
     -c| --calibrate: calibrate --batch_size value. Searches from the previous runs for the same 'fasta' path given\n\
-        in --sequence and uses the longest prediction time found to compute the maximal number of predictions per batch.\n\
-        This maximal number depends on the total time given by --wall_time.\n\
-    -a| --recompute_msas: purges previous alignment step and recomputes msas."
-  exit 1
-fi
-
-#module load massivefold/1.0.0
-#conda activate massivefold-1.0.0
+        \tin --sequence and uses the longest prediction time found to compute the maximal number of predictions per batch.\n\
+        \tThis maximal number depends on the total time given by --wall_time.\n\
+    -a| --recompute_msas: purges previous alignment step and recomputes msas.\n\
+    -h| --help: show this help message."
 
 # default params
 calibration=false
@@ -99,6 +92,14 @@ while true; do
     -t|--tool_to_use)
       tool=$2
       shift 2
+      ;;
+    -h|--help)
+      echo -e $HELP
+      exit 1
+      ;;
+    -*|--*)
+      echo "Option $1 is unknown"
+      exit 1
       ;;
     *)
       break
@@ -290,6 +291,8 @@ if eval $conditions_to_align; then
   waiting_for_alignment=true
   if $only_msas; then
     echo "Only run sequence alignment."
+    mkdir -p ${logs_dir}/${sequence_name}/${run_name}/
+    mv ${sequence_name}_${run_name}_* ${logs_dir}/${sequence_name}/${run_name}/
     exit 1
   fi
 elif [[ $tool == "AFmassive" ]] && [[ -d  $msas_precomputed/msas ]]; then
