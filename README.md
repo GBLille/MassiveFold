@@ -24,15 +24,19 @@
 <!-- TOC -->
 
 
-MassiveFold is a tool that allows to massively expand the sampling of structure 
-predictions by improving the computing of [AlphaFold](https://github.com/google-deepmind/alphafold) based predictions.
+MassiveFold is a tool that allows to massively expand the sampling of structure predictions by improving the computing 
+of [AlphaFold](https://github.com/google-deepmind/alphafold) based predictions.
 
 It optimizes the parallelization of the structure inference by splitting the computing on CPU for alignments, running 
 automatically batches of structure predictions on GPU, and gathering the results in one global output directory, with a 
 global ranking and a variety of plots.
 
 MassiveFold uses [AFmassive](https://github.com/GBLille/AFmassive) or [ColabFold](https://github.com/sokrypton/ColabFold). as inference engine; AFmassive is an updated version of Björn 
-Wallner's [AFsample](https://github.com/bjornwallner/alphafoldv2.2.0/) that offers additional diversity parameters for massive sampling.
+Wallner's [AFsample](https://github.com/bjornwallner/alphafoldv2.2.0/) that offers additional diversity parameters for 
+massive sampling.
+
+It has been submitted for publication and a preprint is available here: 
+[https://doi.org/10.21203/rs.3.rs-4319486/v1](https://doi.org/10.21203/rs.3.rs-4319486/v1).
 
 ## MassiveFold: parallelize protein structure prediction
 MassiveFold's design (see schematic below) is optimized for GPU cluster usage. It allows fast computing for massive 
@@ -605,6 +609,7 @@ massivefold_plots.py --help
 ## Authors
 Nessim Raouraoua (UGSF - UMR 8576, France)  
 Claudio Mirabello (NBIS, Sweden)  
+Thibaut Véry (IDRIS, France)  
 Christophe Blanchet (IFB, France)  
 Björn Wallner (Linköping University, Sweden)  
 Marc F Lensink (UGSF - UMR8576, France)  
