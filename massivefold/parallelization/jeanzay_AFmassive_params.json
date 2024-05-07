@@ -22,7 +22,6 @@
     },
     "AFM_run": {
         "db_preset": "full_dbs",
-        "models_to_relax": "none",
         "dropout": "false",
         "dropout_structure_module": "false",
         "dropout_rates_filename": "",

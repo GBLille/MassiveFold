@@ -180,6 +180,8 @@ def main():
     pred_run_map = create_global_ranking(runs_path, runs, output_path) 
     print(f"Gathering {sequence_name}'s runs")
     move_and_rename(runs_path, pred_run_map, output_path)
+  elif os.path.exists(output_path):
+    rm(output_path)
   delete_symlinks(runs_path, runs)
 
 if __name__ == "__main__":
