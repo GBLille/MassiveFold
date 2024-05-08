@@ -46,7 +46,7 @@ batch_end=$$($${scripts_dir}/get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --jso
 
 echo Model used is $$batch_model, batch computed between prediction $$batch_start and $$batch_end
 
-echo "$${run_massivefold}
+echo "python $$(which $${run_massivefold})
     --fasta_paths=$${fafile}
     --output_dir=$${output_path}
     --data_dir=$${data_dir}
@@ -82,7 +82,7 @@ echo "$${run_massivefold}
     --uniref30_database_path=$${data_dir}/uniref30/UniRef30_2021_03
 "
 
-time $${run_massivefold} \
+time python $$(which $${run_massivefold}) \
     --fasta_paths=$${fafile} \
     --output_dir=$${output_path} \
     --data_dir=$${data_dir} \

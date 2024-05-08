@@ -103,28 +103,29 @@ _ptm_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pdb"
   return new_names
 
 def create_ranking(predictions_to_rank:pd.core.frame.DataFrame, output_path:str, preset:str):
-  for score in ['plddts', 'ptm', 'iptm', 'iptm+ptm']:
-    if preset == 'multimer' and score == 'plddts':
-      continue
+  metrics = ['ptm', 'iptm', 'iptm+ptm'] if preset == 'multimer' else ['plddts', 'ptm']
+  
+  for metric in metrics:
     try:
-      df = predictions_to_rank.sort_values(score, ascending=False)
+      df = predictions_to_rank.sort_values(metric, ascending=False)
     except KeyError:
-      if score == 'plddts':
-        print(predictions_to_rank)
-        print('No "ptm" found')
-        sys.exit()
-      continue
-    metric_name = score if score != 'iptm+ptm' else 'debug'
-    if preset == 'ptm':
-      metric_name = 'debug'
+      print(predictions_to_rank)
+      print(f'No "{metric}" found')
+      sys.exit()
+
+    if preset == 'multimer':
+      metric_name = metric if metric != 'iptm+ptm' else 'debug'
+    elif preset == 'ptm':
+      metric_name = metric if metric != 'plddts' else 'debug'
+
     ranking_file_name = f"{output_path}/ranking_{metric_name}.json"
-    scores_dict = df.set_index('prediction').to_dict(orient='dict')[score]
-    if score != 'iptm+ptm':
+    scores_dict = df.set_index('prediction').to_dict(orient='dict')[metric]
+    if metric != 'iptm+ptm':
       scores_dict = {key: value.item() for key, value in scores_dict.items()}
     order = df['prediction'].to_list()
     
     with open(ranking_file_name, 'w') as json_scores:
-      json.dump({ score: scores_dict, 'order': order }, json_scores, indent=4)
+      json.dump({ metric: scores_dict, 'order': order }, json_scores, indent=4)
 
 def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset):
   jobname = [ name for name in os.listdir(output_path) if name.endswith('a3m') ]
@@ -149,6 +150,7 @@ def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset
       elif preset == 'ptm':
         new_pred = pd.DataFrame([{
           'prediction': pred_name,
+          'ptm': scores['ptm'],
           'plddts': scores['mean_plddt'],
           }])
         
