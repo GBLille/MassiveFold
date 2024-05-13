@@ -9,7 +9,7 @@ import pandas as pd
 from os import symlink
 from shutil import copy  as cp, rmtree as rm
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(allow_abbrev=False)
 parser.add_argument('--runs_path', help='Path to the runs you want to gather', required=True)
 parser.add_argument('--ignore', dest='runs_to_ignore', nargs='+', help="List of run names or" 
 " subdirectories in the run path set in --runs_path. All these runs (separated by a single space)" 
