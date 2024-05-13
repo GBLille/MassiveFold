@@ -4,6 +4,7 @@ import os
 import json
 import sys
 import argparse
+import numpy as np
 import pandas as pd
 from os import symlink
 from shutil import copy  as cp, rmtree as rm
@@ -13,8 +14,10 @@ parser.add_argument('--runs_path', help='Path to the runs you want to gather', r
 parser.add_argument('--ignore', dest='runs_to_ignore', nargs='+', help="List of run names or" 
 "subdirectory in the run path set in --run_path. All these runs (separated by a single space)" 
 " won't be taken into account in the runs gathering", default=[])
-parser.add_argument('--output_path', help="Path to the output of the runs gathering", required=False)
+parser.add_argument('--output_path', help="Path to the output of the runs gathering (default: <RUNS_PATH>/all_pdbs)", required=False)
 parser.add_argument('--only_ranking', help="Skips the run gathering, only output a csv ranking file", required=False, action='store_true')
+parser.add_argument('--include_pickle', help="If specified, include the .pkl pickle" 
+" files in the the gathered results stored in <OUTPUT_PATH>", required=False, action='store_true')
 
 def create_global_ranking(all_runs_path, runs, output_path, ranking_type="debug"):
   map_pred_run = {}
@@ -69,11 +72,12 @@ def rank_all(all_runs_path, runs, output_path, ranking_type="debug"):
     predictions = list(map(reconstruct_prediction, model_names, range(len(model_names))))
     
     check_files_existence = lambda x: os.path.isfile(os.path.join(run, x))
+  
     files_existence = list(map(check_files_existence, predictions))
-
     if not all(files_existence):
-      print(f'/!\ some predictions are not found in the run {run}, needs investigation')
-
+      print(f'/!\\ some predictions are not found in the run {run}, needs investigation')
+      indices = np.logical_not(files_existence).astype(int)
+      print(f"Predictions not present: {', '.join(list(np.array(predictions)[indices.astype(bool)]))}\n")
     single_run_models['file'] = predictions
     single_run_models[ranking_key_score] = scores
     parameter_set = os.path.basename(os.path.normpath(run))
@@ -87,7 +91,7 @@ def rank_all(all_runs_path, runs, output_path, ranking_type="debug"):
 
   print(all_models)
 
-def move_and_rename(all_runs_path, run_names, output_path):
+def move_and_rename(all_runs_path, run_names, output_path, do_include_pickle):
   with open(os.path.join(output_path, 'ranking_debug.json'), 'r') as rank_file:
     global_rank_order = json.load(rank_file)['order']
   for i, prediction in enumerate(global_rank_order):
@@ -111,6 +115,16 @@ def move_and_rename(all_runs_path, run_names, output_path):
     old_pdb_path = os.path.join(all_runs_path, run_names[prediction], old_name) 
     new_pdb_path = os.path.join(output_path, f"ranked_{i}_{prediction}.pdb")
     cp(old_pdb_path, new_pdb_path)
+    
+    if do_include_pickle:
+      pickles_path = os.path.join(all_runs_path, run_names[prediction])
+      local_pred_name = f"model_{prediction.split('model_')[1]}" 
+      if os.path.exists(os.path.join(pickles_path, 'light_pkl')):
+        pickles_path = os.path.join(pickles_path, 'light_pkl')
+
+      old_pdb_path = os.path.join(pickles_path, f"result_{local_pred_name}.pkl") 
+      new_pdb_path = os.path.join(output_path, f"ranked_{i}_{prediction}.pkl")
+      cp(old_pdb_path, new_pdb_path)
 
 def create_symlink_without_ranked(all_runs_path, runs):
   for run in runs:
@@ -164,7 +178,8 @@ def main():
   ignore_runs = [ run.replace('/', '') for run in args.runs_to_ignore ]
   ignored_dir.extend(ignore_runs)
   ignored_dir = [ directory for directory in sorted(list(set(ignored_dir)), key=str) if directory in os.listdir(runs_path) ]
-  print(f"The following directories are ignored: {' - '.join(ignored_dir)}\n")
+  if ignored_dir:
+    print(f"The following directories are ignored:\n{' - '.join(ignored_dir)}\n")
 
   if os.path.exists(output_path) and not args.only_ranking:
     print(f'{output_path} from previous iterations exists, deleting it then repeat.')
@@ -179,7 +194,9 @@ def main():
   if not args.only_ranking:
     pred_run_map = create_global_ranking(runs_path, runs, output_path) 
     print(f"Gathering {sequence_name}'s runs")
-    move_and_rename(runs_path, pred_run_map, output_path)
+    if args.include_pickle:
+      print("Pickle files are also included in the gathering.")
+    move_and_rename(runs_path, pred_run_map, output_path, args.include_pickle)
   elif os.path.exists(output_path):
     rm(output_path)
   delete_symlinks(runs_path, runs)
