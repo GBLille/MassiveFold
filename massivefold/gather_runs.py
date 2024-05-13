@@ -87,7 +87,7 @@ def rank_all(all_runs_path, runs, output_path, ranking_type="debug"):
     all_models = pd.concat([all_models, single_run_models], axis=0) 
   
   all_models = all_models.sort_values(ranking_key_score, ascending=False, ignore_index=True)
-  all_models['global_rank'] = all_models[ranking_key_score].rank(ascending=False, method='min')
+  all_models['global_rank'] = all_models[ranking_key_score].rank(ascending=False, method='min').astype(int)
   columns_order = ['global_rank', ranking_key_score, 'parameters', 'file' ]
   all_models = all_models[columns_order]
   
