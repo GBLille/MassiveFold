@@ -16,7 +16,7 @@ parser.add_argument('--ignore', dest='runs_to_ignore', nargs='+', help="List of 
 " won't be taken into account in the runs gathering", default=[])
 parser.add_argument('--output_path', help="Path to the output of the runs gathering (default: <RUNS_PATH>/all_pdbs)", required=False)
 parser.add_argument('--only_ranking', help="Skips the run gathering, only output a csv ranking file", required=False, action='store_true')
-parser.add_argument('--include_pickle', help="If specified, include the .pkl pickle" 
+parser.add_argument('--include_pickles', help="If specified, include the .pkl pickle" 
 " files in the gathered results stored in <OUTPUT_PATH>", required=False, action='store_true')
 
 def create_global_ranking(all_runs_path, runs, output_path, ranking_type="debug"):
@@ -87,11 +87,15 @@ def rank_all(all_runs_path, runs, output_path, ranking_type="debug"):
     all_models = pd.concat([all_models, single_run_models], axis=0) 
   
   all_models = all_models.sort_values(ranking_key_score, ascending=False, ignore_index=True)
+  all_models['global_rank'] = all_models[ranking_key_score].rank(ascending=False, method='min')
+  columns_order = ['global_rank', ranking_key_score, 'parameters', 'file' ]
+  all_models = all_models[columns_order]
+  
   all_models.to_csv(os.path.join(all_runs_path, 'ranking.csv'), index=None)
 
   print(all_models)
 
-def move_and_rename(all_runs_path, run_names, output_path, do_include_pickle):
+def move_and_rename(all_runs_path, run_names, output_path, do_include_pickles):
   with open(os.path.join(output_path, 'ranking_debug.json'), 'r') as rank_file:
     global_rank_order = json.load(rank_file)['order']
   for i, prediction in enumerate(global_rank_order):
@@ -113,17 +117,17 @@ def move_and_rename(all_runs_path, run_names, output_path, do_include_pickle):
 
     # Move pdb files and rename with rank
     old_pdb_path = os.path.join(all_runs_path, run_names[prediction], old_name) 
-    new_pdb_path = os.path.join(output_path, f"ranked_{i}_{prediction}.pdb")
+    new_pdb_path = os.path.join(output_path, f"{prediction}.pdb")
     cp(old_pdb_path, new_pdb_path)
     
-    if do_include_pickle:
+    if do_include_pickles:
       pickles_path = os.path.join(all_runs_path, run_names[prediction])
       local_pred_name = f"model_{prediction.split('model_')[1]}" 
       if os.path.exists(os.path.join(pickles_path, 'light_pkl')):
         pickles_path = os.path.join(pickles_path, 'light_pkl')
 
       old_pdb_path = os.path.join(pickles_path, f"result_{local_pred_name}.pkl") 
-      new_pdb_path = os.path.join(output_path, f"ranked_{i}_{prediction}.pkl")
+      new_pdb_path = os.path.join(output_path, f"{prediction}.pkl")
       cp(old_pdb_path, new_pdb_path)
 
 def create_symlink_without_ranked(all_runs_path, runs):
@@ -194,9 +198,9 @@ def main():
   if not args.only_ranking:
     pred_run_map = create_global_ranking(runs_path, runs, output_path) 
     print(f"Gathering {sequence_name}'s runs")
-    if args.include_pickle:
+    if args.include_pickles:
       print("Pickle files are also included in the gathering.")
-    move_and_rename(runs_path, pred_run_map, output_path, args.include_pickle)
+    move_and_rename(runs_path, pred_run_map, output_path, args.include_pickles)
   elif os.path.exists(output_path):
     rm(output_path)
   delete_symlinks(runs_path, runs)
