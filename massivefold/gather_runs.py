@@ -12,12 +12,12 @@ from shutil import copy  as cp, rmtree as rm
 parser = argparse.ArgumentParser()
 parser.add_argument('--runs_path', help='Path to the runs you want to gather', required=True)
 parser.add_argument('--ignore', dest='runs_to_ignore', nargs='+', help="List of run names or" 
-"subdirectory in the run path set in --run_path. All these runs (separated by a single space)" 
+" subdirectories in the run path set in --runs_path. All these runs (separated by a single space)" 
 " won't be taken into account in the runs gathering", default=[])
 parser.add_argument('--output_path', help="Path to the output of the runs gathering (default: <RUNS_PATH>/all_pdbs)", required=False)
 parser.add_argument('--only_ranking', help="Skips the run gathering, only output a csv ranking file", required=False, action='store_true')
 parser.add_argument('--include_pickle', help="If specified, include the .pkl pickle" 
-" files in the the gathered results stored in <OUTPUT_PATH>", required=False, action='store_true')
+" files in the gathered results stored in <OUTPUT_PATH>", required=False, action='store_true')
 
 def create_global_ranking(all_runs_path, runs, output_path, ranking_type="debug"):
   map_pred_run = {}
