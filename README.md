@@ -592,7 +592,7 @@ Here is the list of available plots:
   * distribution_comparison: ranking confidence distribution comparison between various MassiveFold outputs, typically 
   useful for runs with different sets of parameters on the same input sequence(s).
   ![header](imgs/plot_illustrations/distribution_comparison.png)
-  * recycles: ranking confidence during the recycle process (only for multimers)
+  * recycles: ranking confidence during the recycle process (only for multimers and ColabFold monomers)
   ![header](imgs/plot_illustrations/recycles.png)
 
 ### Facultative arguments
