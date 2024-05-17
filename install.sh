@@ -113,7 +113,7 @@ Otherwise:\n\
 ./install -h for more details"
 
 # help message
-if $do_help; then
+if [[ $do_help == "true" ]]; then
   echo -e "\
 Usage:
 ------
@@ -128,7 +128,7 @@ $USAGE
 fi
 host=$(hostname | cut -c1-8)
 
-if $only_create_env; then
+if [[ $only_create_env == "true" ]]; then
   install_env "massivefold"
   install_env "colabfold"
   
@@ -141,24 +141,25 @@ if [ "$host" == 'jean-zay' ]; then
   echo "Currently on Jean Zay cluster, using prebuilt headers and json parameter files."
 else
   host_is_jeanzay=false
-  if [[ $db_af && ! -d $alphafold_databases ]]; then
+  if [[ $db_af == "true" && ! -d $alphafold_databases ]]; then
     echo "$alphafold_databases doesn't exists"
     exit 1
-  elif [[ $db_cf && ! -d $colabfold_databases ]]; then
+  elif [[ $db_cf == "true" && ! -d $colabfold_databases ]]; then
     echo "$colabfold_databases doesn't exists"
     exit 1
-  elif [[ ! $db_cf && ! $db_af ]]; then
+  elif [[ $db_cf == "false" && $db_af == "false" ]]; then
     echo -e "$USAGE"
     exit 1
   fi
   
-  # Install envs only if they are not yet installed
   conda="$(conda info --base)/etc/profile.d/conda.sh"
   source $conda
-  install_env "massivefold"
-  if [[ $db_cf ]]; then
+  if [[ $do_not_create_env == "false" && $db_cf == "true" ]]; then
+    install_env "massivefold"
     install_env "colabfold"
-  elif $do_not_create_env; then
+  elif [[ $do_not_create_env == "false" ]]; then
+    install_env "massivefold"
+  elif [[ $do_not_create_env == "true" ]]; then
     echo "No env asked, install skipped"
   else
     echo "ColabFold databases not provided, install skipped"
@@ -176,7 +177,7 @@ cp examples/H1140.fasta $runs/input
 cp massivefold/run_massivefold.sh $runs
 cp -r massivefold/parallelization/headers $runs
 
-if $host_is_jeanzay; then
+if [[ $host_is_jeanzay == "true" ]]; then
   cp massivefold/parallelization/jeanzay_AFmassive_params.json $runs/AFmassive_params.json
   cp massivefold/parallelization/jeanzay_ColabFold_params.json $runs/ColabFold_params.json
   echo "Taking Jean Zay's prebuilt headers and renaming them."
@@ -186,9 +187,9 @@ if $host_is_jeanzay; then
   exit 1
 fi
 
-if $db_af; then
+if [[ $db_af == "true" ]]; then
   setup_params "AFmassive"
 fi
-if $db_cf; then
+if [[ $db_cf == "true" ]]; then
   setup_params "ColabFold"
 fi
