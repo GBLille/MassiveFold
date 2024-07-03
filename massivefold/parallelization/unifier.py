@@ -35,7 +35,7 @@ flags.DEFINE_bool(
 def convert_fasta(fasta_path:str):
   records = list(SeqIO.parse(fasta_path, "fasta"))
   fasta_dir = os.path.dirname(fasta_path)
-  fasta_file = os.path.basename(fasta_path).split('.')[0]
+  fasta_file = os.path.basename(fasta_path).split('.fa')[0]
 
   converted = ''
   ids = '>'
