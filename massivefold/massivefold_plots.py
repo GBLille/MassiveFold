@@ -357,6 +357,16 @@ def MF_recycling_parser(log_file, prediction):
 
   encoded_recycles = {}
   for log in logs:
+    if 'recycle' in log:
+      n_recycle = int(log.split('recycle=')[1].split(' ')[0])
+    elif 'last step' in log:
+      n_recycle = 'last'
+    else:
+      print('Unexpected log')
+      print(log)
+      print('Pass this log')
+      continue
+
     pred_encoded = log.split('] ')[0][1:]
     pred_name = MF_decode_array(pred_encoded)
     if pred_name not in encoded_recycles:
@@ -365,15 +375,7 @@ def MF_recycling_parser(log_file, prediction):
         'distances': [ None for _ in range(max_recycles) ],
         'last': {}
         }
-    if 'recycle' in log:
-      n_recycle = int(log.split('recycle=')[1].split(' ')[0])
-    elif 'last step' in log:
-      n_recycle = 'last'
-    else:
-      print(log)
-      print('Unexpected log')
-      sys.exit()
-
+    
     if 'distance' in log:
       distance = log.split('distance=')[1].split(' ')[0]
       if n_recycle == 0:
