@@ -77,9 +77,19 @@ def rank_all(all_runs_path, runs, output_path, ranking_type="debug"):
   
     files_existence = list(map(check_files_existence, predictions))
     if not all(files_existence):
-      print(f'/!\\ some predictions are not found in the run {run}, needs investigation')
       indices = np.logical_not(files_existence).astype(int)
-      print(f"Predictions not present: {', '.join(list(np.array(predictions)[indices.astype(bool)]))}\n")
+      not_found = list(np.array(predictions)[indices.astype(bool)])
+      get_relaxed_version = lambda x: x.replace('unrelaxed', 'relaxed')
+      relaxed_predictions = list(map(get_relaxed_version, not_found))
+      relaxed_files_existence = list(map(check_files_existence, relaxed_predictions)) 
+      if not all(relaxed_files_existence):
+        secondary_indices = np.logical_not(relaxed_files_existence).astype(int)
+        secondary_not_found = list(np.array(not_found)[secondary_indices.astype(bool)])
+        print(f'/!\\ some predictions are not found in the run {run}, needs investigation')
+        print(f"Predictions not present: {', '.join(secondary_not_found)}\n")
+        delete_symlinks(all_runs_path, runs)
+        sys.exit()
+
     single_run_models['file'] = predictions
     single_run_models[ranking_key_score] = scores
     parameter_set = os.path.basename(os.path.normpath(run))
@@ -94,7 +104,6 @@ def rank_all(all_runs_path, runs, output_path, ranking_type="debug"):
   all_models = all_models[columns_order]
   
   all_models.to_csv(os.path.join(all_runs_path, 'ranking.csv'), index=None)
-
   print(all_models)
 
 def move_and_rename(all_runs_path, run_names, output_path, do_include_pickles, do_include_rank):
@@ -151,10 +160,12 @@ def move_and_rename(all_runs_path, run_names, output_path, do_include_pickles, d
 def create_symlink_without_ranked(all_runs_path, runs):
   for run in runs:
     path = os.path.join(all_runs_path, run)
-    ranked_preds = [pred for pred in os.listdir(path) if pred.startswith('ranked_')]
-    for pred in ranked_preds:
+    ranked_preds = [ pred for pred in os.listdir(path) if pred.startswith('ranked_') ]
+    # to remove when unrelaxed is implemented
+    corrected_preds = [ pred.replace('relaxed', 'unrelaxed') if '_relaxed' in pred else pred for pred in ranked_preds ]
+    for pred, corr in zip(ranked_preds, corrected_preds):
       old_name = os.path.realpath(os.path.join(path, pred))
-      new_name = os.path.join(path, pred.split('_', 2)[-1])
+      new_name = os.path.join(path, corr.split('_', 2)[-1])
       try:
         os.symlink(old_name, new_name)
       except FileExistsError:
@@ -208,7 +219,6 @@ def main():
     rm(output_path)
 
   runs = check_all_runs(runs_path, ignored_dir)
-
   # create ranking json files
   delete_symlinks(runs_path, runs)
   create_symlink_without_ranked(runs_path, runs)
