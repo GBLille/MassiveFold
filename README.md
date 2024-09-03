@@ -11,6 +11,7 @@
     * [Building](#building)
     * [How to add a parameter](#how-to-add-a-parameter)
   * [Installation on Jean Zay](#installation-on-jean-zay)
+  * [Hardware recommendations](#hardware-recommendations)
 * [Usage](#usage)
   * [Inference workflow](#inference-workflow)
   * [Parameters](#parameters)
@@ -293,6 +294,12 @@ git clone https://github.com/GBLille/MassiveFold.git
 ```
 The same [file architecture](#tree) is built, follow the [usage](#usage) section to use MassiveFold.
 
+### Hardware recommendations
+
+We recommend a 4 TB fast storage to host the sequence databases for AFmassive and ColabFold. The requirements in RAM 
+is function of the sequence but 128GB works for the majority of the cases, both for AFmassive and ColabFold. A GPU with 
+at least 16 GB RAM is also recommended, knowing that the higher the memory size, the bigger the system to model. 
+
 ## Usage
 
 Edit the `AFmassive_params.json` or `ColabFold_params.json` parameters file (see [file architecture](#tree)).  
@@ -550,7 +557,13 @@ Lastly, the **plots** section is used for the MassiveFold plotting module.
 
 ### Relaxation
 
-`colabfold_relax` developed by the ColabFold team can be used to relax selected predictions. For help, type:  
+Because the relaxation takes time and resources to compute and that the MassiveFold process splits the predictions in 
+many batches, the “use_gpu_relax” and “models_to_relax” parameters are set to “false” and “none” respectively. Indeed, 
+if the relaxation is activated during the process, it will be run per batches, before the final ranking, resulting in 
+relaxed structures that wouldn't necessarily be the best predictions. Instead, we recommend to use the `colabfold_relax` 
+program provided in the MassiveFold conda environment and developed by the ColabFold team, once all the predicted 
+structures are produced and ranked. It allows to relax only selected PDB structures.  
+For help, type:  
 ```bash
 colabfold_relax -h
 ```
