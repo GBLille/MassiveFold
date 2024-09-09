@@ -298,7 +298,8 @@ The same [file architecture](#tree) is built, follow the [usage](#usage) section
 
 We recommend a 4 TB fast storage to host the sequence databases for AFmassive and ColabFold. The requirements in RAM 
 is function of the sequence but 128GB works for the majority of the cases, both for AFmassive and ColabFold. A GPU with 
-at least 16 GB RAM is also recommended, knowing that the higher the memory size, the bigger the system to model. 
+at least 16 GB RAM is also recommended, knowing that the higher the memory size, the larger the system to be modeled 
+can be. 
 
 ## Usage
 
