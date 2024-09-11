@@ -308,32 +308,33 @@ Set first the [parameters of your run](https://github.com/GBLille/AFmassive?tab=
 **AFM_run** section of the `AFmassive_params.json`, for instance:
 ```json
 {
- "AFM_run": {
-    "db_preset": "full_dbs",
-    "use_gpu_relax": "true",
-    "models_to_relax": "none",
+ "AFM_run":
+ {
+    "model_preset": "multimer",
+    "max_recycles": "20",
+    "templates": "true",
     "dropout": "false",
     "dropout_structure_module": "false",
     "dropout_rates_filename": "",
-    "max_recycles": "20",
+    "stop_recycling_below": "0",
+    "min_score": "0",
+    "max_score": "1",
+    "db_preset": "full_dbs",
     "early_stop_tolerance": "0.5",
     "bfd_max_hits": "100000",
     "mgnify_max_hits": "501",
     "uniprot_max_hits": "50000",
-    "uniref_max_hits": "10000",
-    "model_preset": "multimer",
-    "templates": "true",
-    "stop_recycling_below": "0",
-    "min_score": "0",
-    "max_score": "1"
+    "uniref_max_hits": "10000"
  }
 }
 ```
 or in the `ColabFold_params.json` file, for instance:
 ```json
 {
- "CF_run": {
+ "CF_run":
+ {
     "model_preset": "multimer",
+    "pair_strategy": "greedy",
     "use_dropout": "false",
     "num_recycle": "20",
     "recycle_early_stop_tolerance": "0.5",
@@ -395,6 +396,7 @@ Usage: ./run_massivefold.sh -s str -r str -p int -f str [-t str] [ -b int | [[-C
     -w| --wall_time: (default: 20) total time available for calibration computations, unit is hours.
     -m| --msas_precomputed: path to directory that contains computed msas.
     -n| --top_n_models: uses the n neural network models with best ranking confidence from this run's path.
+    -j| --jobid: jobid of an alignment job to wait for inference, skips the alignments.
 
   Facultative options:
     -t| --tool_to_use: (default: 'AFmassive') Use either AFmassive or ColabFold in structure prediction for MassiveFold
@@ -473,15 +475,15 @@ The **massivefold** section designates the whole run parameters.
   {
     "run_massivefold": "run_AFmassive.py",
     "run_massivefold_plots": "../massivefold/massivefold_plots.py",
-    "data_dir": "/gpfsdswork/dataset/AlphaFold-2.3.1",
+    "data_dir": "/gpfsdswork/dataset/Alphafold-2024-04",
     "jobfile_headers_dir": "./headers",
     "jobfile_templates_dir": "../massivefold/parallelization/templates",
     "output_dir": "./output",
     "logs_dir": "./log",
     "input_dir": "./input",
+    "scripts_dir": "../massivefold/parallelization",
     "models_to_use": "",
-    "keep_pkl": "false",
-    "scripts_dir": "../massivefold/parallelization"
+    "pkl_format": "full"
   }
 }
 ```
@@ -503,8 +505,8 @@ For instance, for the Jean Zay GPU cluster:
 {
   "custom_params": 
     {
-      "jeanzay_project": "project",
-      "jeanzay_account": "project@v100",
+      "jeanzay_project": "<project>",
+      "jeanzay_account": "<project>@v100",
       "jeanzay_gpu_with_memory": "v100-32g",
       "jeanzay_alignment_time": "10:00:00",
       "jeanzay_jobarray_time": "10:00:00"
@@ -519,30 +521,28 @@ the jobfiles are created.
 section). All parameters except *--keep_pkl*, *--models_to_relax*, *--use_precomputed_msas*, *--alignment_only*, 
 *--start_prediction*, *--end_prediction*, *--fasta_path* and *--output_dir* are exposed in this section.  
 You can adapt the parameter values in function of your needs.  
-The non exposed parameters mentioned before are set internally by the Massivefold's pipeline or in the **massivefold**  
+The non exposed parameters mentioned before are set internally by the Massivefold's pipeline or in the **massivefold** 
 section (**models_to_use** and **pkl_format**).  
 
 ```json
 {
-"AFM_run": 
+  "AFM_run":
   {
-    "db_preset": "full_dbs",
-    "use_gpu_relax": "true",
-    "models_to_relax": "none",
+    "model_preset": "multimer",
+    "max_recycles": "20",
+    "templates": "true",
     "dropout": "false",
     "dropout_structure_module": "false",
     "dropout_rates_filename": "",
-    "max_recycles": "20",
+    "stop_recycling_below": "0",
+    "min_score": "0",
+    "max_score": "1",
+    "db_preset": "full_dbs",
     "early_stop_tolerance": "0.5",
     "bfd_max_hits": "100000",
     "mgnify_max_hits": "501",
     "uniprot_max_hits": "50000",
-    "uniref_max_hits": "10000",
-    "model_preset": "multimer",
-    "templates": "true",
-    "stop_recycling_below": "0",
-    "min_score": "0",
-    "max_score": "1"
+    "uniref_max_hits": "10000"
   }
 }
 ```
