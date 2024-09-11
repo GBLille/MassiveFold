@@ -5,7 +5,10 @@ USAGE="\
 ./run_massivefold.sh -s str -r str -p int -f str [-t str] [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]\n\
 ./run_massivefold.sh -h for more details "
 
-HELP="Usage: $USAGE\n\
+# help message
+if [[ " ${@} " == *" -h "* ]] || [[ " ${@} " == *" --help "* ]]; then
+  echo -e "\
+Usage: $USAGE\n\
   Required arguments:\n\
     -s| --sequence: path of the sequence(s) to infer, should be a 'fasta' file \n\
     -r| --run: name chosen for the run to organize in outputs.\n\
@@ -18,15 +21,17 @@ HELP="Usage: $USAGE\n\
     -w| --wall_time: (default: 20) total time available for calibration computations, unit is hours.\n\
     -m| --msas_precomputed: path to directory that contains computed msas.\n\
     -n| --top_n_models: uses the n neural network models with best ranking confidence from this run's path.\n\
+    -j| --jobid: jobid of an alignment job to wait for inference, skips the alignments.\n\
 \n\
   Facultative options:\n\
     -t| --tool_to_use: (default: 'AFmassive') Use either AFmassive or ColabFold in structure prediction for MassiveFold\n\
     -o| --only_msas: only compute alignments, the first step of MassiveFold\n\
     -c| --calibrate: calibrate --batch_size value. Searches from the previous runs for the same 'fasta' path given\n\
-        \tin --sequence and uses the longest prediction time found to compute the maximal number of predictions per batch.\n\
-        \tThis maximal number depends on the total time given by --wall_time.\n\
-    -a| --recompute_msas: purges previous alignment step and recomputes msas.\n\
-    -h| --help: show this help message."
+        in --sequence and uses the longest prediction time found to compute the maximal number of predictions per batch.\n\
+        This maximal number depends on the total time given by --wall_time.\n\
+    -a| --recompute_msas: purges previous alignment step and recomputes msas."
+  exit 1
+fi
 
 # default params
 calibration=false
@@ -93,13 +98,9 @@ while true; do
       tool=$2
       shift 2
       ;;
-    -h|--help)
-      echo -e $HELP
-      exit 1
-      ;;
-    -*|--*)
-      echo "Option $1 is unknown"
-      exit 1
+    -j|--jobid)
+      wait_for_jobid=$2
+      shift 2
       ;;
     *)
       break
@@ -278,7 +279,11 @@ elif [[ $tool == "ColabFold" ]]; then
                          [[ -z \$msas_precomputed ]] )"
 fi
 
-if eval $conditions_to_align; then
+if [ ! -z $wait_for_jobid ]; then
+  echo "Waiting for alignment job $wait_for_jobid"
+  ALIGNMENT_ID=$wait_for_jobid
+  waiting_for_alignment=true
+elif eval $conditions_to_align; then
   echo "Running alignment for $sequence_name"
   ${scripts_dir}/create_jobfile.py \
   --job_type=alignment \
@@ -291,8 +296,6 @@ if eval $conditions_to_align; then
   waiting_for_alignment=true
   if $only_msas; then
     echo "Only run sequence alignment."
-    mkdir -p ${logs_dir}/${sequence_name}/${run_name}/
-    mv ${sequence_name}_${run_name}_* ${logs_dir}/${sequence_name}/${run_name}/
     exit 1
   fi
 elif [[ $tool == "AFmassive" ]] && [[ -d  $msas_precomputed/msas ]]; then
