@@ -252,13 +252,11 @@ specified and modified conveniently for each run.
 
 **Example** in the json parameters file for Jean Zay headers:
 ```json
+"custom_params":
 {
-  "custom_params":
-  {
     "jeanzay_account": "project@v100",
     "jeanzay_gpu_with_memory": "v100-32g",
     "jeanzay_jobarray_time": "10:00:00"
-  }
 }
 ```
 Where "project" is your 3 letter project with allocated hours on Jean Zay.
@@ -297,9 +295,8 @@ The same [file architecture](#tree) is built, follow the [usage](#usage) section
 ### Hardware recommendations
 
 We recommend a 4 TB fast storage to host the sequence databases for AFmassive and ColabFold. The requirements in RAM 
-is function of the sequence but 128GB works for the majority of the cases, both for AFmassive and ColabFold. A GPU with 
-at least 16 GB RAM is also recommended, knowing that the higher the memory size, the larger the system to be modeled 
-can be. 
+depend on the length of the sequence(s) but 128GB should work for the majority of cases, both for AFmassive and 
+ColabFold. A GPU with at least 16 GB RAM is also recommended, knowing that more memory allows to model larger systems. 
 
 ## Usage
 
@@ -307,9 +304,8 @@ Edit the `AFmassive_params.json` or `ColabFold_params.json` parameters file (see
 Set first the [parameters of your run](https://github.com/GBLille/AFmassive?tab=readme-ov-file#running-afmassive) in the 
 **AFM_run** section of the `AFmassive_params.json`, for instance:
 ```json
+"AFM_run":
 {
- "AFM_run":
- {
     "model_preset": "multimer",
     "max_recycles": "20",
     "templates": "true",
@@ -317,6 +313,7 @@ Set first the [parameters of your run](https://github.com/GBLille/AFmassive?tab=
     "dropout_structure_module": "false",
     "dropout_rates_filename": "",
     "stop_recycling_below": "0",
+    "max_template_date": "2024-08-31",
     "min_score": "0",
     "max_score": "1",
     "db_preset": "full_dbs",
@@ -325,14 +322,12 @@ Set first the [parameters of your run](https://github.com/GBLille/AFmassive?tab=
     "mgnify_max_hits": "501",
     "uniprot_max_hits": "50000",
     "uniref_max_hits": "10000"
- }
 }
 ```
 or in the `ColabFold_params.json` file, for instance:
 ```json
+"CF_run":
 {
- "CF_run":
- {
     "model_preset": "multimer",
     "pair_strategy": "greedy",
     "use_dropout": "false",
@@ -340,7 +335,6 @@ or in the `ColabFold_params.json` file, for instance:
     "recycle_early_stop_tolerance": "0.5",
     "stop_at_score": "100",
     "disable_cluster_profile": "false"
- }
 }
 ```
 
@@ -525,9 +519,8 @@ The non exposed parameters mentioned before are set internally by the Massivefol
 section (**models_to_use** and **pkl_format**).  
 
 ```json
+"AFM_run":
 {
-  "AFM_run":
-  {
     "model_preset": "multimer",
     "max_recycles": "20",
     "templates": "true",
@@ -535,6 +528,7 @@ section (**models_to_use** and **pkl_format**).
     "dropout_structure_module": "false",
     "dropout_rates_filename": "",
     "stop_recycling_below": "0",
+    "max_template_date": "2024-08-31",
     "min_score": "0",
     "max_score": "1",
     "db_preset": "full_dbs",
@@ -543,17 +537,16 @@ section (**models_to_use** and **pkl_format**).
     "mgnify_max_hits": "501",
     "uniprot_max_hits": "50000",
     "uniref_max_hits": "10000"
-  }
 }
 ```
 Lastly, the **plots** section is used for the MassiveFold plotting module.
 
 ```json
-  "plots":
-    {
-        "MF_plots_top_n_predictions": "10",
-        "MF_plots_chosen_plots": "coverage,DM_plddt_PAE,CF_PAEs,score_distribution,recycles"
-    }
+"plots":
+{
+    "MF_plots_top_n_predictions": "10",
+    "MF_plots_chosen_plots": "coverage,DM_plddt_PAE,CF_PAEs,score_distribution,recycles"
+}
 ```
 
 ### Relaxation
@@ -569,6 +562,13 @@ For help, type:
 colabfold_relax -h
 ```
 
+### Multiple runs gathering
+
+We provide a `gather_runs.py` script in the `massivefold` folder that allows to collate the results of several runs. It 
+gathers all the results and ranks them all.
+
+We also provide an `extract_scores.py` script that allows to extract the scores from pickle files and create rankings
+(notably useful for interrupted runs).
 
 ## massivefold_plots: output representation
 
