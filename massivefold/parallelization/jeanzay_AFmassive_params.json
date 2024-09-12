@@ -27,6 +27,7 @@
         "dropout_rates_filename": "",
         "max_recycles": "20",
         "early_stop_tolerance": "0.5",
+        "max_template_date": "2024-08-31",
         "bfd_max_hits": "100000",
         "mgnify_max_hits": "501",
         "uniprot_max_hits": "50000",
