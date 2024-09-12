@@ -5,10 +5,11 @@ run_massivefold=$run_massivefold
 output=$output_dir
 fafile=${input_dir}/$${sequence_name}.fasta
 data_dir=$data_dir
+max_template_date=$max_template_date
+#max_template_date=2023-07-31
 
 model_preset=monomer_ptm
 alignments_only=true
-max_template_date=2023-07-31
 db_preset=full_dbs
 bfd_max_hits=100000
 mgnify_max_hits=501

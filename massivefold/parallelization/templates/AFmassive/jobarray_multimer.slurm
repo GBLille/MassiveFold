@@ -7,6 +7,8 @@ fafile=${input_dir}/$${sequence_name}.fasta
 run_massivefold=$run_massivefold
 data_dir=$data_dir
 scripts_dir=$scripts_dir
+max_template_date=$max_template_date
+#max_template_date=2023-07-31
 
 output_dir=$$(realpath ${output_dir})
 output_path="$${output_dir}/$${sequence_name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID}"
@@ -15,7 +17,6 @@ mkdir -vp $${output_path}/$${sequence_name}
 ln -s $${output_dir}/$${sequence_name}/msas $${output_path}/$${sequence_name}
 
 # fixed variables
-max_template_date=2023-07-31
 use_precomputed_msas=true
 alignments_only=false
 use_gpu_relax=false

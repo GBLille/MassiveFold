@@ -13,6 +13,7 @@
         "dropout_structure_module": "false",
         "dropout_rates_filename": "",
         "stop_recycling_below": "0",
+        "max_template_date": "2024-08-31",
         "min_score": "0",
         "max_score": "1",
         "db_preset": "full_dbs",
