@@ -18,6 +18,7 @@
     * [Parameters in run_massivefold.sh](#parameters-in-run_massivefoldsh)
     * [Parameters in the json file](#parameters-in-the-json-file)
   * [Relaxation](#relaxation)
+  * [Multiple runs gathering](#multiple-runs-gathering)
 * [massivefold_plots: output representation](#massivefold_plots-output-representation)
   * [Required arguments](#required-arguments)
   * [Facultative arguments](#facultative-arguments)
@@ -172,16 +173,14 @@ cd MassiveFold/massivefold_runs
 ```
 Modify `AFmassive_params.json` and/or `ColabFold_params.json`:
 ```json
+"custom_params":
 {
- "custom_params":
- {
-        "jeanzay_gpu": "v100",
-        "jeanzay_project": "<project>",
-        "jeanzay_account": "<project>@v100",
-        "jeanzay_gpu_with_memory": "v100-32g",
-        "jeanzay_alignment_time": "05:00:00",
-        "jeanzay_jobarray_time": "15:00:00"
- },
+    "jeanzay_gpu": "v100",
+    "jeanzay_project": "<project>",
+    "jeanzay_account": "<project>@v100",
+    "jeanzay_gpu_with_memory": "v100-32g",
+    "jeanzay_alignment_time": "05:00:00",
+    "jeanzay_jobarray_time": "15:00:00"
 }
 ```
 And specify them in the jobfile headers (such as here for `MassiveFold/headers/jobarray.slurm`) 
@@ -464,9 +463,8 @@ Each section of `AFmassive_params.json` or `ColabFold_params.json` is used for a
 The **massivefold** section designates the whole run parameters.  
 
 ```json
-{
 "massivefold": 
-  {
+{
     "run_massivefold": "run_AFmassive.py",
     "run_massivefold_plots": "../massivefold/massivefold_plots.py",
     "data_dir": "/gpfsdswork/dataset/Alphafold-2024-04",
@@ -478,7 +476,6 @@ The **massivefold** section designates the whole run parameters.
     "scripts_dir": "../massivefold/parallelization",
     "models_to_use": "",
     "pkl_format": "full"
-  }
 }
 ```
 The paths in the section are filled by `install.sh` but can be changed here if necessary. 
@@ -496,16 +493,15 @@ plddt scores, ptm scores, iptm scores and ranking confidence values (stored in .
 - The **custom_params** section is relative to the personalized parameters that you want to add for your own cluster. 
 For instance, for the Jean Zay GPU cluster:
 ```json
+"custom_params": 
 {
-  "custom_params": 
-    {
-      "jeanzay_project": "<project>",
-      "jeanzay_account": "<project>@v100",
-      "jeanzay_gpu_with_memory": "v100-32g",
-      "jeanzay_alignment_time": "10:00:00",
-      "jeanzay_jobarray_time": "10:00:00"
-    }
+    "jeanzay_project": "<project>",
+    "jeanzay_account": "<project>@v100",
+    "jeanzay_gpu_with_memory": "v100-32g",
+    "jeanzay_alignment_time": "10:00:00",
+    "jeanzay_jobarray_time": "10:00:00"
 }
+
 ```
 As explained in [How to add a parameter](#how-to-add-a-parameter), these variables are substituted by their value when 
 the jobfiles are created.
