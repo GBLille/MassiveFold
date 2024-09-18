@@ -112,18 +112,6 @@ Options:
   --only-envs: only install the environments (other arguments are not used)
 ```
 
-**On a GPU cluster:**  
-- the **administrator** only needs to install the environments: 
-```bash
-cd MassiveFold
-./install.sh --only-envs
-```
-- the **user** only needs to install the remaining files:
-```bash
-cd MassiveFold
-./install.sh --no-env --alphafold-db <AF_DB_PATH> --colabfold-db <CF_DB_PATH>
-```
-
 This file tree displays the files' architecture after running `./install.sh`.
 
 <a id="tree"></a> 
@@ -155,6 +143,18 @@ MassiveFold directly on Jean Zay),
 - `log` with the logs of the MassiveFold runs (debug purposes), 
 - `output` which contains the predictions, 
 - `run_massivefold.sh` being the script to run [MassiveFold](#usage)
+
+**On a GPU cluster:**  
+- the **administrator** only needs to install the environments: 
+```bash
+cd MassiveFold
+./install.sh --only-envs
+```
+- the **user** only needs to install the remaining files:
+```bash
+cd MassiveFold
+./install.sh --no-env --alphafold-db <AF_DB_PATH> --colabfold-db <CF_DB_PATH>
+```
 
 3. **Create header files**  
 
