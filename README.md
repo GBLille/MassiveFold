@@ -102,14 +102,26 @@ cd MassiveFold
 
 Installation with:
 ```bash
-./install.sh [--only-envs] || --alphafold-db str --colabfold-db str [--no-env]
+./install.sh [--only-envs] || --alphafold-db <AF_DB_PATH> --colabfold-db <CF_DB_PATH> [--no-env]
 
 Options:
-  --alphafold-db <str>: path to AlphaFold database
-  --colabfold-db <str>: path to ColabFold database
+  --alphafold-db <AF_DB_PATH>: path to AlphaFold database
+  --colabfold-db <CF_DB_PATH>: path to ColabFold database
   --no-env: do not install the environments, only sets up the files and parameters.
     At least one of --alphafold-db or colabfold-db is required with this option.
   --only-envs: only install the environments (other arguments are not used)
+```
+
+**On a GPU cluster:**  
+- the **administrator** only needs to install the environments: 
+```bash
+cd MassiveFold
+./install.sh --only-envs
+```
+- the **user** only needs to install the remaining files:
+```bash
+cd MassiveFold
+./install.sh --no-env --alphafold-db <AF_DB_PATH> --colabfold-db <CF_DB_PATH>
 ```
 
 This file tree displays the files' architecture after running `./install.sh`.
