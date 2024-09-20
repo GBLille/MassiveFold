@@ -11,13 +11,13 @@ parser = argparse.ArgumentParser(allow_abbrev=False)
 parser.add_argument('--target_run', help='Path of the unfinished run you want to get the scores', required=True)
 parser.add_argument('--verbose', choices=['ranking_confidence', 'ptm', 'iptm'], help='If you want scores to be displayed and which one')
 
-def create_ranking(df_ranking):
+def create_ranking(df_ranking, model_type='multimer'):
   ranking_metrics = [ ranking  for ranking in df_ranking.columns if ranking.startswith('ranking_') ]
   every_ranking = {}
   for metric in ranking_metrics:
     df = df_ranking.sort_values(metric, ascending=False).copy()
     score_type = metric.split('ranking_')[1]
-    if score_type == 'debug':
+    if score_type == 'debug' and model_type == 'multimer':
       score_type = 'iptm+ptm'
       df[score_type] = df[metric]
     else:
@@ -27,7 +27,6 @@ def create_ranking(df_ranking):
     order = list(df['model'])
     ranking = {score_type: scores, 'order':order}
     every_ranking[metric] = ranking
-
   return every_ranking
 
 def extract_scores(pkl_file):
@@ -46,9 +45,9 @@ def associate_pdb_pkl(path):
     pkl_dir = path
   else:
     pkl_dir = os.path.join(path, './light_pkl')
-  pdb = [ file for file in os.listdir(path) if file.startswith('unrelaxed_') if f'result_{file.split("unrelaxed_")[1].split(".pdb")[0]}.pkl' in os.listdir(pkl_dir) ]
-  model = [ f'{file.split("unrelaxed_")[1].split(".pdb")[0]}' for file in pdb  if f'result_{file.split("unrelaxed_")[1].split(".pdb")[0]}.pkl' in os.listdir(pkl_dir) ]
-  pkl = [ f'result_{file.split("unrelaxed_")[1].split(".pdb")[0]}.pkl' for file in pdb  if f'result_{file.split("unrelaxed_")[1].split(".pdb")[0]}.pkl' in os.listdir(pkl_dir) ]
+  pdb = [ file for file in os.listdir(path) if file.endswith('.pdb') and f'result_model{file.split("model")[1].replace(".pdb", "")}.pkl' in os.listdir(pkl_dir) ]
+  model = [ f'model{file.split("model")[1].replace(".pdb", "")}' for file in pdb  if f'result_model{file.split("model")[1].replace(".pdb", "")}.pkl' in os.listdir(pkl_dir) ]
+  pkl = [ f'result_model{file.split("model")[1].replace(".pdb", "")}.pkl' for file in pdb  if f'result_model{file.split("model")[1].replace(".pdb", "")}.pkl' in os.listdir(pkl_dir) ]
 
   df = pd.DataFrame({'model': model, 'pdb': pdb, 'pkl': pkl})
   return df
@@ -86,8 +85,13 @@ if __name__ == "__main__":
   args = parser.parse_args()
   df_association = associate_pdb_pkl(args.target_run)
   df_scored = get_all_scores(df_association, args.target_run)
-  rankings = create_ranking(df_scored) 
-  
+  pdb = [ i for i in os.listdir(args.target_run) if i.endswith('.pdb') ]
+  is_multimer = False
+  for name in pdb:
+    if 'multimer' in name:
+      is_multimer = True    
+  rankings = create_ranking(df_scored, is_multimer) 
+  print(rankings)
   if args.verbose:
     score = f"ranking_{args.verbose}" if args.verbose != 'ranking_confidence' else 'ranking_debug'
     key = score.split('_')[1]
