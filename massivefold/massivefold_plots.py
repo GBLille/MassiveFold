@@ -8,6 +8,7 @@ import pickle
 import json
 from absl import flags
 from absl import app
+from absl.flags._exceptions import UnparsedFlagAccessError
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from plots.colabfold_plots import plot_msa_v2, plot_plddts, plot_confidence, plot_paes, plot_plddt_legend
@@ -27,6 +28,7 @@ flags.DEFINE_list('chosen_plots', [],
                   'CF_plddt for plddt of each predictions, DM_plddt_PAE for plddt and PAE on the same plot for each prediction,'
                   'CF_PAEs for PAEs of all predictions on the same plot and CF_plddts for plddt of all predictions on the same plot.')
 flags.DEFINE_enum('action', "save", ["save", "show"], "Choose to save the plot or show them.")
+flags.DEFINE_enum('format', "png", ["png", "svg"], "Format in which the plots are saved.")
 flags.DEFINE_string('output_path', None, 
                     'Path to directory that will store the plots, same as the input dir by default.')
 flags.DEFINE_list('runs_to_compare', [], 'Runs that you want to compare on a same distribution plot')
@@ -55,8 +57,8 @@ def CF_PAEs():
     all_models_pae.append(np.asarray(data['predicted_aligned_error']))
   plot_paes(all_models_pae)
   if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/top_{FLAGS.top_n_predictions}_PAE.png", dpi=200)
-    print(f"Saved as top_{FLAGS.top_n_predictions}_PAE.png")
+    plt.savefig(f"{FLAGS.output_path}/top_{FLAGS.top_n_predictions}_PAE.{FLAGS.format}", dpi=200)
+    print(f"Saved as top_{FLAGS.top_n_predictions}_PAE.{FLAGS.format}")
     plt.close()
   if FLAGS.action == "show":
     plt.show()
@@ -71,8 +73,8 @@ def CF_plddts():
     all_models_plddt.append(np.asarray(data['plddt']))
   plot_plddts(all_models_plddt)
   if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/top_{FLAGS.top_n_predictions}_plddt.png", dpi=200)
-    print(f"Saved as top_{FLAGS.top_n_predictions}_plddt.png")
+    plt.savefig(f"{FLAGS.output_path}/top_{FLAGS.top_n_predictions}_plddt.{FLAGS.format}", dpi=200)
+    print(f"Saved as top_{FLAGS.top_n_predictions}_plddt.{FLAGS.format}")
     plt.close()
   if FLAGS.action == "show":
     plt.show()
@@ -107,8 +109,8 @@ def MF_DM_dual_plddt_PAE(prediction, rank):
   plt.ylabel('Aligned residue')
   
   if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/rank_{rank}_{prediction}_plddt_PAE.png", dpi=200)
-    print(f"Saved as rank_{rank}_{prediction}_plddt_PAE.png")
+    plt.savefig(f"{FLAGS.output_path}/rank_{rank}_{prediction}_plddt_PAE.{FLAGS.format}", dpi=200)
+    print(f"Saved as rank_{rank}_{prediction}_plddt_PAE.{FLAGS.format}")
     plt.close()
   if FLAGS.action == "show":
     plt.show()
@@ -127,8 +129,8 @@ def MF_indiv_plddt():
     plot_confidence(data['plddt'])
     plt.title(f'rank_{i}_{pred} predicted lDDT')
     if FLAGS.action == "save":
-      plt.savefig(f"{FLAGS.output_path}/rank_{i}_{pred}_plddt.png", dpi=200)
-      print(f"Saved as rank_{i}_{pred}_plddt.png")
+      plt.savefig(f"{FLAGS.output_path}/rank_{i}_{pred}_plddt.{FLAGS.format}", dpi=200)
+      print(f"Saved as rank_{i}_{pred}_plddt.{FLAGS.format}")
       plt.close()
     if FLAGS.action == "show":
       plt.show()
@@ -140,8 +142,8 @@ def MF_coverage():
       data = pickle.load(f)
     plot_msa_v2(data)
     if FLAGS.action == "save":
-      plt.savefig(f"{FLAGS.output_path}/alignment_coverage.png", dpi=200)
-      print(f"Saved as alignment_coverage.png")
+      plt.savefig(f"{FLAGS.output_path}/alignment_coverage.{FLAGS.format}", dpi=200)
+      print(f"Saved as alignment_coverage.{FLAGS.format}")
       plt.close()
     elif FLAGS.action == "show":
       plt.show()
@@ -159,11 +161,11 @@ def MF_score_histogram(scores:dict):
   histogram.suptitle('Global score distribution')
   ax1.set(xlabel='Ranking confidence', ylabel='Number of predictions')
   if FLAGS.action == "save":
-    histogram.savefig(f"{FLAGS.output_path}/score_distribution.png", dpi=200)
-    print("Saved as score_distribution.png")
+    histogram.savefig(f"{FLAGS.output_path}/score_distribution.{FLAGS.format}", dpi=200)
+    print(f"Saved as score_distribution.{FLAGS.format}")
     plt.close(histogram)
 
-def MF_versions_density(scores:dict):
+def MF_versions_density(scores:dict, given_ax=None):
   try:
     scores = scores['iptm+ptm']
   except KeyError:
@@ -178,7 +180,8 @@ def MF_versions_density(scores:dict):
   scores_per_version = pd.DataFrame(versions)
   scores_per_version = scores_per_version.sort_index(axis=1)
   kde_versions, ax2 = plt.subplots()
- 
+  if given_ax:
+    ax2 = given_ax
   kde_versions.suptitle('Score density')
   sns.kdeplot(scores_per_version, ax=ax2)
   #scores_per_version.plot(kind="kde", ax=ax2, bw_method=0.3)
@@ -186,13 +189,17 @@ def MF_versions_density(scores:dict):
     xlabel='Ranking confidence',
     ylabel="Density"
   )
+  
+  if not flags.FLAGS.is_parsed():
+    plt.close()
+    return ax2
 
   if FLAGS.action == "save":
-    kde_versions.savefig(f"{FLAGS.output_path}/versions_density.png",dpi=200)
-    print("Saved as versions_density.png")
+    kde_versions.savefig(f"{FLAGS.output_path}/versions_density.{FLAGS.format}",dpi=200)
+    print(f"Saved as versions_density.{FLAGS.format}")
     plt.close(kde_versions)
 
-def MF_models_scores(scores:dict):
+def MF_models_scores(scores:dict, given_ax=None):
   try:
     scores = scores['iptm+ptm']
     s_type = 'iptm+ptm'
@@ -213,13 +220,15 @@ def MF_models_scores(scores:dict):
   colors = {
   'boxes': '#add8e6',
   }
-# Create a boxplot with inclined x-axis labels
+  
   fig, ax = plt.subplots()
-  ax = scores_per_model.boxplot(sym='g+', patch_artist=True, color = colors, flierprops=dict(markerfacecolor='red'))
+  if given_ax:
+    ax = given_ax
+  scores_per_model.boxplot(sym='g+', patch_artist=True, color = colors, flierprops=dict(markerfacecolor='red'), ax=ax)
   for box, color in zip(ax.artists, pastel_colors):
     box.set_facecolor(color)
 
-  plt.grid(False)
+  ax.grid(False)
   fig.suptitle("Score per NN model")
   
   ax.set(
@@ -234,11 +243,14 @@ def MF_models_scores(scores:dict):
   elif s_type == 'plddts':
     ax.set_ylim(bottom=0, top=110)
   
+  if not flags.FLAGS.is_parsed():
+    plt.close()
+    return ax
+
   plt.tight_layout()
- 
   if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/models_scores.png", dpi=200)
-    print("Saved as models_scores.png")
+    plt.savefig(f"{FLAGS.output_path}/models_scores.{FLAGS.format}", dpi=200)
+    print(f"Saved as models_scores.{FLAGS.format}")
 
   if FLAGS.action == "show":
     plt.show()
@@ -263,34 +275,78 @@ def MF_score_distribution():
     #except:
     #  print(f"Error while trying to plot {DISTRIBUTION_MAP[distrib].__name__}()")
 
-def MF_distribution_comparison():
-  sequence_path = FLAGS.input_path
-  runs = FLAGS.runs_to_compare
+def MF_legacy_recycle_extraction(log):
+  with open(log, 'r') as log_file:
+    lines = log_file.readlines()
+  
+  start_symbol = 'Starts recycling'
+  end_symbol = 'Ends recycling'
+  
+  recycle_logs = []
+  for line in lines:
+    if line.startswith(start_symbol):
+      pred = {
+        'scores': [],
+        'distances': []
+      }
+    elif line.startswith(end_symbol):
+      pred['distances'] = [distance for i, distance in enumerate(pred['distances']) if i != 1]
+      recycle_logs.append(pred)
+    
+    elif line.startswith('Distance for') or line.startswith("Last step's distance"):
+      distance = float(line.split(': ')[1])
+      pred['distances'].append(distance)
+    elif line.startswith('Score for') or line.startswith("Last step's score"):
+      score = float(line.split(': ')[1])
+      pred['scores'].append(score)
+  
+  return recycle_logs
+
+def MF_distribution_comparison(run_names:list=None, given_ax=None):
+  fig, ax = plt.subplots()
+  
+  if flags.FLAGS.is_parsed():
+    sequence_path = FLAGS.input_path
+    run_names = FLAGS.runs_to_compare
+    runs = [ os.path.normpath(os.path.join(sequence_path, run)) for run in run_names ]
+  elif given_ax:
+    sequence_path = ''
+    runs = [ os.path.normpath(run) for run in run_names ]
+    ax = given_ax
+  else:
+    raise UnparsedFlagAccessError()
+  
   all_scores = {}
   for run in runs:
     run_basename = os.path.basename(run)
     scores = []
-    with open(f"{sequence_path}/{run}/ranking_debug.json" ,'r') as json_file:
-      run = json.load(json_file)
+    with open(os.path.join(run, "ranking_debug.json") ,'r') as json_file:
+      run_data = json.load(json_file)
       try:
-        run_scores = run['iptm+ptm']
+        run_scores = run_data['iptm+ptm']
       except KeyError:
-        run_scores = run['plddts']
+        run_scores = run_data['plddts']
 
-    run_scores = [run_scores[score] for score in run_scores]
+    run_scores = [ run_scores[score] for score in run_scores ]
     if len(runs) <= 3:
-      plt.hist(run_scores, bins=30, alpha=0.5, label=run_basename)
+      ax.hist(run_scores, bins=30, alpha=0.5, label=run_basename)
     else:
       all_scores[run_basename] = run_scores
   if len(runs) > 3:
     datas = pd.DataFrame(all_scores)
-    datas.plot(kind='kde')
-  plt.legend()
-  plt.title(f'Distribution comparison between {os.path.basename(sequence_path)} runs')
-  plt.xlabel('Ranking confidence')
-  plt.ylabel('Number of predictions')
-  plt.savefig(f'{sequence_path}/distribution_compa.png', dpi=200)
-  print('Saved as distribution_compa.png')
+    datas.plot(kind='kde', ax=ax)
+  
+  ax.legend()
+  ax.set_title(f'Distribution comparison between {os.path.basename(sequence_path)} runs')
+  ax.set_xlabel('Ranking confidence')
+  ax.set_ylabel('Number of predictions')
+  
+  if given_ax:
+    return ax
+
+  plt.savefig(f'{sequence_path}/distribution_compa.{FLAGS.format}', dpi=200)
+  plt.close()
+  print(f'Saved as distribution_compa.{FLAGS.format}')
 
 def MF_decode_array(encoded_pred:str):
   encoded_lst = [ int(i) for i in encoded_pred.replace('[', '').replace(']', '').split() ]
@@ -430,13 +486,16 @@ def MF_recycling_plot(
     prediction_to_plot:str,
     rank:int, 
     tol:float,
-    preset:str):
+    preset:str,
+    given_ax=None):
  
-  recycle_dir = f'{FLAGS.output_path}/recycles/'
-  if not shutil.os.path.exists(recycle_dir):
-    shutil.os.makedirs(recycle_dir)
-
-  fig, ax1 = plt.subplots()
+  if not given_ax:
+    fig, ax1 = plt.subplots()
+    recycle_dir = f'{FLAGS.output_path}/recycles/'
+    if not shutil.os.path.exists(recycle_dir):
+      shutil.os.makedirs(recycle_dir)
+  else:
+    ax1 = given_ax
   scores_elements = all_values[prediction_to_plot]['scores']
   distances_elements = all_values[prediction_to_plot]['distances']
   n_recycling = np.linspace(0, len(scores_elements) - 1, len(scores_elements))
@@ -467,13 +526,16 @@ def MF_recycling_plot(
   ax1.xaxis.set_major_locator(locator)
   ax2.xaxis.set_major_locator(locator)
 
+  if given_ax:
+    plt.close()
+    return ax1
   fig.suptitle(f"{seq} - {run}")
   plt.title(f"ranked_{rank}_{prediction_to_plot}")
   fig.tight_layout()
 
   if FLAGS.action == "save":
-    plt.savefig(f"{recycle_dir}/ranked_{rank}_unrelaxed_{prediction_to_plot}.png", dpi=200)
-    print(f"Saved as recycles/ranked_{rank}_unrelaxed_{prediction_to_plot}.png")
+    plt.savefig(f"{recycle_dir}/ranked_{rank}_unrelaxed_{prediction_to_plot}.{FLAGS.format}", dpi=200)
+    print(f"Saved as recycles/ranked_{rank}_unrelaxed_{prediction_to_plot}.{FLAGS.format}")
     plt.close()
   if FLAGS.action == "show":
     plt.show()
