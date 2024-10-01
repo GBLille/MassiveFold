@@ -1,5 +1,7 @@
 ![header](imgs/header.png)
 
+[![DOI](https://zenodo.org/badge/617429072.svg)](https://doi.org/10.5281/zenodo.13870060)
+
 # MassiveFold
 
 ## Table of contents
