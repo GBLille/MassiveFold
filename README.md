@@ -305,6 +305,9 @@ git clone https://github.com/GBLille/MassiveFold.git
 ```
 The same [file architecture](#tree) is built, follow the [usage](#usage) section to use MassiveFold.
 
+And specify the project you want to use in the `AFmassive_params.json` or `ColabFold_params.json`, replacing the 
+`<project>` value by the 3-letters project name.  
+
 ### Hardware recommendations
 
 We recommend a 4 TB fast storage to host the sequence databases for AFmassive and ColabFold. The requirements in RAM 
