@@ -9,6 +9,12 @@ data_dir=$data_dir
 scripts_dir=$scripts_dir
 max_template_date=$max_template_date
 #max_template_date=2023-07-31
+uniref_database=$uniref_database
+
+if [ -z "$$uniref_database" ]; then
+  echo "No specified path for uniref30, use default ${data_dir}/uniref30/UniRef30_2021_03"
+  uniref_database=$${data_dir}/uniref30/UniRef30_2021_03
+fi
 
 output_dir=$$(realpath ${output_dir})
 output_path="$${output_dir}/$${sequence_name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID}"
@@ -80,8 +86,7 @@ echo "python $$(which $${run_massivefold})
     --obsolete_pdbs_path=$${data_dir}/pdb_mmcif/obsolete.dat
     --bfd_database_path=$${data_dir}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt
     --pdb70_database_path=$${data_dir}/pdb70/pdb70
-    --uniref30_database_path=$${data_dir}/uniref30/UniRef30_2021_03
-"
+    --uniref30_database_path=$${uniref_database}"
 
 time python $$(which $${run_massivefold}) \
     --fasta_paths=$${fafile} \
@@ -115,7 +120,7 @@ time python $$(which $${run_massivefold}) \
     --template_mmcif_dir=$${data_dir}/pdb_mmcif/mmcif_files \
     --obsolete_pdbs_path=$${data_dir}/pdb_mmcif/obsolete.dat \
     --bfd_database_path=$${data_dir}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt \
-    --uniref30_database_path=$${data_dir}/uniref30/UniRef30_2021_03 \
-    --pdb70_database_path=$${data_dir}/pdb70/pdb70 \
-    
+    --uniref30_database_path=$${uniref_database} \
+    --pdb70_database_path=$${data_dir}/pdb70/pdb70
+
 date

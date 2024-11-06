@@ -7,6 +7,12 @@ fafile=${input_dir}/$${sequence_name}.fasta
 data_dir=$data_dir
 max_template_date=$max_template_date
 #max_template_date=2023-07-31
+uniref_database=$uniref_database
+
+if [ -z "$$uniref_database" ]; then
+  echo "No specified path for uniref30, use default ${data_dir}/uniref30/UniRef30_2021_03"
+  uniref_database=$${data_dir}/uniref30/UniRef30_2021_03
+fi
 
 model_preset=monomer_ptm
 alignments_only=true
@@ -36,7 +42,7 @@ echo "$${run_massivefold}
     --obsolete_pdbs_path=$${data_dir}/pdb_mmcif/obsolete.dat 
     --bfd_database_path=$${data_dir}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt 
     --pdb70_database_path=$${data_dir}/pdb70/pdb70
-    --uniref30_database_path=$${data_dir}/uniref30/UniRef30_2021_03" 
+    --uniref30_database_path=$${uniref_database}"
 
 time $${run_massivefold} \
     --alignments_only=$${alignments_only} \
@@ -57,6 +63,6 @@ time $${run_massivefold} \
     --obsolete_pdbs_path=$${data_dir}/pdb_mmcif/obsolete.dat \
     --bfd_database_path=$${data_dir}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt \
     --pdb70_database_path=$${data_dir}/pdb70/pdb70 \
-    --uniref30_database_path=$${data_dir}/uniref30/UniRef30_2021_03
+    --uniref30_database_path=$${uniref_database}
 
 date
