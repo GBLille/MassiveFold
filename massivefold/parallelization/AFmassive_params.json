@@ -1,5 +1,6 @@
 {
     "massivefold": {
+        "uniref_database": "",
         "models_to_use": "",
         "pkl_format":"full"
     },

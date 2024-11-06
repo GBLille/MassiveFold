@@ -485,6 +485,7 @@ The **massivefold** section designates the whole run parameters.
     "run_massivefold": "run_AFmassive.py",
     "run_massivefold_plots": "../massivefold/massivefold_plots.py",
     "data_dir": "/gpfsdswork/dataset/Alphafold-2024-04",
+    "uniref_database": "",
     "jobfile_headers_dir": "./headers",
     "jobfile_templates_dir": "../massivefold/parallelization/templates",
     "output_dir": "./output",
@@ -497,7 +498,7 @@ The **massivefold** section designates the whole run parameters.
 ```
 The paths in the section are filled by `install.sh` but can be changed here if necessary. 
 Headers (**jobfile_headers_dir**) are specified to setup the run, in order to give the parameters that are required to 
-run the jobs on your cluster/server. 
+run the jobs on your cluster/server.
 Build your own according to the [Jobfile's header building](#jobfiles-header-building) section.   
 **models_to_use** is the list of NN models to use. To select which NN models are used, separate them with a comma *e.g.*:
 "model_3_multimer_v1,model_3_multimer_v3", by default all are used  
@@ -506,6 +507,8 @@ Build your own according to the [Jobfile's header building](#jobfiles-header-bui
     - ‘light’ to reduce its size by selecting main components, which are: number of recycles, PAE values, max PAE, 
 plddt scores, ptm scores, iptm scores and ranking confidence values (stored in ./light_pkl directory)  
     - ‘none’ to remove them  
+**uniref_databse** is the parameter to fix the issue described in the [Troubleshooting](#troubleshooting) section. You can change specifically uniref30 database path at this location.  
+If not specified ("uniref_database": ""), the default uniref30 database path is used (same as AlphaFold2 configuration).  
 
 - The **custom_params** section is relative to the personalized parameters that you want to add for your own cluster. 
 For instance, for the Jean Zay GPU cluster:
@@ -631,6 +634,34 @@ More help with
 ```bash
 conda activate massivefold
 massivefold_plots.py --help
+```
+
+## Troubleshooting
+
+While using AlphaFold2 or AlphaFold2 based software like AFmassive, you can encounter a bug similar to this one in the msas generation:  
+
+`WARNING: maximum number of residues 32763 exceeded in sequence UniRef100_A0A5E4B6R9_consensus`  
+or  
+`WARNING: maximum number of residues 32763 exceeded in sequence UniRef100_UPI000F443DA9 titin n=1 Tax=Lagenorhynchus obliquidens TaxID=90247 RepID=UPI000F443DA9`  
+It makes the msas unusable and causes any inference on the sequence to crash. This was referenced in a [github issue](https://github.com/google-deepmind/alphafold/issues/810) and a [fix](https://github.com/google-deepmind/alphafold/issues/810#issuecomment-1666718050) was provided.  
+According to this fix, download an updated version of the uniref30 database. To apply this modification to MassiveFold, set the `uniref_database` parameter in the AFmassive_params.json file to the updated database similarly to this:
+
+```json
+"massivefold": 
+{
+    "run_massivefold": "run_AFmassive.py",
+    "run_massivefold_plots": "../massivefold/massivefold_plots.py",
+    "data_dir": "/path/to/databases/AlphaFold/",
+    "uniref_database": "/path/to/databases/AlphaFold/UniRef30_2023_02_hhsuite/UniRef30_2023_02",
+    "jobfile_headers_dir": "./headers",
+    "jobfile_templates_dir": "../massivefold/parallelization/templates",
+    "output_dir": "./output",
+    "logs_dir": "./log",
+    "input_dir": "./input",
+    "scripts_dir": "../massivefold/parallelization",
+    "models_to_use": "",
+    "pkl_format": "full"
+}
 ```
 
 ## Authors
