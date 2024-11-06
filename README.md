@@ -24,6 +24,7 @@
 * [massivefold_plots: output representation](#massivefold_plots-output-representation)
   * [Required arguments](#required-arguments)
   * [Facultative arguments](#facultative-arguments)
+* [Troubleshooting](#troubleshooting)
 * [Authors](#authors)
 <!-- TOC -->
 
