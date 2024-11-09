@@ -5,6 +5,7 @@ from Bio import SeqIO
 import pickle
 from shutil import move as mv
 import pandas as pd
+import numpy as np
 import json
 import sys
 import shutil
@@ -25,11 +26,15 @@ flags.DEFINE_string(
 flags.DEFINE_string(
   'batches_file',
   '',
-  'Path to batches file. If --conversion=output, this file is necessary.')
+  'Path to batches file. Necessary argument for --conversion=output.')
 flags.DEFINE_bool(
   'do_rename',
   True,
   'To rename file or not')
+flags.DEFINE_bool(
+  'independant',
+  False,
+  'If launched independantly from MassiveFold (no batches informations)')
 
 
 def convert_fasta(fasta_path:str):
@@ -104,28 +109,26 @@ _ptm_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pdb"
 
 def create_ranking(predictions_to_rank:pd.core.frame.DataFrame, output_path:str, preset:str):
   metrics = ['ptm', 'iptm', 'iptm+ptm'] if preset == 'multimer' else ['plddts', 'ptm']
+  metric_names = ['ptm', 'iptm', 'debug'] if preset == 'multimer' else ['debug', 'ptm']
   
-  for metric in metrics:
-    try:
-      df = predictions_to_rank.sort_values(metric, ascending=False)
-    except KeyError:
-      print(predictions_to_rank)
-      print(f'No "{metric}" found')
-      sys.exit()
-
-    if preset == 'multimer':
-      metric_name = metric if metric != 'iptm+ptm' else 'debug'
-    elif preset == 'ptm':
-      metric_name = metric if metric != 'plddts' else 'debug'
-
-    ranking_file_name = f"{output_path}/ranking_{metric_name}.json"
-    scores_dict = df.set_index('prediction').to_dict(orient='dict')[metric]
-    if metric != 'iptm+ptm':
-      scores_dict = {key: value.item() for key, value in scores_dict.items()}
-    order = df['prediction'].to_list()
+  per_chains = [ i for i in predictions_to_rank.columns if i.startswith('iptm_chain') ]
+  metrics.extend(per_chains)
+  metric_names.extend(per_chains)
+  for metric, name in zip(metrics, metric_names):
+    assert metric in predictions_to_rank.columns
     
+    df = predictions_to_rank.sort_values(metric, ascending=False)
+    ranking_file_name = f"{output_path}/ranking_{name}.json"
+    
+    scores_dict = df.set_index('prediction').to_dict(orient='dict')[metric]
+    if metric != 'iptm+ptm' and 'chain' not in metric:
+      scores_dict = {key: value.item() for key, value in scores_dict.items()}
+    if "chain" not in metric:
+      json_content = { metric: scores_dict, 'order': df['prediction'].tolist() }
+    else:
+      json_content = { metric: scores_dict }
     with open(ranking_file_name, 'w') as json_scores:
-      json.dump({ metric: scores_dict, 'order': order }, json_scores, indent=4)
+      json.dump(json_content, json_scores, indent=4)
 
 def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset):
   jobname = [ name for name in os.listdir(output_path) if name.endswith('a3m') ]
@@ -147,6 +150,10 @@ def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset
           'ptm': scores['ptm'],
           'iptm+ptm': 0.8 * scores['iptm'] + 0.2 * scores['ptm']
           }])
+        if 'chain_iptm' in scores:
+          #iptm_per_chain = pd.DataFrame({ f"iptm_chain_{i+1}": [np.array2string(iptms)] for i, iptms in enumerate(scores['chain_iptm']) })
+          iptm_per_chain = pd.DataFrame({ f"iptm_chain_{i+1}": [iptms.tolist()] for i, iptms in enumerate(scores['chain_iptm']) })
+          new_pred = pd.concat([new_pred, iptm_per_chain], axis=1)
       elif preset == 'ptm':
         new_pred = pd.DataFrame([{
           'prediction': pred_name,
@@ -204,6 +211,10 @@ def main(argv):
     convert_fasta(FLAGS.to_convert)
 
   if FLAGS.conversion == 'output':
+    if FLAGS.independant:
+      convert_output(FLAGS.to_convert, 0)
+      return
+    
     assert FLAGS.batches_file
     with open(FLAGS.batches_file, 'r') as batches_json:
       all_batches_infos = json.load(batches_json)

@@ -14,19 +14,23 @@ def create_global_ranking(all_batches_path, jobname, ranking_type="debug"):
   map_pred_batch = {}
   whole_ranking = {}
   ranking_key_score = ''
-  for batch in os.listdir(all_batches_path):
-    if batch.startswith('batch'):
-      ranking_path = os.path.join(all_batches_path, batch, jobname, f'ranking_{ranking_type}.json')
-      with open(ranking_path, 'r') as local_ranking_file:
-        local_rank = json.load(local_ranking_file)
-        if not ranking_key_score:
-          ranking_key_score = list(local_rank.keys())[0]
-      map_pred_batch.update({pred: batch for pred in local_rank['order']})
-      whole_ranking.update(local_rank[ranking_key_score])
+  batches = [ i for i in os.listdir(all_batches_path) if i.startswith('batch_') ]
+  for i, batch in enumerate(batches):
+    ranking_path = os.path.join(all_batches_path, batch, jobname, f'ranking_{ranking_type}.json')
+    with open(ranking_path, 'r') as local_ranking_file:
+      local_rank = json.load(local_ranking_file)
+    if not ranking_key_score:
+      ranking_key_score = list(local_rank.keys())[0]
+
+    order = local_rank['order'] if 'order' in local_rank else [ i for i in local_rank[ranking_key_score] ]
+    map_pred_batch.update({pred: batch for pred in order})
+    whole_ranking.update(local_rank[ranking_key_score])
+
   sorted_predictions = sorted(whole_ranking.items(), key=lambda x:x[1], reverse=True)
   iptm_ptm = dict(sorted_predictions)
-  order = sorted(whole_ranking, reverse=True, key=whole_ranking.get)
+  order = sorted(whole_ranking, reverse=True, key=whole_ranking.get) if not ranking_type.startwith('iptm_chain') else []
   global_ranking = {ranking_key_score: iptm_ptm, 'order': order}
+
   with open(f"{all_batches_path}/ranking_{ranking_type}.json", 'w') as fileout:
     fileout.write(json.dumps(global_ranking, indent=4)) 
 
@@ -93,6 +97,14 @@ def main(argv):
     create_global_ranking(batches_path, sequence_name, 'iptm')
   if os.path.isfile(f"{batches_path}/batch_0/{sequence_name}/ranking_ptm.json"):
     create_global_ranking(batches_path, sequence_name, 'ptm')
+  
+  per_chain_iptm = [ 
+    i.replace('ranking_', '').replace('.json', '') \
+    for i in os.listdir(f"{batches_path}/batch_0/{sequence_name}") \
+    if i.startswith("ranking_iptm_chain_") and i.endswith('.json') 
+  ]
+  for per_chain_ranking in per_chain_iptm:
+    create_global_ranking(batches_path, sequence_name, per_chain_ranking)
 
   # organize output directory
   move_and_rename(batches_path, pred_batch_map, sequence_name)

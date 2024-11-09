@@ -1,6 +1,6 @@
 
 source $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-colabfold
+conda activate mf-colabfold-chain
 
 sequence_name=$sequence_name
 run_name=$run_name
