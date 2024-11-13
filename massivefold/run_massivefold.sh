@@ -295,7 +295,10 @@ elif eval $conditions_to_align; then
   ALIGNMENT_ID=$(sbatch --parsable ${sequence_name}_${run_name}_alignment.slurm)
   waiting_for_alignment=true
   if $only_msas; then
+    mkdir -p ${logs_dir}/${sequence_name}/${run_name}/
+    mv ${sequence_name}_${run_name}_* ${logs_dir}/${sequence_name}/${run_name}/
     echo "Only run sequence alignment."
+
     exit 1
   fi
 elif [[ $tool == "AFmassive" ]] && [[ -d  $msas_precomputed/msas ]]; then

@@ -29,9 +29,9 @@ params['massivefold']['output_dir'] = './output'
 params['massivefold']['logs_dir'] = './log'
 params['massivefold']['input_dir'] = './input'
 
-key_order = ['run_massivefold', 'run_massivefold_plots', 'data_dir', 'jobfile_headers_dir', \
-'jobfile_templates_dir', 'scripts_dir', 'output_dir', 'logs_dir', 'input_dir', \
-'models_to_use', 'pkl_format']
+key_order = ['run_massivefold', 'run_massivefold_plots', 'data_dir', 'uniref_database', \
+'jobfile_headers_dir', 'jobfile_templates_dir', 'scripts_dir', 'output_dir', \
+'logs_dir', 'input_dir', 'models_to_use', 'pkl_format']
 sorted_keys = sorted(params['massivefold'], key=lambda x: key_order.index(x))
 mf_params_ordered = {key: params['massivefold'][key] for key in sorted_keys}
 
