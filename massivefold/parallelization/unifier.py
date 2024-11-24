@@ -8,12 +8,14 @@ import pandas as pd
 import json
 import sys
 import shutil
+import string
+import random
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
   'conversion',
   None,
-  ['input', 'output'],
+  ['input', 'input_inference', 'output'],
   "What to convert."
   "'input' to get the fasta format of colabfold from a traditionnal multichain pdb."
   "'output' to transform colabfold output to the alphafold one.")
@@ -22,6 +24,16 @@ flags.DEFINE_string(
   '',
   'Path of the fasta file (for --conversion=input) or output directory (for --conversion=output)'
   'To convert')
+flags.DEFINE_enum(
+  'tool',
+  "ColabFold",
+  ["ColabFold", "alphafold3"],
+  "Chose the tool from which the input/output should be unified.")
+flags.DEFINE_string(
+  "json_params",
+  "",
+  "Set json file path for input parameters. "
+  "Necessary when using '--tool alphafold3' coupled with '--conversion input'")
 flags.DEFINE_string(
   'batches_file',
   '',
@@ -31,8 +43,7 @@ flags.DEFINE_bool(
   True,
   'To rename file or not')
 
-
-def convert_fasta(fasta_path:str):
+def convert_colabfold_fasta(fasta_path:str):
   records = list(SeqIO.parse(fasta_path, "fasta"))
   fasta_dir = os.path.dirname(fasta_path)
   fasta_file = os.path.basename(fasta_path).split('.fa')[0]
@@ -48,6 +59,90 @@ def convert_fasta(fasta_path:str):
   
   with open(f"{fasta_dir}/converted_for_colabfold/{fasta_file}.fasta", 'w') as output:
     output.write(converted)
+
+def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
+  json_params = os.path.realpath(FLAGS.json_params)
+  assert os.path.exists(json_params) and json_params.endswith('.json'), \
+  "Please provide a valid path to a json file with --json_params"
+  
+  template_dir = json.load(open(json_params, 'r'))['massivefold']['jobfile_templates_dir']
+  json_template = os.path.realpath(os.path.join(template_dir, "alphafold3", "af3_input.json"))
+  with open(json_template, 'r') as template:
+    input_json = json.load(template)
+
+  all_chain_ids = string.ascii_uppercase + string.ascii_lowercase
+  records = list(SeqIO.parse(fasta_path, "fasta"))
+  entities = json.load(open(json_params, 'r'))['AF3_run']['entities']
+
+  assert len(records) == len(entities), \
+  f"The number of entities in {json_params} should be the same as in {fasta_path}."
+  assert len(records) < len(all_chain_ids), \
+  f"Using more than {len(all_chain_ids)} is currently unsupported"
+  
+  sequence_dicts = []
+  for entity, record, chain_id in zip(entities, records, all_chain_ids):
+    all_sequences = [sequence[list(sequence.keys())[0]]["sequence"] for sequence in sequence_dicts]
+    if f"{record.seq}" not in all_sequences:
+      sequence_dicts.append({entity:  {"id": [chain_id], "sequence": f"{record.seq}"}})
+    else:
+      index = all_sequences.index(f"{record.seq}")
+      sequence_dicts[index][entities[index]]["id"].append(chain_id)
+
+  # create alphafold3 input as json
+  fasta_file = os.path.basename(fasta_path).split('.fa')[0]
+  json_input = json.load(open(json_template, 'r'))
+  json_input['name'] = "msas_alphafold3"
+  json_input['sequences'] = sequence_dicts
+  with open(os.path.join(adapted_input_dir, fasta_file + '.json'), "w") as f:
+    json.dump(json_input, f, indent=4)
+
+def convert_input(args, tool):
+  fasta_file = args['input']
+  input_dir = os.path.dirname(fasta_file)
+
+  if tool == 'ColabFold':
+    adapted_input_dir =  f"{input_dir}/converted_for_colabfold/" 
+    if not os.path.exists(adapted_input_dir):
+      os.makedirs(adapted_input_dir)
+    convert_colabfold_fasta(fasta_file)
+
+  elif tool == 'alphafold3':
+    adapted_input_dir = f"{input_dir}/alphafold3_json_requests/" 
+    if not os.path.exists(adapted_input_dir):
+      os.makedirs(adapted_input_dir)
+    create_alphafold3_json(fasta_file, adapted_input_dir)
+
+def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
+  sequence = os.path.basename(os.path.dirname(os.path.dirname(input_json)))
+  logs_dir = json.load(open(params_json, 'r'))["massivefold"]["logs_dir"]
+  output_dir = json.load(open(params_json, 'r'))["massivefold"]["output_dir"]
+  batch_filename = os.path.basename(batches)
+  run_name = batch_filename.replace(f"{sequence}_", "").replace("_batches.json", "")
+
+  batches = json.load(open(batches, 'r'))
+  for batch in batches:
+    starting_seed = random.randint(0, 1_000_000)
+    num_seeds = int(batches[batch]['end']) - int(batches[batch]['start']) + 1
+    model_seeds = [ starting_seed  + i for i in range(num_seeds)]
+    alphafold3_input = os.path.join(
+      output_dir,
+      sequence,
+      run_name,
+      f"batch_{batch}",
+      f"{sequence}_{run_name}_input_{batch}.json")
+    os.makedirs(os.path.dirname(alphafold3_input))
+    batch_input_json = json.load(open(input_json, 'r'))
+    batch_input_json['name'] = 'batch_' + batch
+    batch_input_json['modelSeeds'] = model_seeds
+    json.dump(batch_input_json, open(alphafold3_input, 'w'), indent=4)
+
+def prepare_inference(args, tool):
+  input = args['input']
+  params = args['params']
+  batches = args['batches']
+  if tool == "alphafold3":
+    get_alphafold3_batch_input(input, params, batches)
+
 
 def rename_pkl(pkl_files:list, output_path:str, pred_shift:int, sep:str):
   extract = lambda x: int(x.split('_')[-1].replace('.pickle', ''))
@@ -190,20 +285,23 @@ def move_output(output_path:str, batch):
       shutil.move(source, destination)
 
 def main(argv):
-  if not FLAGS.conversion or not FLAGS.to_convert:
-    raise ValueError('Parameter --conversion and --to_convert are mandatory.')
+  
+  assert FLAGS.conversion and FLAGS.to_convert, \
+  'Parameter --conversion and --to_convert are mandatory.'
   
   if FLAGS.conversion == 'input':
-    assert FLAGS.to_convert.endswith('.fasta') and os.path.isfile(FLAGS.to_convert)
-   
-    colabfold_input_dir = f"{os.path.dirname(FLAGS.to_convert)}/converted_for_colabfold/" 
-    colabfold_fasta_exists = os.path.exists(f"{os.path.dirname(FLAGS.to_convert)}/converted_for_colabfold/")
-    if not colabfold_fasta_exists:
-      os.makedirs(colabfold_input_dir)
+    assert os.path.isfile(FLAGS.to_convert) and FLAGS.to_convert.endswith('.fasta')
+    convert_input({"input": FLAGS.to_convert}, FLAGS.tool)
 
-    convert_fasta(FLAGS.to_convert)
+  elif FLAGS.conversion == 'input_inference':
+    assert os.path.isfile(FLAGS.batches_file) and FLAGS.batches_file.endswith('.json')
+    assert os.path.isfile(FLAGS.to_convert) and FLAGS.to_convert.endswith('.json')
+    prepare_inference({"input": FLAGS.to_convert,
+                       "params": FLAGS.json_params,
+                       "batches": FLAGS.batches_file},
+                      FLAGS.tool)
 
-  if FLAGS.conversion == 'output':
+  elif FLAGS.conversion == 'output':
     assert FLAGS.batches_file
     with open(FLAGS.batches_file, 'r') as batches_json:
       all_batches_infos = json.load(batches_json)
