@@ -8,7 +8,6 @@ import sys
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string('batches_path', '', "Path of all batches containing the ranking files to add in the global ranking.")
-flags.DEFINE_string('global_ranking_path', 'global_ranking.json', "Global ranking file name, in the 'global path' directory.")
 
 def create_global_ranking(all_batches_path, jobname, ranking_type="debug"):
   map_pred_batch = {}

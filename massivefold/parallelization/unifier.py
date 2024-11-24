@@ -4,7 +4,7 @@ from absl import flags, app
 from Bio.PDB.MMCIFParser import MMCIFParser
 from Bio import SeqIO
 import pickle
-from shutil import move as mv
+from shutil import move as mv, copy as cp
 import pandas as pd
 import json
 import sys
@@ -289,7 +289,7 @@ def prediction_metrics(input_dir: str, nature: str):
   prediction_confs = os.path.join(input_dir, 'summary_confidences.json')
   with open(prediction_confs, 'r') as f:
     data = json.load(f)
-  metrics_possibilities = [ "plddt", "iptm", "ptm", "ranking_score"]#, "chain_pair_iptm" ]
+  metrics_possibilities = [ "plddt", "iptm", "ptm" ]#, "chain_pair_iptm" ]
   metrics = { metric: data[metric] for metric in metrics_possibilities if metric in data }
   return metrics
 
@@ -305,6 +305,24 @@ def plddts_from_cif(cif_filename):
     residues_plddt.append(np.round(np.mean([ i.get_bfactor() for i in res.get_atoms() ]), decimals=2))
   return residues_plddt
 
+def af3_move_and_rename(df, output_dir):
+  pred_list = df.to_dict(orient="records")
+  score_map = { "ranking_score": "debug", "iptm": "iptm", "ptm": "ptm", "mean_plddt": "plddt"  }
+  score_types = ['iptm', 'ptm', 'ranking_score', 'mean_plddt' ]
+  all_scores = { score_map[stype]: { stype: {}, "order": [] } for stype in score_types if stype in df.columns  }
+
+  for pred in pred_list:
+    model_cif_name = os.path.join(pred["original_dir"], 'model.cif')
+    new_cif_name = os.path.join(os.path.dirname(pred["original_dir"]), pred["ranked_name"])
+    cp(model_cif_name, new_cif_name)
+    for stype in score_types:
+      all_scores[score_map[stype]][stype][pred["prediction_name"]] = pred[stype]
+      all_scores[score_map[stype]]["order"].append(pred["prediction_name"])
+
+  for score_ranking in all_scores:
+    ranking_file = os.path.join(output_dir, f"ranking_{score_ranking}.json")
+    json.dump(all_scores[score_ranking], open(ranking_file, 'w'), indent=4)
+
 def exctract_plddts_create_pkl(df, output_dir):
   pred_list = df.to_dict(orient="records")
   for pred in pred_list:
@@ -318,14 +336,14 @@ def exctract_plddts_create_pkl(df, output_dir):
     json_confidences_file["max_predicted_aligned_error"] = np.max(json_confidences_file["pae"])
     json_confidences_file["plddt"] = pred_plddts
 
-    """
-    pkl_name = pred["pkl_name"]
+    pkl_name = os.path.join(os.path.dirname(pred["original_dir"]), pred["pkl_name"])
     pickle.dump(json_confidences_file, open(pkl_name, 'wb'))
-    """
+
   updated_df = pd.DataFrame(pred_list)
   return updated_df
 
 def convert_alphafold3_output(output_path: str, pred_shift: int):
+  df_ranking_scores = pd.read_csv(os.path.join(output_path, "ranking_scores.csv"))
   seed_dirs = [ os.path.join(output_path, seed) for seed in os.listdir(output_path) if seed.startswith('seed-')]
   seed_dirs = sorted(
     seed_dirs,
@@ -343,9 +361,10 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
   df = pd.DataFrame( {
     "pred_nb": pred_nb,
     "original_dir": seed_dirs,
-    "seed_used": seeds,
-    "seed_sampling": samples 
+    "seed": seeds,
+    "sample": samples 
   })
+  df = df.merge(df_ranking_scores, on=["seed", "sample"], how="left")
   df["pred_nb"] += pred_shift * 5
   to_add = {}
   for seed in seed_dirs:
@@ -357,14 +376,14 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
         to_add[metric].append(pred_metrics[metric])
   for new_metric in to_add:
     df[new_metric] = to_add[new_metric]
-  
+
   df["prediction_name"] = "alphafold3_pred_" + df["pred_nb"].astype(str)
+  df["pkl_name"] = "result_" + df["prediction_name"] + ".pkl"
   df = exctract_plddts_create_pkl(df, output_path)
   df = df.sort_values(['ranking_score', 'iptm', 'ptm', 'mean_plddt'], ascending=False, ignore_index=True)
   df['rank'] = df.index
-  df["ranked_name"] = "ranked_" + df["rank"] + "_" + df["prediction_name"] + ".pdb"
-  df["pkl_name"] = "result_" + df["prediction_name"] + ".pkl"
-  print(df)
+  df["ranked_name"] = "ranked_" + df["rank"].astype(str) + "_" + df["prediction_name"] + ".cif"
+  af3_move_and_rename(df, output_path)
 
 def main(argv):
   
