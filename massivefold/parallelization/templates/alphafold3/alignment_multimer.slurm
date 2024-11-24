@@ -1,27 +1,14 @@
 
+mf_following_msas="$${MF_FOLLOWING_MSAS}"
+
 # variables to adapt: used for alignment
 run_massivefold=$run_massivefold
 sequence_name=$sequence_name
 run_name=$run_name
 output=$output_dir
-fafile=${input_dir}/$${sequence_name}.fasta
 data_dir=$data_dir
+logs_dir=$logs_dir
 scripts_dir=$scripts_dir
-
-json_params=./alphafold3_params.json
-model_dir=../../data/af3weights 
-
-echo "./$${scripts_dir}/unifier.py
-  --conversion input
-  --json_params $$json_params
-  --to_convert $$fafile
-  --tool alphafold3"
-
-./$${scripts_dir}/unifier.py \
-  --conversion input \
-  --json_params $$json_params \
-  --to_convert $$fafile \
-  --tool alphafold3
 
 source $$(conda info --base)/etc/profile.d/conda.sh
 conda activate mf-alphafold3
@@ -51,3 +38,27 @@ time $${run_massivefold} \
   --hmmbuild_binary_path $$(which hmmbuild) \
   --hmmsearch_binary_path $$(which hmmsearch)
 date
+
+conda deactivate
+
+if [[ -n $${mf_following_msas}  ]] && [[ $${mf_following_msas} == "true"  ]]; then
+  echo "Inference will folow after this MSAS step. Preparing batches..."
+  json_params=$json_params
+  json_msas=$${output}/$${sequence_name}/msas_alphafold3/msas_alphafold3_data.json
+  batches_file=$${logs_dir}/$${sequence_name}/$${run_name}/$${sequence_name}_$${run_name}_batches.json
+  echo "./$${scripts_dir}/unifier.py
+    --conversion input_inference
+    --batches_file $$batches_file
+    --json_params $$json_params
+    --to_convert $$json_msas
+    --tool alphafold3"
+
+  ./$${scripts_dir}/unifier.py \
+    --conversion input_inference \
+    --batches_file $$batches_file \
+    --json_params $$json_params \
+    --to_convert $$json_msas \
+    --tool alphafold3
+else
+  echo "Only MSAS are computed, no following inference."
+fi

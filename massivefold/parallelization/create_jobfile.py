@@ -31,16 +31,17 @@ flags.DEFINE_enum(
   ["AFmassive", "ColabFold", "alphafold3"],
   "Specify the tool used by MassiveFold for structure prediction.")
 
-def create_single_jobfile(jobfile_type, templates:dict, params):
+def create_single_jobfile(jobfile_type, templates:dict, params, json_params: str):
+  params["json_params"] = json_params
   jobfile = Template(templates[jobfile_type]).substitute(params)
   if FLAGS.create_files:
     with open(f"{FLAGS.sequence_name}_{FLAGS.run_name}_{jobfile_type}.slurm", 'w') as slurm_job:
       slurm_job.write(jobfile)
   return jobfile
 
-def create_all_jobfile(templates:dict, params:dict):
+def create_all_jobfile(templates:dict, params:dict, json_params: str):
   for jobtype in ['alignment', 'jobarray', 'post_treatment']:
-    create_single_jobfile(jobtype, templates, params)
+    create_single_jobfile(jobtype, templates, params, json_params)
 
 def group_templates(all_params, job_types:list):
   templates_paths = all_params['massivefold']
@@ -120,9 +121,9 @@ def main(argv):
 
   if FLAGS.job_type != 'all':
     all_templates = group_templates(all_params, [FLAGS.job_type])
-    create_single_jobfile(FLAGS.job_type, all_templates, run_params)
+    create_single_jobfile(FLAGS.job_type, all_templates, run_params, FLAGS.path_to_parameters)
   else:
     all_templates = group_templates(all_params, ['alignment', 'jobarray', 'post_treatment'])
-    create_all_jobfile(all_templates, run_params)
+    create_all_jobfile(all_templates, run_params, FLAGS.path_to_parameters)
 if __name__ == "__main__":
   app.run(main)

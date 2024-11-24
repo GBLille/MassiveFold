@@ -14,23 +14,10 @@ export XLA_CLIENT_MEM_FRACTION=1.5
 #export XLA_CLIENT_MEM_FRACTION=3.2
 '
 sequence_name=$sequence_name
-json_input_msas=${output_dir}/$${sequence_name}/msas_alphafold3/msas_alphafold3_data.json
 run_name=$run_name
 data_dir=$data_dir
 scripts_dir=$scripts_dir
 batch=$$SLURM_ARRAY_TASK_ID
-
-json_params=./alphafold3_params.json
-
-batches_file=${logs_dir}/${sequence_name}/${run_name}/$${sequence_name}_$${run_name}_batches.json
-if [ $$batch -eq 0 ]; then
-  ./$${scripts_dir}/unifier.py \
-    --conversion input_inference \
-    --to_convert $$json_input_msas \
-    --json_params $$json_params \
-    --batches_file $$batches_file \
-    --tool alphafold3
-fi
 
 json_batch_input=$${sequence_name}_$${run_name}_input_$${batch}.json
 output_dir=$$(realpath ${output_dir})
