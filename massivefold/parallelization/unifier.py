@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 from absl import flags, app
+from Bio.PDB.MMCIFParser import MMCIFParser
 from Bio import SeqIO
 import pickle
 from shutil import move as mv
@@ -10,6 +11,7 @@ import sys
 import shutil
 import string
 import random
+import numpy as np
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
@@ -197,7 +199,7 @@ _ptm_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pdb"
         json.dump(map_old_to_new, map_json, indent=4)
   return new_names
 
-def create_ranking(predictions_to_rank:pd.core.frame.DataFrame, output_path:str, preset:str):
+def create_colabfold_ranking(predictions_to_rank:pd.core.frame.DataFrame, output_path:str, preset:str):
   metrics = ['ptm', 'iptm', 'iptm+ptm'] if preset == 'multimer' else ['plddts', 'ptm']
   
   for metric in metrics:
@@ -221,6 +223,21 @@ def create_ranking(predictions_to_rank:pd.core.frame.DataFrame, output_path:str,
     
     with open(ranking_file_name, 'w') as json_scores:
       json.dump({ metric: scores_dict, 'order': order }, json_scores, indent=4)
+
+def move_output(output_path:str, batch):
+  whole_path = os.path.realpath(output_path)
+  sequence = os.path.basename(os.path.dirname(whole_path))
+  batch_path = f"{whole_path}/{batch}"
+  destination_path = f"{whole_path}/{batch}/{sequence}"
+  to_move = os.listdir(batch_path)
+  if FLAGS.do_rename:
+    os.makedirs(destination_path)
+
+  for element in to_move:
+    source = os.path.join(batch_path, element)
+    destination = os.path.join(destination_path, element)
+    if FLAGS.do_rename:
+      shutil.move(source, destination)
 
 def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset):
   jobname = [ name for name in os.listdir(output_path) if name.endswith('a3m') ]
@@ -251,9 +268,9 @@ def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset
         
       all_preds = pd.concat([all_preds, new_pred], ignore_index=True)
   
-  create_ranking(all_preds, output_path, preset)
+  create_colabfold_ranking(all_preds, output_path, preset)
 
-def convert_output(output_path:str, pred_shift:int):
+def convert_colabfold_output(output_path:str, pred_shift:int):
   pkls = [ file for file in os.listdir(output_path) if file.endswith('.pickle') ]
   pdbs = [ file for file in os.listdir(output_path) if file.endswith('.pdb') and 'rank' in file ]
   if 'multimer' in pdbs[0]:
@@ -267,22 +284,87 @@ def convert_output(output_path:str, pred_shift:int):
   renamed_pdbs = rename_pdb(pdbs, output_path, pred_shift, sep=sep)
   rank_predictions(output_path, pdbs, renamed_pdbs.values(), preset=sep)
   rename_pkl(pkls, output_path, pred_shift, sep=sep)
-    
 
-def move_output(output_path:str, batch):
-  whole_path = os.path.realpath(output_path)
-  sequence = os.path.basename(os.path.dirname(whole_path))
-  batch_path = f"{whole_path}/{batch}"
-  destination_path = f"{whole_path}/{batch}/{sequence}"
-  to_move = os.listdir(batch_path)
-  if FLAGS.do_rename:
-    os.makedirs(destination_path)
+def prediction_metrics(input_dir: str, nature: str):
+  prediction_confs = os.path.join(input_dir, 'summary_confidences.json')
+  with open(prediction_confs, 'r') as f:
+    data = json.load(f)
+  metrics_possibilities = [ "plddt", "iptm", "ptm", "ranking_score"]#, "chain_pair_iptm" ]
+  metrics = { metric: data[metric] for metric in metrics_possibilities if metric in data }
+  return metrics
 
-  for element in to_move:
-    source = os.path.join(batch_path, element)
-    destination = os.path.join(destination_path, element)
-    if FLAGS.do_rename:
-      shutil.move(source, destination)
+def plddts_from_cif(cif_filename):
+  pdb_parser = MMCIFParser(QUIET=True)
+  structure = pdb_parser.get_structure(
+    'strct',
+    cif_filename)
+  model = next(structure.get_models())
+  residues = model.get_residues()
+  residues_plddt = []
+  for res in residues:
+    residues_plddt.append(np.round(np.mean([ i.get_bfactor() for i in res.get_atoms() ]), decimals=2))
+  return residues_plddt
+
+def exctract_plddts_create_pkl(df, output_dir):
+  pred_list = df.to_dict(orient="records")
+  for pred in pred_list:
+    model_cif_name = os.path.join(pred["original_dir"], 'model.cif')
+    pred_plddts = plddts_from_cif(model_cif_name)
+    pred["mean_plddt"] = np.mean(pred_plddts)
+
+    json_confidences_name = os.path.join(pred["original_dir"], 'confidences.json')
+    json_confidences_file = json.load(open(json_confidences_name, 'r'))
+    json_confidences_file["predicted_aligned_error"] = json_confidences_file["pae"]
+    json_confidences_file["max_predicted_aligned_error"] = np.max(json_confidences_file["pae"])
+    json_confidences_file["plddt"] = pred_plddts
+
+    """
+    pkl_name = pred["pkl_name"]
+    pickle.dump(json_confidences_file, open(pkl_name, 'wb'))
+    """
+  updated_df = pd.DataFrame(pred_list)
+  return updated_df
+
+def convert_alphafold3_output(output_path: str, pred_shift: int):
+  seed_dirs = [ os.path.join(output_path, seed) for seed in os.listdir(output_path) if seed.startswith('seed-')]
+  seed_dirs = sorted(
+    seed_dirs,
+    key=lambda x: (
+      int(os.path.basename(x).replace('seed-', '').split('_sample')[0]),
+      int(os.path.basename(x).split('_sample-')[1])
+    )
+  )
+  seeds = [ int(os.path.basename(x).replace('seed-', '').split('_sample')[0]) for x in seed_dirs ]
+  seeds_to_0 = [ seed - seeds[0] for seed in seeds ]
+  pred_nb = [ pred*5 for pred in seeds_to_0 ]
+  samples = [ i%5 for i, _ in enumerate(pred_nb) ]
+  pred_nb = [ pred + i%5 for i, pred in enumerate(pred_nb) ]
+  
+  df = pd.DataFrame( {
+    "pred_nb": pred_nb,
+    "original_dir": seed_dirs,
+    "seed_used": seeds,
+    "seed_sampling": samples 
+  })
+  df["pred_nb"] += pred_shift * 5
+  to_add = {}
+  for seed in seed_dirs:
+    pred_metrics = prediction_metrics(seed, "multimer")
+    for metric in pred_metrics:
+      if metric not in to_add:
+        to_add[metric] = [pred_metrics[metric]]
+      else:
+        to_add[metric].append(pred_metrics[metric])
+  for new_metric in to_add:
+    df[new_metric] = to_add[new_metric]
+  
+  df["prediction_name"] = "alphafold3_pred_" + df["pred_nb"].astype(str)
+  df = exctract_plddts_create_pkl(df, output_path)
+  df = df.sort_values(['ranking_score', 'iptm', 'ptm', 'mean_plddt'], ascending=False, ignore_index=True)
+  df['rank'] = df.index
+  df["ranked_name"] = "ranked_" + df["rank"] + "_" + df["prediction_name"] + ".pdb"
+  df["pkl_name"] = "result_" + df["prediction_name"] + ".pkl"
+  print(df)
 
 def main(argv):
   
@@ -312,8 +394,11 @@ def main(argv):
     for batch in batches:
       batch_number = batch.split('_')[1]
       batch_shift = int(all_batches_infos[batch_number]['start'])
-      convert_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
-      move_output(FLAGS.to_convert, batch)
+      if FLAGS.tool == "ColabFold":
+        convert_colabfold_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
+        move_output(FLAGS.to_convert, batch)
+      elif FLAGS.tool == "alphafold3":
+        convert_alphafold3_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
 
 if __name__ == "__main__": 
   app.run(main)
