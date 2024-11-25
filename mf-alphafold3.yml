@@ -4,6 +4,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
+  - cxx-compiler
   - gxx
   - zlib
   - python=3.12

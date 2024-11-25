@@ -377,7 +377,8 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
   for new_metric in to_add:
     df[new_metric] = to_add[new_metric]
 
-  df["prediction_name"] = "alphafold3_pred_" + df["pred_nb"].astype(str)
+  df["prediction_name"] = "af3" + "_seed_" + df["seed"].astype(str) \
+    + "_sample_" + df["sample"].astype(str) + "_pred_" + df["pred_nb"].astype(str)
   df["pkl_name"] = "result_" + df["prediction_name"] + ".pkl"
   df = exctract_plddts_create_pkl(df, output_path)
   df = df.sort_values(['ranking_score', 'iptm', 'ptm', 'mean_plddt'], ascending=False, ignore_index=True)
