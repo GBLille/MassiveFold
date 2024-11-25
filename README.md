@@ -639,13 +639,19 @@ massivefold_plots.py --help
 
 ## Troubleshooting
 
-While using AlphaFold2 or AlphaFold2 based software like AFmassive, you can encounter a bug similar to this one in the msas generation:  
+### Uniref
+
+While using AlphaFold2 or AlphaFold2 based software like AFmassive, you can encounter a bug similar to this one in the 
+msas generation:  
 
 `WARNING: maximum number of residues 32763 exceeded in sequence UniRef100_A0A5E4B6R9_consensus`  
 or  
-`WARNING: maximum number of residues 32763 exceeded in sequence UniRef100_UPI000F443DA9 titin n=1 Tax=Lagenorhynchus obliquidens TaxID=90247 RepID=UPI000F443DA9`  
-It makes the msas unusable and causes any inference on the sequence to crash. This was referenced in a [github issue](https://github.com/google-deepmind/alphafold/issues/810) and a [fix](https://github.com/google-deepmind/alphafold/issues/810#issuecomment-1666718050) was provided.  
-According to this fix, download an updated version of the uniref30 database. To apply this modification to MassiveFold, set the `uniref_database` parameter in the AFmassive_params.json file to the updated database similarly to this:
+`WARNING: maximum number of residues 32763 exceeded in sequence UniRef100_UPI000F443DA9 titin n=1 Tax=Lagenorhynchus 
+obliquidens TaxID=90247 RepID=UPI000F443DA9`  
+It makes the msas unusable and causes any inference on the sequence to crash. This was referenced in a 
+[github issue](https://github.com/google-deepmind/alphafold/issues/810) and a [fix](https://github.com/google-deepmind/alphafold/issues/810#issuecomment-1666718050) was provided.  
+According to this fix, download an updated version of the uniref30 database. To apply this modification to MassiveFold, 
+set the `uniref_database` parameter in the AFmassive_params.json file to the updated database similarly to this:
 
 ```json
 "massivefold": 
@@ -664,6 +670,12 @@ According to this fix, download an updated version of the uniref30 database. To 
     "pkl_format": "full"
 }
 ```
+
+### Usage without SLURM
+
+MassiveFold can't run without SLURM. However, the `massivefold` and `mf-colabfold` conda environments 
+created at the installation allow to use respectively AFmassive and ColabFold. Their usage is detailed on their 
+respective GitHub webpages.
 
 ## Authors
 Nessim Raouraoua (UGSF - UMR 8576, France)  
