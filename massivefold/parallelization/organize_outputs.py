@@ -54,8 +54,10 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
     # copy the predictions
     if os.path.exists(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, f"relaxed_{prediction}.pdb")):
       pred_new_name = f"relaxed_{prediction}.pdb"
-    else:
+    elif os.path.exists(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, f"unrelaxed_{prediction}.pdb")):
       pred_new_name = f"unrelaxed_{prediction}.pdb"
+    else:
+      pred_new_name = f"{prediction}.cif"
     
     # Move pdb files and rename with rank
     old_pdb_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pred_new_name) 
@@ -64,7 +66,6 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
       mv(old_pdb_path, new_pdb_path)
     except FileNotFoundError:
       print(f"{pred_batch_map[prediction]}/ranked_{i}_{pred_new_name} does not exist, probably score < --min_score.")
-    
     # Move pkl files
     pkl_name = f"result_{prediction}.pkl"
     old_pkl_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pkl_name)
@@ -78,14 +79,29 @@ def remove_batch_dirs(all_batches_path):
   batch_dirs = [d for d in os.listdir(all_batches_path) if d.startswith('batch')]
   for batch_dir in batch_dirs:
     rm(os.path.join(all_batches_path, batch_dir))
-    
+
 def main(argv):
   batches_path = os.path.normpath(FLAGS.batches_path)
-  sequence_name = os.path.basename(batches_path)
-  
-  massivefold_output_dir = "output"
-  if os.path.dirname(batches_path) != massivefold_output_dir:
-    sequence_name = os.path.basename(os.path.dirname(batches_path))
+  sequence_name = os.path.basename(os.path.dirname(batches_path))
+  run_name = os.path.basename(batches_path)
+  batch_0 = os.path.join(batches_path, "batch_0")
+
+  if os.path.exists(os.path.join(batch_0, "ranking_debug.json")):
+    print("AlphaFold3 output detected")
+    try:
+      mv(os.path.join(batch_0, "TERMS_OF_USE.md"), batches_path)
+    except:
+      pass
+    all_batches = [ i for i in os.listdir(batches_path) if i.startswith('batch_') and os.path.isdir(os.path.join(batches_path, i)) ]
+    for batch in all_batches:
+      batch_dir = os.path.join(batches_path, batch)
+      new_location = os.path.join(batch_dir, sequence_name)
+      os.makedirs(new_location)
+      output_files = [ os.path.join(batch_dir, i) for i in os.listdir(batch_dir) if i.endswith('.json') or i.endswith('.cif') or i.endswith('.pkl') ]
+      for file in output_files: 
+        new_file = os.path.join(new_location, os.path.basename(file))
+        mv(file, new_file)
+
   # create ranking json files
   pred_batch_map = create_global_ranking(batches_path, sequence_name)
   if os.path.isfile(f"{batches_path}/batch_0/{sequence_name}/ranking_iptm.json"):
