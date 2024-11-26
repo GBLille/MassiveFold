@@ -17,6 +17,8 @@ sequence_name=$sequence_name
 run_name=$run_name
 data_dir=$data_dir
 scripts_dir=$scripts_dir
+max_template_date=$max_template_date
+
 batch=$$SLURM_ARRAY_TASK_ID
 
 json_batch_input=$${sequence_name}_$${run_name}_input_$${batch}.json
@@ -33,6 +35,7 @@ conda activate mf-alphafold3
 date
 echo "run_alphafold.py
   --norun_data_pipeline
+  --max_template_date $${max_template_date}
   --json_path $${path_to_msas}
   --db_dir $${data_dir}
   --model_dir $${data_dir}
@@ -44,6 +47,7 @@ echo "run_alphafold.py
 
 time run_alphafold.py \
   --norun_data_pipeline \
+  --max_template_date $${max_template_date} \
   --json_path $${path_to_msas} \
   --db_dir $${data_dir} \
   --model_dir $${data_dir} \
