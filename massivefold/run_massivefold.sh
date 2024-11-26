@@ -263,7 +263,7 @@ elif [[ $tool == "AFmassive" ]] && [ -d ${output_dir}/${sequence_name}/msas/ ]; 
   echo -e "Detected msas compatible with AFmassive for ${sequence_name} at ${output_dir}/${sequence_name}/msas/, \
   using them.\n"
   msas_precomputed="${output_dir}/${sequence_name}"
-elif [[ $tool == "alphafold3" ]] && [ -d ${output_dir}/${sequence_name}/msas_aplhafold3/ ]; then
+elif [[ $tool == "alphafold3" ]] && [ -d ${output_dir}/${sequence_name}/msas_alphafold3/ ]; then
   echo -e "Detected msas compatible with af3 for ${sequence_name} at ${output_dir}/${sequence_name}/msas_alphafold3/, \
   using them.\n"
   msas_precomputed="${output_dir}/${sequence_name}"
