@@ -42,11 +42,6 @@ MassiveFold uses [AFmassive](https://github.com/GBLille/AFmassive) or [ColabFold
 Wallner's [AFsample](https://github.com/bjornwallner/alphafoldv2.2.0/) that offers additional diversity parameters for 
 massive sampling.
 
-It is published here:  
-
-Raouraoua N. et al. **MassiveFold: unveiling AlphaFold’s hidden potential with optimized and parallelized massive sampling**. 2024. 
-**_Nature Computational Science_**, DOI: 10.1038/s43588-024-00714-4, https://www.nature.com/articles/s43588-024-00714-4  
-
 ## MassiveFold: parallelize protein structure prediction
 MassiveFold's design (see schematic below) is optimized for GPU cluster usage. It allows fast computing for massive 
 sampling by automatically splitting a large run of numerous predictions into several jobs. Each of these individual 
@@ -680,6 +675,12 @@ set the `uniref_database` parameter in the AFmassive_params.json file to the upd
 MassiveFold can't run without SLURM. However, the `massivefold` and `mf-colabfold` conda environments 
 created at the installation allow to use respectively AFmassive and ColabFold. Their usage is detailed on their 
 respective GitHub webpages.
+
+## Citation
+
+Raouraoua N. et al. **MassiveFold: unveiling AlphaFold’s hidden potential with optimized and parallelized massive 
+sampling**. 2024. **_Nature Computational Science_**, DOI: 10.1038/s43588-024-00714-4, 
+https://www.nature.com/articles/s43588-024-00714-4  
 
 ## Authors
 Nessim Raouraoua (UGSF - UMR 8576, France)  
