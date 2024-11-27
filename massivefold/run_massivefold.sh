@@ -255,7 +255,6 @@ ${scripts_dir}/batching.py \
 mkdir -p ${logs_dir}/${sequence_name}/${run_name}/
 cp ${sequence_name}_${run_name}_batches.json ${logs_dir}/${sequence_name}/${run_name}/
 
-
 # align when forcing or no precomputed and detected msas
 if [ ! -z $msas_precomputed ]; then
   echo "Using precomputed msas at $msas_precomputed"
@@ -360,7 +359,6 @@ else
   ARRAY_ID=$(sbatch --parsable ${sequence_name}_${run_name}_jobarray.slurm)
 fi
 
-exit 1
 # Create and start post treatment (output organization axnd plots)
 # Waiting for inference to end
 ${scripts_dir}/create_jobfile.py \
