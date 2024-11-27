@@ -27,6 +27,7 @@
 * [Troubleshooting](#troubleshooting)
   * [Uniref](#uniref)
   * [Usage without SLURM](#usage-without-slurm)
+* [Citation](#citation)
 * [Authors](#authors)
 <!-- TOC -->
 
