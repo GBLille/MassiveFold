@@ -25,6 +25,8 @@
   * [Required arguments](#required-arguments)
   * [Facultative arguments](#facultative-arguments)
 * [Troubleshooting](#troubleshooting)
+  * [Uniref](#uniref)
+  * [Usage without SLURM](#usage-without-slurm)
 * [Authors](#authors)
 <!-- TOC -->
 
@@ -40,8 +42,10 @@ MassiveFold uses [AFmassive](https://github.com/GBLille/AFmassive) or [ColabFold
 Wallner's [AFsample](https://github.com/bjornwallner/alphafoldv2.2.0/) that offers additional diversity parameters for 
 massive sampling.
 
-It has been submitted for publication and a preprint is available here: 
-[https://doi.org/10.21203/rs.3.rs-4319486/v1](https://doi.org/10.21203/rs.3.rs-4319486/v1).
+It is published here:  
+
+Raouraoua N. et al. **MassiveFold: unveiling AlphaFold’s hidden potential with optimized and parallelized massive sampling**. 2024. 
+**_Nature Computational Science_**, DOI: 10.1038/s43588-024-00714-4, https://www.nature.com/articles/s43588-024-00714-4  
 
 ## MassiveFold: parallelize protein structure prediction
 MassiveFold's design (see schematic below) is optimized for GPU cluster usage. It allows fast computing for massive 
