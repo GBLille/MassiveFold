@@ -25,7 +25,6 @@ Usage: $USAGE\n\
     -j| --jobid: jobid of an alignment job to wait for inference, skips the alignments.\n\
 \n\
   Facultative options:\n\
-    -t| --tool_to_use: (default: 'AFmassive') Use either AFmassive, alphafold3 or ColabFold in structure prediction for MassiveFold\n\
     -o| --only_msas: only compute alignments, the first step of MassiveFold\n\
     -c| --calibrate: calibrate --batch_size value. Searches from the previous runs for the same 'fasta' path given\n\
         in --sequence and uses the longest prediction time found to compute the maximal number of predictions per batch.\n\
