@@ -14,6 +14,7 @@ Usage: $USAGE\n\
     -r| --run: name chosen for the run to organize in outputs.\n\
     -p| --predictions_per_model: number of predictions computed for each neural network model.\n\
     -f| --parameters: json file's path containing the parameters used for this run.\n\
+    -t| --tool: (default: 'AFmassive') Use either AFmassive, alphafold3 or ColabFold in structure prediction for MassiveFold\n\
 \n\
   Facultative arguments:\n\
     -b| --batch_size: (default: 25) number of predictions per batch, should not be higher than -p.\n\
@@ -40,7 +41,6 @@ batch_size=25
 wall_time=20
 force_msas_computation=false
 only_msas=false
-tool=AFmassive
 
 # argument parser
 while true; do
@@ -94,7 +94,7 @@ while true; do
       force_msas_computation=true
       shift
       ;;
-    -t|--tool_to_use)
+    -t|--tool)
       tool=$2
       shift 2
       ;;
@@ -111,6 +111,7 @@ done
 # check mandatory args
 if
   [ -z "$sequence_file" ] ||
+  [ -z "$tool" ] ||
   [ -z "$run_name" ] ||
   [ -z "$parameters_file" ]; then
   echo -e "Usage: $USAGE"
