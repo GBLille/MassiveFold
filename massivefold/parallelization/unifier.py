@@ -315,7 +315,7 @@ def af3_move_and_rename(df, output_dir):
     model_cif_name = os.path.join(pred["original_dir"], 'model.cif')
     new_cif_name = os.path.join(os.path.dirname(pred["original_dir"]), pred["ranked_name"])
     cp(model_cif_name, new_cif_name)
-    model_no_rank = os.path.join(os.path.dirname(pred["original_dir"]), '_'.join(new_cif_name.split('_')[3:]))
+    model_no_rank = os.path.join(os.path.dirname(pred["original_dir"]), '_'.join(os.path.basename(new_cif_name).split('_')[2:]))
     cp(new_cif_name, model_no_rank)
     for stype in score_types:
       all_scores[score_map[stype]][stype][pred["prediction_name"]] = pred[stype]
