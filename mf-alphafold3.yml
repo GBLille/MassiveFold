@@ -1,0 +1,14 @@
+name: mf-alphafold3
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - cxx-compiler
+  - gxx
+  - zlib
+  - python=3.12
+  - hmmer=3.4
+  - pip
+  - pip:
+    - git+https://github.com/google-deepmind/alphafold3@cdbcf41b71235ec33338edef1f80e03fb0c6bae4
