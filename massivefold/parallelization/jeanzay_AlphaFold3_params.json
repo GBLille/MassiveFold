@@ -8,7 +8,8 @@
         "output_dir": "./output",
         "logs_dir": "./log",
         "input_dir": "./input",
-        "scripts_dir": "../massivefold/parallelization"
+        "scripts_dir": "../massivefold/parallelization",
+        "pkl_format":"full"
     },
     "custom_params": {
         "jeanzay_gpu": "v100",
