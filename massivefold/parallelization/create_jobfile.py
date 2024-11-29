@@ -28,7 +28,7 @@ flags.DEFINE_string(
 flags.DEFINE_enum(
   "tool",
   "AFmassive",
-  ["AFmassive", "ColabFold", "alphafold3"],
+  ["AFmassive", "ColabFold", "AlphaFold3"],
   "Specify the tool used by MassiveFold for structure prediction.")
 
 def create_single_jobfile(jobfile_type, templates:dict, params, json_params: str):
@@ -51,7 +51,7 @@ def group_templates(all_params, job_types:list):
   
   if FLAGS.tool == "AFmassive":
     tool_code = "AFM"
-  elif FLAGS.tool == "alphafold3":
+  elif FLAGS.tool == "AlphaFold3":
     tool_code = "AF3"
   elif FLAGS.tool == "ColabFold":
     tool_code = "CF"
@@ -91,7 +91,7 @@ def main(argv):
 
   if FLAGS.tool == "AFmassive":
     tool_code = "AFM"
-  elif FLAGS.tool == "alphafold3":
+  elif FLAGS.tool == "AlphaFold3":
     tool_code = "AF3"
   elif FLAGS.tool == "ColabFold":
     tool_code = "CF"

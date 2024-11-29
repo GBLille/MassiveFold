@@ -119,8 +119,9 @@ fi
 
 echo "Tool used is $tool"
 
-if [[ $tool != "AFmassive" && $tool != "ColabFold" && $tool != "alphafold3" ]]; then
-  echo "-t|--tool_to_use value is either 'AFmassive', 'alphafold3' or 'ColabFold'"
+if [[ $tool != "AFmassive" && $tool != "ColabFold" && $tool != "AlphaFold3" ]]; then
+  echo "Tool value is either 'AFmassive', 'AlphaFold3' or 'ColabFold'"
+  exit 1
 fi
 
 output_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['massivefold']['output_dir'])")
@@ -259,16 +260,13 @@ cp ${sequence_name}_${run_name}_batches.json ${logs_dir}/${sequence_name}/${run_
 if [ ! -z $msas_precomputed ]; then
   echo "Using precomputed msas at $msas_precomputed"
 elif [[ $tool == "AFmassive" ]] && [ -d ${output_dir}/${sequence_name}/msas/ ]; then
-  echo -e "Detected msas compatible with AFmassive for ${sequence_name} at ${output_dir}/${sequence_name}/msas/, \
-  using them.\n"
+  echo -e "Detected msas compatible with AFmassive for ${sequence_name} at ${output_dir}/${sequence_name}/msas/, using them.\n"
   msas_precomputed="${output_dir}/${sequence_name}"
-elif [[ $tool == "alphafold3" ]] && [ -d ${output_dir}/${sequence_name}/msas_alphafold3/ ]; then
-  echo -e "Detected msas compatible with af3 for ${sequence_name} at ${output_dir}/${sequence_name}/msas_alphafold3/, \
-  using them.\n"
+elif [[ $tool == "AlphaFold3" ]] && [ -d ${output_dir}/${sequence_name}/msas_alphafold3/ ]; then
+  echo -e "Detected msas compatible with af3 for ${sequence_name} at ${output_dir}/${sequence_name}/msas_alphafold3/, using them.\n"
   msas_precomputed="${output_dir}/${sequence_name}"
 elif [[ $tool == "ColabFold" ]] && [ -d ${output_dir}/${sequence_name}/msas_colabfold/ ]; then
-  echo -e "Detected msas compatible with ColabFold for ${sequence_name} at ${output_dir}/${sequence_name}/msas_colabfold/, \
-  using them.\n"
+  echo -e "Detected msas compatible with ColabFold for ${sequence_name} at ${output_dir}/${sequence_name}/msas_colabfold/, using them.\n"
   msas_precomputed="${output_dir}/${sequence_name}"
 fi
 
@@ -278,7 +276,7 @@ if [[ $tool == "AFmassive" ]]; then
   conditions_to_align="[[ \$force_msas_computation = true ]] || \
                        ( [[ ! -d \${output_dir}/\${sequence_name}/msas/ ]] && \
                          [[ -z \$msas_precomputed ]] )"
-elif [[ $tool == "alphafold3" ]]; then
+elif [[ $tool == "AlphaFold3" ]]; then
   conditions_to_align="[[ \$force_msas_computation = true ]] || \
                        ( [[ ! -d \${output_dir}/\${sequence_name}/msas_alphafold3/ ]] && \
                          [[ -z \$msas_precomputed ]] )"
@@ -293,12 +291,12 @@ if [ ! -z $wait_for_jobid ]; then
   ALIGNMENT_ID=$wait_for_jobid
   waiting_for_alignment=true
 elif eval $conditions_to_align; then
-  if [[ $tool == "alphafold3" ]]; then
+  if [[ $tool == "AlphaFold3" ]]; then
     ./${scripts_dir}/unifier.py \
       --conversion input \
       --json_params $parameters_file \
       --to_convert $sequence_file \
-      --tool alphafold3
+      --tool AlphaFold3
   fi
   echo "Running alignment for $sequence_name"
   if $only_msas; then
@@ -327,15 +325,15 @@ elif [[ $tool == "AFmassive" ]] && [[ -d  $msas_precomputed/msas ]]; then
   echo "Using AFmassive"
   mkdir -p ${output_dir}/${sequence_name}/
   ln -s $(realpath $msas_precomputed/msas) ${output_dir}/${sequence_name}/
-elif [[ $tool == "alphafold3" ]] && [[ -f  $msas_precomputed/msas_alphafold3/msas_alphafold3_data.json ]]; then
+elif [[ $tool == "AlphaFold3" ]] && [[ -f  $msas_precomputed/msas_alphafold3/msas_alphafold3_data.json ]]; then
   echo "$msas_precomputed are valid."
-  echo "Using alphafold3"
+  echo "Using AlphaFold3"
   ./${scripts_dir}/unifier.py \
     --conversion input_inference \
     --to_convert $msas_precomputed/msas_alphafold3/msas_alphafold3_data.json \
     --json_params $parameters_file \
     --batches_file ${sequence_name}_${run_name}_batches.json \
-    --tool alphafold3
+    --tool AlphaFold3
 elif [[ $tool == "ColabFold" ]] && [[ -d  $msas_precomputed/msas_colabfold ]]; then
   echo "$msas_precomputed are valid."
   echo "Using ColabFold"

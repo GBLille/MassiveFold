@@ -17,7 +17,7 @@ flags.DEFINE_list('models_to_use', None, 'Select the models used for prediction 
 flags.DEFINE_string('sequence_name', '', 'Name of the sequence to predict.')
 flags.DEFINE_string('run_name', '', 'Name of the run.')
 flags.DEFINE_string('path_to_parameters', '', 'Parameters to use, contains models_to_use')
-flags.DEFINE_enum('tool', 'AFmassive', ['AFmassive', 'alphafold3', 'ColabFold'], 'Specify the tool that you want to use')
+flags.DEFINE_enum('tool', 'AFmassive', ['AFmassive', 'AlphaFold3', 'ColabFold'], 'Specify the tool that you want to use')
 FLAGS = flags.FLAGS
 
 def batches_per_model(pred_nb_per_model:int):
@@ -56,7 +56,7 @@ def main(argv):
   if FLAGS.tool == "AFmassive":
     models = all_params['massivefold']['models_to_use']
     tool_code = "AFM"
-  elif FLAGS.tool == "alphafold3":
+  elif FLAGS.tool == "AlphaFold3":
     models = ["AlphaFold3"]
     tool_code = "AF3"
   elif FLAGS.tool == "ColabFold":
@@ -65,7 +65,7 @@ def main(argv):
 
   model_preset = all_params[f'{tool_code}_run'][f'model_preset']  
 
-  if FLAGS.tool == "alphafold3":
+  if FLAGS.tool == "AlphaFold3":
     model_names = ["AlphaFold3"]
 
   elif model_preset == 'multimer':

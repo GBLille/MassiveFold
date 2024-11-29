@@ -64,7 +64,8 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
     new_pdb_path = os.path.join(all_batches_path, f"ranked_{i}_{pred_new_name}")
     try:
       mv(old_pdb_path, new_pdb_path)
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+      print(e)
       print(f"{pred_batch_map[prediction]}/ranked_{i}_{pred_new_name} does not exist, probably score < --min_score.")
     # Move pkl files
     pkl_name = f"result_{prediction}.pkl"

@@ -29,13 +29,13 @@ flags.DEFINE_string(
 flags.DEFINE_enum(
   'tool',
   "ColabFold",
-  ["ColabFold", "alphafold3"],
+  ["ColabFold", "AlphaFold3"],
   "Chose the tool from which the input/output should be unified.")
 flags.DEFINE_string(
   "json_params",
   "",
   "Set json file path for input parameters. "
-  "Necessary when using '--tool alphafold3' coupled with '--conversion input'")
+  "Necessary when using '--tool AlphaFold3' coupled with '--conversion input'")
 flags.DEFINE_string(
   'batches_file',
   '',
@@ -68,7 +68,7 @@ def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
   "Please provide a valid path to a json file with --json_params"
   
   template_dir = json.load(open(json_params, 'r'))['massivefold']['jobfile_templates_dir']
-  json_template = os.path.realpath(os.path.join(template_dir, "alphafold3", "af3_input.json"))
+  json_template = os.path.realpath(os.path.join(template_dir, "AlphaFold3", "af3_input.json"))
   with open(json_template, 'r') as template:
     input_json = json.load(template)
 
@@ -90,7 +90,7 @@ def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
       index = all_sequences.index(f"{record.seq}")
       sequence_dicts[index][entities[index]]["id"].append(chain_id)
 
-  # create alphafold3 input as json
+  # create AlphaFold3 input as json
   fasta_file = os.path.basename(fasta_path).split('.fa')[0]
   json_input = json.load(open(json_template, 'r'))
   json_input['name'] = "msas_alphafold3"
@@ -108,7 +108,7 @@ def convert_input(args, tool):
       os.makedirs(adapted_input_dir)
     convert_colabfold_fasta(fasta_file)
 
-  elif tool == 'alphafold3':
+  elif tool == 'AlphaFold3':
     adapted_input_dir = f"{input_dir}/alphafold3_json_requests/" 
     if not os.path.exists(adapted_input_dir):
       os.makedirs(adapted_input_dir)
@@ -130,8 +130,7 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
       output_dir,
       sequence,
       run_name,
-      f"batch_{batch}",
-      f"{sequence}_{run_name}_input_{batch}.json")
+      f"af3_batch_{batch}.json")
     os.makedirs(os.path.dirname(alphafold3_input))
     batch_input_json = json.load(open(input_json, 'r'))
     batch_input_json['name'] = 'batch_' + batch
@@ -142,7 +141,7 @@ def prepare_inference(args, tool):
   input = args['input']
   params = args['params']
   batches = args['batches']
-  if tool == "alphafold3":
+  if tool == "AlphaFold3":
     get_alphafold3_batch_input(input, params, batches)
 
 
@@ -419,7 +418,7 @@ def main(argv):
       if FLAGS.tool == "ColabFold":
         convert_colabfold_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
         move_output(FLAGS.to_convert, batch)
-      elif FLAGS.tool == "alphafold3":
+      elif FLAGS.tool == "AlphaFold3":
         convert_alphafold3_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
 
 if __name__ == "__main__": 
