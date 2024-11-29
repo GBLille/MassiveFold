@@ -12,4 +12,4 @@ dependencies:
   - hmmer=3.4
   - pip
   - pip:
-    - git+https://github.com/google-deepmind/alphafold3@e56abb7a55fb22e1af6d9fcba2edc0990b444070
+    - git+https://github.com/google-deepmind/alphafold3@2eb6555de502d3ec8b6616df718861127cb39c4a
