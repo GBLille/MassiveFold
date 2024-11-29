@@ -101,7 +101,7 @@ We use an installation based on conda. The **install.sh** script we provide inst
 `environment.yml`, `mf-colabfold.yml` and `mf-alphafold3.yml` files. The first one is created for MassiveFold and 
 AFmassive, the second one is created for ColabFold and the last one for Alphafold3. It also creates the files 
 architecture and set paths according to this architecture in the `AFmassive_params.json` and/or `ColabFold_params.json` 
-and/or `alphafold3_params.json` parameters file.  
+and/or `AlphaFold3_params.json` parameters file.  
 
 Help with:
 ```bash
@@ -135,7 +135,7 @@ MassiveFold
 └── massivefold_runs
     ├── AFmassive_params.json
     ├── ColabFold_params.json
-    ├── alphafold3_params.json
+    ├── AlphaFold3_params.json
     ├── headers/
         ├── example_header_alignment_jeanzay.slurm
         ├── example_header_jobarray_jeanzay.slurm
@@ -148,7 +148,7 @@ MassiveFold
 The directory `massivefold_runs` is created, which contains:
 - `AFmassive_params.json` to set the run parameters for AFmassive,
 - `ColabFold_params.json` to set the run parameters for ColabFold,
-- `alphafold3_params.json` to set the run parameters for AlphaFold3,
+- `AlphaFold3_params.json` to set the run parameters for AlphaFold3,
 - `headers`' directory, containing the headers that must be created to use MassiveFold. Examples are given for the Jean 
 Zay national CNRS French cluster (ready to use, see the [installation on Jean Zay](#install-on-jean-zay) to run 
 MassiveFold directly on Jean Zay),
@@ -178,7 +178,7 @@ They are three and should be named as follows: `{step}.slurm` (`alignment.slurm`
 `post_treatment.slurm`). The headers contain the parameters to give to SLURM for the jobs running (#SBATCH parameters). 
 They have to be added in `MassiveFold/massivefold_runs/headers/` directory. Depending on your installation it can be 
 another path, this path has to be set in the `AFmassive_params.json` and/or `ColabFold_params.json` and/or 
-`alphafold3_params.json` as `jobfile_headers_dir` parameter.
+`AlphaFold3_params.json` as `jobfile_headers_dir` parameter.
 
 Headers for Jean Zay cluster are provided as examples to follow (named `example_header_<step>_jeanzay.slurm`), to use 
 them, rename each one following the previously mentioned naming convention.  
@@ -187,7 +187,7 @@ them, rename each one following the previously mentioned naming convention.
 
 Each cluster has its own specifications in parameterizing job files. For flexibility needs, you can add your custom 
 parameters in your headers, and then in the `AFmassive_params.json` file and/or `ColabFold_params.json` file and/or 
-`alphafold3_params.json` so that you can dynamically change their values in the json file.  
+`AlphaFold3_params.json` so that you can dynamically change their values in the json file.  
 
 To illustrate these "special needs", here is an example of parameters that can be used on the French national Jean Zay 
 cluster to specify GPU type, time limits or the project on which the hours are used:
@@ -196,7 +196,7 @@ Go to `AFmassive_params.json` and/or `ColabFold_params.json` location:
 ```bash
 cd MassiveFold/massivefold_runs
 ```
-Modify `AFmassive_params.json` and/or `ColabFold_params.json` and/or `alphafold3_params.json`:
+Modify `AFmassive_params.json` and/or `ColabFold_params.json` and/or `AlphaFold3_params.json`:
 ```json
 "custom_params":
 {
@@ -232,7 +232,7 @@ Their names should be identical to:
 * **post_treatment.slurm**
 
 The templates work with the parameters provided in `AFmassive_params.json` and/or `ColabFold_params.json` and/or 
-`alphafold3_params.json` files, given as a parameter to the **run_massivefold.sh** script.  
+`AlphaFold3_params.json` files, given as a parameter to the **run_massivefold.sh** script.  
 These parameters are substituted in the template job files thanks to the python library [string.Template](https://docs.python.org/3.8/library/string.html#template-strings).  
 Refer to [How to add a parameter](#how-to-add-a-parameter) for parameters substitution.
 
@@ -327,7 +327,7 @@ ColabFold. A GPU with at least 16 GB RAM is also recommended, knowing that more 
 
 ## Usage
 
-Edit the `AFmassive_params.json` and/or `ColabFold_params.json` and/or `alphafold3_params.json` parameters file 
+Edit the `AFmassive_params.json` and/or `ColabFold_params.json` and/or `AlphaFold3_params.json` parameters file 
 (see [file architecture](#tree)).  
 Set first the [parameters of your run](https://github.com/GBLille/AFmassive?tab=readme-ov-file#running-afmassive) in the 
 **AFM_run** section of the `AFmassive_params.json`, for instance:
@@ -365,7 +365,7 @@ or in the `ColabFold_params.json` file, for instance:
     "disable_cluster_profile": "false"
 }
 ```
-or in the `alphafold3_params.json` file, for instance
+or in the `AlphaFold3_params.json` file, for instance
 ```json
 "AF3_run":
 {
@@ -397,7 +397,7 @@ Example for ColabFold:
 ```
 Example for AlphaFold3:
 ```bash
-./run_massivefold.sh -s input/H1140.fasta -r af3_default_run -p 5 -f alphafold3_params.json -t alphafold3
+./run_massivefold.sh -s input/H1140.fasta -r af3_default_run -p 5 -f AlphaFold3_params.json -t AlphaFold3
 ```
 
 For more help and list of required and facultative parameters, run:
@@ -485,11 +485,11 @@ adapt this walltime value to the one of the job). For instance:
 #### Parameters in run_massivefold.sh
 
 In addition to the parameters displayed with **-h** option, the json parameters file set with **-f** or **--parameters** 
-should be organized like the `AFmassive_params.json` or `ColabFold_params.json` or `alphafold3_params.json` file.
+should be organized like the `AFmassive_params.json` or `ColabFold_params.json` or `AlphaFold3_params.json` file.
 
 #### Parameters in the json file
 
-Each section of `AFmassive_params.json` or `ColabFold_params.json` or `alphafold3_params.json` is used for a different 
+Each section of `AFmassive_params.json` or `ColabFold_params.json` or `AlphaFold3_params.json` is used for a different 
 purpose.
 
 The **massivefold** section designates the whole run parameters.  
