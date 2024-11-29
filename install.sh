@@ -6,7 +6,7 @@ setup_params () {
   cp massivefold/parallelization/${tool}_params.json $param_file
   if [ $tool == "AFmassive" ]; then
     db=$alphafold_databases
-  elif [ $tool == "alphafold3" ]; then
+  elif [ $tool == "AlphaFold3" ]; then
     db=$alphafold3_databases
   elif [ $tool == "ColabFold" ]; then
     db=$colabfold_databases
@@ -21,7 +21,7 @@ params = json.load(sys.stdin)
 
 if '$tool' == 'AFmassive':
   params['massivefold']['run_massivefold'] = 'run_AFmassive.py'
-if '$tool' == 'alphafold3':
+if '$tool' == 'AlphaFold':
   params['massivefold']['run_massivefold'] = 'run_alphafold.py'
 params['massivefold']['run_massivefold_plots'] = 'massivefold_plots.py'
 params['massivefold']['data_dir'] = '$(realpath $db)'
@@ -71,7 +71,7 @@ install_env () {
     conda env create -f mf-alphafold3.yml
     conda activate mf-alphafold3
     build_data
-    wget -O $CONDA_PREFIX/bin/run_alphafold.py https://raw.githubusercontent.com/google-deepmind/alphafold3/7708e354d0bfb79258d0f6dd2b402b59c008eebe/run_alphafold.py
+    wget -O $CONDA_PREFIX/bin/run_alphafold.py https://raw.githubusercontent.com/google-deepmind/alphafold3/e56abb7a55fb22e1af6d9fcba2edc0990b444070/run_alphafold.py
     sed -i '1i #!/usr/bin/env python' $CONDA_PREFIX/bin/run_alphafold.py
     chmod +x $CONDA_PREFIX/bin/run_alphafold.py
   fi
@@ -215,7 +215,7 @@ if [[ $db_af == "true" ]]; then
   setup_params "AFmassive"
 fi
 if [[ $db_af3 == "true" ]]; then
-  setup_params "alphafold3"
+  setup_params "AlphaFold3"
 fi
 if [[ $db_cf == "true" ]]; then
   setup_params "ColabFold"

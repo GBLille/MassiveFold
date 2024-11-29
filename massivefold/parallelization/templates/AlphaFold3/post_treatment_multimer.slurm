@@ -12,13 +12,13 @@ echo "$${scripts_dir}/unifier.py
   --batches_file $${batches_file}
   --conversion output
   --to_convert $$output
-  --tool alphafold3"
+  --tool AlphaFold3"
 
 time $${scripts_dir}/unifier.py \
   --batches_file $${batches_file} \
   --conversion output \
   --to_convert $$output \
-  --tool alphafold3
+  --tool AlphaFold3
 
 # rename and move files
 echo "$${scripts_dir}/organize_outputs.py --batches_path $$output"

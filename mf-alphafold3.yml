@@ -4,6 +4,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
+  - cuda-compat
   - cxx-compiler
   - gxx
   - zlib
@@ -11,4 +12,4 @@ dependencies:
   - hmmer=3.4
   - pip
   - pip:
-    - git+https://github.com/google-deepmind/alphafold3@cdbcf41b71235ec33338edef1f80e03fb0c6bae4
+    - git+https://github.com/google-deepmind/alphafold3@e56abb7a55fb22e1af6d9fcba2edc0990b444070

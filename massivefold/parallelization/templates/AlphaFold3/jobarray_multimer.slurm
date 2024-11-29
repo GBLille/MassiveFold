@@ -21,13 +21,13 @@ max_template_date=$max_template_date
 
 batch=$$SLURM_ARRAY_TASK_ID
 
-json_batch_input=$${sequence_name}_$${run_name}_input_$${batch}.json
+json_batch_input=af3_batch_$${batch}.json
 output_dir=$$(realpath ${output_dir})
 output_path="$${output_dir}/$${sequence_name}/$${run_name}/"
 echo output_path is $$output_path
 mkdir -vp $${output_path}/
 
-path_to_msas=$${output_dir}/$${sequence_name}/$${run_name}/batch_$${batch}/$${json_batch_input}
+path_to_msas=$${output_dir}/$${sequence_name}/$${run_name}/$${json_batch_input}
 
 source $$(conda info --base)/etc/profile.d/conda.sh
 conda activate mf-alphafold3

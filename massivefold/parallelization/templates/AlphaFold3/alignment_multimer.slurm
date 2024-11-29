@@ -51,14 +51,14 @@ if [[ -n $${mf_following_msas}  ]] && [[ $${mf_following_msas} == "true"  ]]; th
     --batches_file $$batches_file
     --json_params $$json_params
     --to_convert $$json_msas
-    --tool alphafold3"
+    --tool AlphaFold3"
 
   ./$${scripts_dir}/unifier.py \
     --conversion input_inference \
     --batches_file $$batches_file \
     --json_params $$json_params \
     --to_convert $$json_msas \
-    --tool alphafold3
+    --tool AlphaFold3
 else
   echo "Only MSAS are computed, no following inference."
 fi
