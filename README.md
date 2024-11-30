@@ -40,7 +40,7 @@ automatically batches of structure predictions on GPU, and gathering the results
 global ranking and a variety of plots.
 
 MassiveFold uses [AFmassive](https://github.com/GBLille/AFmassive), [ColabFold](https://github.com/sokrypton/ColabFold) 
-or [AlphaFold3](https://github.com/google-deepmind/alphafold3) as inference engine; AFmassive is an updated version of Björn 
+or [AlphaFold3](https://github.com/google-deepmind/alphafold3) as inference engine (AlphaFold3 only for protein/DNA/RNA complexes for now); AFmassive is an updated version of Björn 
 Wallner's [AFsample](https://github.com/bjornwallner/alphafoldv2.2.0/) that offers additional diversity parameters for 
 massive sampling.
 
