@@ -166,7 +166,7 @@ cd MassiveFold
 - the **user** only needs to install the remaining files:
 ```bash
 cd MassiveFold
-./install.sh --no-env --alphafold-db <AF_DB_PATH> --alphafold3-db <AF3_DB_PATH> --colabfold-db <CF_DB_PATH> 
+./install.sh --no-env --alphafold-db <AF_DB_PATH> --colabfold-db <CF_DB_PATH> --alphafold3-db <AF3_DB_PATH>
 ```
 
 3. **Create header files**  
@@ -314,10 +314,15 @@ To use it on Jean Zay, the only installation steps are:
 git clone https://github.com/GBLille/MassiveFold.git
 ./install.sh
 ```
+
+To use AlphaFold3, copy your weights to the `~/af3_datadir` directory.
+
 The same [file architecture](#tree) is built, follow the [usage](#usage) section to use MassiveFold.
 
-And specify the project you want to use in the `AFmassive_params.json` or `ColabFold_params.json`, replacing the 
-`<project>` value by the 3-letters project name.  
+And specify the project you want to use in the `AFmassive_params.json` or `ColabFold_params.json` or `AlphaFold3_params.json`, 
+replacing the `<project>` value by the 3-letters project name.  
+
+***N.B.***: on Jean-Zay, AlphaFold3 only runs on A100 and H100  
 
 ### Hardware recommendations
 
