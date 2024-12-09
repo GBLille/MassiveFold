@@ -21,7 +21,7 @@ params = json.load(sys.stdin)
 
 if '$tool' == 'AFmassive':
   params['massivefold']['run_massivefold'] = 'run_AFmassive.py'
-if '$tool' == 'AlphaFold':
+if '$tool' == 'AlphaFold3':
   params['massivefold']['run_massivefold'] = 'run_alphafold.py'
 params['massivefold']['run_massivefold_plots'] = 'massivefold_plots.py'
 params['massivefold']['data_dir'] = '$(realpath $db)'
@@ -201,8 +201,10 @@ cp massivefold/run_massivefold.sh $runs
 cp -r massivefold/parallelization/headers $runs
 
 if [[ $host_is_jeanzay == "true" ]]; then
+  mkdir $HOME/af3_datadir/
+  ln -s $ALPHAFOLD3DB/* $HOME/af3_datadir/
   cp massivefold/parallelization/jeanzay_AFmassive_params.json $runs/AFmassive_params.json
-  cp massivefold/parallelization/jeanzay_AFmassive_params.json $runs/alphafold3_params.json
+  cp massivefold/parallelization/jeanzay_AlphaFold3_params.json $runs/AlphaFold3_params.json
   cp massivefold/parallelization/jeanzay_ColabFold_params.json $runs/ColabFold_params.json
   echo "Taking Jean Zay's prebuilt headers and renaming them."
   mv $runs/headers/example_header_alignment_jeanzay.slurm $runs/headers/alignment.slurm
