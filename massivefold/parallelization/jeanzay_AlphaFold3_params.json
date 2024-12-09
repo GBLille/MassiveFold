@@ -1,25 +1,28 @@
 {
     "massivefold": {
-        "run_massivefold": "",
+        "run_massivefold": "run_alphafold.py",
         "run_massivefold_plots": "../massivefold/massivefold_plots.py",
-        "data_dir": "",
-        "jobfile_headers_dir": "",
+        "data_dir": "$HOME/af3_datadir",
+        "jobfile_headers_dir": "./headers",
         "jobfile_templates_dir": "../massivefold/parallelization/templates/alphafold3",
         "output_dir": "./output",
         "logs_dir": "./log",
         "input_dir": "./input",
         "scripts_dir": "../massivefold/parallelization",
-        "pkl_format":"full"
+        "pkl_format": "full"
     },
     "custom_params": {
-        "jeanzay_gpu": "v100",
+        "jeanzay_gpu": "a100",
         "jeanzay_project": "<project>",
-        "jeanzay_account": "<project>@v100",
-        "jeanzay_gpu_with_memory": "v100", 
+        "jeanzay_account": "<project>@a100",
+        "jeanzay_gpu_with_memory": "a100", 
         "jeanzay_alignment_time": "10:00:00",
         "jeanzay_jobarray_time": "19:59:59"
     },
-    "AFM_run": {
+    "AF3_run": {
+        "entities": [],
+        "model_preset": "multimer",
+        "max_template_date": "2024-11-28"
     },
     "plots": {
         "MF_plots_top_n_predictions": "10",
