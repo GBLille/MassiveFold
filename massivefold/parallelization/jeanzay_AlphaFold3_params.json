@@ -4,7 +4,7 @@
         "run_massivefold_plots": "../massivefold/massivefold_plots.py",
         "data_dir": "$HOME/af3_datadir",
         "jobfile_headers_dir": "./headers",
-        "jobfile_templates_dir": "../massivefold/parallelization/templates/alphafold3",
+        "jobfile_templates_dir": "../massivefold/parallelization/templates",
         "output_dir": "./output",
         "logs_dir": "./log",
         "input_dir": "./input",
