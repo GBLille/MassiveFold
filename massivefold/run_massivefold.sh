@@ -323,11 +323,12 @@ elif eval $conditions_to_align; then
 elif [[ $tool == "AFmassive" ]] && [[ -d  $msas_precomputed/msas ]]; then
   echo "$msas_precomputed are valid."
   echo "Using AFmassive"
-  mkdir -p ${output_dir}/${sequence_name}/
+  mkdir -p ${output_dir}/${sequence_name}
   ln -s $(realpath $msas_precomputed/msas) ${output_dir}/${sequence_name}/
 elif [[ $tool == "AlphaFold3" ]] && [[ -f  $msas_precomputed/msas_alphafold3/msas_alphafold3_data.json ]]; then
   echo "$msas_precomputed are valid."
   echo "Using AlphaFold3"
+  mkdir -p ${output_dir}/${sequence_name}/${run_name}
   ./${scripts_dir}/unifier.py \
     --conversion input_inference \
     --to_convert $msas_precomputed/msas_alphafold3/msas_alphafold3_data.json \
