@@ -71,7 +71,7 @@ install_env () {
     conda env create -f mf-alphafold3.yml
     conda activate mf-alphafold3
     build_data
-    wget -O $CONDA_PREFIX/bin/run_alphafold.py https://raw.githubusercontent.com/google-deepmind/alphafold3/2eb6555de502d3ec8b6616df718861127cb39c4a/run_alphafold.py
+    wget -O $CONDA_PREFIX/bin/run_alphafold.py https://raw.githubusercontent.com/google-deepmind/alphafold3/adb131f010d0b011586bc6caf3eda8e822e02f5a/run_alphafold.py
     sed -i '1i #!/usr/bin/env python' $CONDA_PREFIX/bin/run_alphafold.py
     chmod +x $CONDA_PREFIX/bin/run_alphafold.py
   fi

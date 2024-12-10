@@ -13,6 +13,8 @@ Usage: $USAGE\n\
     -s| --sequence: path of the sequence(s) to infer, should be a 'fasta' file \n\
     -r| --run: name chosen for the run to organize in outputs.\n\
     -p| --predictions_per_model: number of predictions computed for each neural network model.\n\
+        If used with -t AlphaFold3, -p is the number of seeds used. Each seed will have 5 samples predicted.\n\
+        In total, with -p n, you will have 5n predictions computed.\n\
     -f| --parameters: json file's path containing the parameters used for this run.\n\
     -t| --tool: (default: 'AFmassive') Use either AFmassive, AlphaFold3 or ColabFold in structure prediction for MassiveFold\n\
 \n\
