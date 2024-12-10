@@ -131,7 +131,7 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
       sequence,
       run_name,
       f"af3_batch_{batch}.json")
-    os.makedirs(os.path.dirname(alphafold3_input))
+    #os.makedirs(os.path.dirname(alphafold3_input))
     batch_input_json = json.load(open(input_json, 'r'))
     batch_input_json['name'] = 'batch_' + batch
     batch_input_json['modelSeeds'] = model_seeds
