@@ -315,7 +315,10 @@ git clone https://github.com/GBLille/MassiveFold.git
 ./install.sh
 ```
 
-To use AlphaFold3, copy your weights to the `~/af3_datadir` directory.
+To use AlphaFold3, copy your weights to the `~/af3_datadir` directory and run the following command:
+```bash
+ln -s /gpfsdsdir/dataset/Alphafold3/* ~/af3_datadir/
+```
 
 The same [file architecture](#tree) is built, follow the [usage](#usage) section to use MassiveFold.
 
