@@ -393,7 +393,7 @@ Activate the conda environment, then launch MassiveFold.
 conda activate massivefold
 ./run_massivefold.sh -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> -t <TOOL> 
 ```
-**N.B.**: on the Jean Zay cluster, load the massivefold module instead of activating the conda environment
+**N.B.**: on the Jean Zay cluster, load the massivefold module instead of activating the conda environment; first load the module arch/a100 to be able to load massivefold/1.3.* and run AlphaFold3 on A100.
 
 Example for AFmassive:
 ```bash
