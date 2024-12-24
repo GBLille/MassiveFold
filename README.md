@@ -70,8 +70,8 @@ all the structure predictions are over.
 
 ## Installation
 
-MassiveFold was developed to run massive sampling with [AFmassive](https://github.com/GBLille/AFmassive) and 
-[ColabFold](https://github.com/sokrypton/ColabFold) and relies on them for its installation.
+MassiveFold was developed to run massive sampling with [AFmassive](https://github.com/GBLille/AFmassive), 
+[ColabFold](https://github.com/sokrypton/ColabFold) and [AlphaFold3](https://github.com/google-deepmind/alphafold3), and relies on them for its installation.
 
 ### Steps
 
@@ -192,12 +192,10 @@ parameters in your headers, and then in the `AFmassive_params.json` file and/or 
 To illustrate these "special needs", here is an example of parameters that can be used on the French national Jean Zay 
 cluster to specify GPU type, time limits or the project on which the hours are used:
 
-Go to `AFmassive_params.json` and/or `ColabFold_params.json` location:
+Go to `AFmassive_params.json`/`ColabFold_params.json`/`AlphaFold3_params.json` location and modify it:
 ```bash
 cd MassiveFold/massivefold_runs
-```
-Modify `AFmassive_params.json` and/or `ColabFold_params.json` and/or `AlphaFold3_params.json`:
-```json
+
 "custom_params":
 {
     "jeanzay_gpu": "v100",
@@ -271,8 +269,8 @@ that can also be used as examples for your own infrastructure.
 #### How to add a parameter
 
 - Add **\$new_parameter** or **\$\{new_parameter\}** in the template's header where you want its value to be set and 
-in the "custom_params" section of `AFmassive_params.json` and/or `ColabFold_params.json` where its value can be 
-specified and modified conveniently for each run.
+in the "custom_params" section of `AFmassive_params.json` and/or `ColabFold_params.json` and/or `AlphaFold3_params.json` 
+where its value can be specified and modified conveniently for each run.
 
 **Example** in the json parameters file for Jean Zay headers:
 ```json
@@ -329,9 +327,15 @@ replacing the `<project>` value by the 3-letters project name.
 
 ### Hardware recommendations
 
-We recommend a 4 TB fast storage to host the sequence databases for AFmassive and ColabFold. The requirements in RAM 
-depend on the length of the sequence(s) but 128GB should work for the majority of cases, both for AFmassive and 
-ColabFold. A GPU with at least 16 GB RAM is also recommended, knowing that more memory allows to model larger systems. 
+We recommend a 5 TB fast storage to host the sequence databases for AFmassive, ColabFold and AlphaFold3. The requirements in RAM 
+depend on the length of the sequence(s) but 128GB should work in most cases. A GPU with at least 16 GB RAM is also recommended, 
+knowing that more memory allows to model larger systems. 
+
+## Uninstallation
+
+To uninstall MassiveFold, remove the three conda environments (`massivefold`, `mf-colabfold` and `mf-alphafold3`) and 
+remove the `MassiveFold` folder you cloned. Make sure you copy all the files and folders you want to keep 
+from the `output` and `log` directories somewhere else. 
 
 ## Usage
 
@@ -443,8 +447,8 @@ Usage: ./run_massivefold.sh -s str -r str -p int -f str -t str [ -b int | [[-C s
 
 ### Inference workflow
 
-It launches MassiveFold with the same parameters introduced above but instead of running AFmassive or ColabFold a single 
-time, it divides it into multiple batches.
+It launches MassiveFold with the same parameters introduced above but instead of running AFmassive or ColabFold or 
+AlphaFold3 a single time, it divides it into multiple batches.
 
 For the following examples, we assume that **--model_preset=multimer** as it is the majority of cases to run MassiveFold
 in parallel.
@@ -667,7 +671,7 @@ massivefold_plots.py --help
 
 ### Uniref
 
-While using AlphaFold2 or AlphaFold2 based software like AFmassive, you can encounter a bug similar to this one in the 
+While using AlphaFold2 or another AlphaFold2 based software like AFmassive, you can encounter a bug similar to this one in the 
 msas generation:  
 
 `WARNING: maximum number of residues 32763 exceeded in sequence UniRef100_A0A5E4B6R9_consensus`  
