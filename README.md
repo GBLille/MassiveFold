@@ -14,6 +14,7 @@
     * [How to add a parameter](#how-to-add-a-parameter)
   * [Installation on Jean Zay](#installation-on-jean-zay)
   * [Hardware recommendations](#hardware-recommendations)
+* [Uninstallation](#uninstallation)
 * [Usage](#usage)
   * [Inference workflow](#inference-workflow)
   * [Parameters](#parameters)
