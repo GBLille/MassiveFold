@@ -15,6 +15,7 @@ export XLA_CLIENT_MEM_FRACTION=1.5
 '
 sequence_name=$sequence_name
 run_name=$run_name
+num_diffusion_samples=$num_diffusion_samples
 data_dir=$data_dir
 scripts_dir=$scripts_dir
 max_template_date=$max_template_date
@@ -41,6 +42,7 @@ echo "run_alphafold.py
   --db_dir $${data_dir}
   --model_dir $${data_dir}
   --output_dir $${output_path}
+  --num_diffusion_samples $${num_diffusion_samples}
   --jackhmmer_binary_path $$(which jackhmmer)
   --hmmalign_binary_path $$(which hmmalign)
   --hmmbuild_binary_path $$(which hmmbuild)
@@ -53,6 +55,7 @@ time run_alphafold.py \
   --db_dir $${data_dir} \
   --model_dir $${data_dir} \
   --output_dir $${output_path} \
+  --num_diffusion_samples $${num_diffusion_samples} \
   --jackhmmer_binary_path $$(which jackhmmer) \
   --hmmalign_binary_path $$(which hmmalign) \
   --hmmbuild_binary_path $$(which hmmbuild) \

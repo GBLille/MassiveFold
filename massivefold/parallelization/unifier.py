@@ -67,20 +67,27 @@ def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
   assert os.path.exists(json_params) and json_params.endswith('.json'), \
   "Please provide a valid path to a json file with --json_params"
   
-  template_dir = json.load(open(json_params, 'r'))['massivefold']['jobfile_templates_dir']
+  all_params = json.load(open(json_params, 'r')) 
+  template_dir = all_params['massivefold']['jobfile_templates_dir']
   json_template = os.path.realpath(os.path.join(template_dir, "AlphaFold3", "af3_input.json"))
-  with open(json_template, 'r') as template:
-    input_json = json.load(template)
+  json_input = json.load(open(json_template, 'r'))
 
   all_chain_ids = string.ascii_uppercase + string.ascii_lowercase
   records = list(SeqIO.parse(fasta_path, "fasta"))
-  entities = json.load(open(json_params, 'r'))['AF3_run']['entities']
+  entities = all_params['AF3_run']['entities']
 
   assert len(records) == len(entities), \
   f"The number of entities in {json_params} should be the same as in {fasta_path}."
   assert len(records) < len(all_chain_ids), \
   f"Using more than {len(all_chain_ids)} is currently unsupported"
   
+  glycans = []
+
+  if not glycans:
+    print("No glycan modification on input")
+  else:
+    print("{len(glycans)} detected on folowing entities:") #TO-DO: add entities nature in log
+
   sequence_dicts = []
   for entity, record, chain_id in zip(entities, records, all_chain_ids):
     all_sequences = [sequence[list(sequence.keys())[0]]["sequence"] for sequence in sequence_dicts]
@@ -92,11 +99,11 @@ def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
 
   # create AlphaFold3 input as json
   fasta_file = os.path.basename(fasta_path).split('.fa')[0]
-  json_input = json.load(open(json_template, 'r'))
   json_input['name'] = "msas_alphafold3"
   json_input['sequences'] = sequence_dicts
   with open(os.path.join(adapted_input_dir, fasta_file + '.json'), "w") as f:
     json.dump(json_input, f, indent=4)
+  print(json.dumps(json_input, indent=4))
 
 def convert_input(args, tool):
   fasta_file = args['input']
@@ -354,10 +361,12 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
     )
   )
   seeds = [ int(os.path.basename(x).replace('seed-', '').split('_sample')[0]) for x in seed_dirs ]
+  num_samples = 1 + max([ int(os.path.basename(x).split('sample-')[1]) for x in seed_dirs ])
+
   seeds_to_0 = [ seed - seeds[0] for seed in seeds ]
-  pred_nb = [ pred*5 for pred in seeds_to_0 ]
-  samples = [ i%5 for i, _ in enumerate(pred_nb) ]
-  pred_nb = [ pred + i%5 for i, pred in enumerate(pred_nb) ]
+  pred_nb = [ pred*num_samples for pred in seeds_to_0 ]
+  samples = [ i%num_samples for i, _ in enumerate(pred_nb) ]
+  pred_nb = [ pred + i%num_samples for i, pred in enumerate(pred_nb) ]
   
   df = pd.DataFrame( {
     "pred_nb": pred_nb,
@@ -366,7 +375,7 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
     "sample": samples 
   })
   df = df.merge(df_ranking_scores, on=["seed", "sample"], how="left")
-  df["pred_nb"] += pred_shift * 5
+  df["pred_nb"] += pred_shift * num_samples
   to_add = {}
   for seed in seed_dirs:
     pred_metrics = prediction_metrics(seed, "multimer")
