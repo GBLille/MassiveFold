@@ -121,10 +121,34 @@ def convert_input(args, tool):
       os.makedirs(adapted_input_dir)
     create_alphafold3_json(fasta_file, adapted_input_dir)
 
+def set_alphafold3_parameters(af3_input: dict, parameters: list):
+  for i, sequence in enumerate(af3_input["sequences"]):
+    entity = list(sequence.keys())[0]
+    for param in parameters:
+      if param == "unpairedMsa" or param == "pairedMsa":
+        af3_input['sequences'][i][entity][param] = ""
+      elif param == "templates":
+        af3_input["sequences"][i][entity][param] = []
+  return af3_input
+
 def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
   sequence = os.path.basename(os.path.dirname(os.path.dirname(input_json)))
-  logs_dir = json.load(open(params_json, 'r'))["massivefold"]["logs_dir"]
-  output_dir = json.load(open(params_json, 'r'))["massivefold"]["output_dir"]
+  experimental_params = ["unpairedMsa", "pairedMsa", "templates"]
+
+  all_params = json.load(open(params_json, 'r'))
+  massivefold_params = all_params["massivefold"]
+  af3_params = all_params["AF3_run"]
+  logs_dir = massivefold_params["logs_dir"]
+  output_dir = massivefold_params["output_dir"]
+
+
+  batch_input_json = json.load(open(input_json, 'r'))
+
+  experimental = [ i for i in af3_params if i in experimental_params and af3_params[i] == "false" ]
+  if experimental:
+    print(f"Experimental parameters in use: {', '.join(experimental)}")
+    batch_input_json = set_alphafold3_parameters(batch_input_json, experimental)
+
   batch_filename = os.path.basename(batches)
   run_name = batch_filename.replace(f"{sequence}_", "").replace("_batches.json", "")
 
@@ -139,10 +163,10 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
       run_name,
       f"af3_batch_{batch}.json")
     #os.makedirs(os.path.dirname(alphafold3_input))
-    batch_input_json = json.load(open(input_json, 'r'))
-    batch_input_json['name'] = 'batch_' + batch
-    batch_input_json['modelSeeds'] = model_seeds
-    json.dump(batch_input_json, open(alphafold3_input, 'w'), indent=4)
+    single_batch = batch_input_json.copy()
+    single_batch['name'] = 'batch_' + batch
+    single_batch['modelSeeds'] = model_seeds
+    json.dump(single_batch, open(alphafold3_input, 'w'), indent=4)
 
 def prepare_inference(args, tool):
   input = args['input']
@@ -150,7 +174,6 @@ def prepare_inference(args, tool):
   batches = args['batches']
   if tool == "AlphaFold3":
     get_alphafold3_batch_input(input, params, batches)
-
 
 def rename_pkl(pkl_files:list, output_path:str, pred_shift:int, sep:str):
   extract = lambda x: int(x.split('_')[-1].replace('.pickle', ''))
@@ -271,7 +294,6 @@ def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset
           'ptm': scores['ptm'],
           'plddts': scores['mean_plddt'],
           }])
-        
       all_preds = pd.concat([all_preds, new_pred], ignore_index=True)
   
   create_colabfold_ranking(all_preds, output_path, preset)

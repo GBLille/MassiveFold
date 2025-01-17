@@ -6,6 +6,9 @@
     },
     "AF3_run": {
         "entities": [],
+        "unpairedMsa": "true",
+        "pairedMsa": "true",
+        "templates": "ture",
         "model_preset": "multimer",
         "max_template_date": "2024-11-28"
     },
