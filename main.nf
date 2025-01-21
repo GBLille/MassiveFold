@@ -102,7 +102,6 @@ workflow {
 }
 
 process RUN_alignment {
-    container 'jysgro/colabfold:latest'
     tag "$seqFile.baseName"
     publishDir "result/$runName/alignment"
 
@@ -153,7 +152,6 @@ process Create_batchs_csv {
 
 process RUN_inference {
     tag " $sequence_name | batch#$id_batch"
-    container 'jysgro/colabfold:latest'
 
     publishDir "result/prediction/$sequence_name/$batch_model/$id_batch"
 
