@@ -50,7 +50,15 @@ with open('$param_file', 'w') as params_output:
 install_env () {
   env=$1
   source $(conda info --base)/etc/profile.d/conda.sh
-  if [[ $env == "massivefold" ]]; then
+
+  if [[ $env == "nextflow" ]]; then
+    echo "Installing Nextflow"
+    conda create -n nextflow -y
+    conda activate nextflow
+    conda install -c bioconda nextflow -y
+    echo "Nextflow installed successfully."
+
+  elif [[ $env == "massivefold" ]]; then
     echo "Installing MassiveFold environment"
     CONDA_OVERRIDE_CUDA="11.8" conda env create -f environment.yml
     
@@ -102,6 +110,10 @@ while true; do
       db_cf=true
       shift 2
       ;;
+    --install-nextflow)
+      install_nextflow=true
+      shift 1
+      ;;
     --no-env)
       do_not_create_env=true
       shift 1
@@ -123,9 +135,10 @@ done
 USAGE="\
 On Jean Zay cluster:\n\
   ./install.sh\n\
-Otherwise:\n\
-  ./install.sh [--only-envs] || --alphafold-db str --alphafold3-db str --colabfold-db str [--no-env]\n\n\
+Otherwise
+./install.sh [--install-nextflow] [--only-envs] || --alphafold-db str --alphafold3-db str --colabfold-db str [--no-env]
 ./install -h for more details"
+
 
 # help message
 if [[ $do_help == "true" ]]; then
@@ -152,6 +165,10 @@ if [[ $only_create_env == "true" ]]; then
   echo "Both environments installed, exiting."
   exit 1
 fi
+
+if [[ $install_nextflow == "true" ]]; then
+    install_env "nextflow"
+  fi
 
 if [ "$host" == 'jean-zay' ]; then
   host_is_jeanzay=true
