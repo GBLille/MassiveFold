@@ -69,8 +69,7 @@ workflow {
         params.predictions_per_model,
         params.batch_size,
         "ColabFold",
-        "",
-        params.bash_script)
+        "")
 
     batches_msa = batches_csv.splitCsv(header: true)
         .combine(msa_results)
@@ -127,11 +126,34 @@ process RUN_alignment {
 
     time colabfold_search $seqFile $data_dir ${seqFile.baseName}_msa --pairing_strategy \${pairing_strategy}
     """
+
+    stub:
+    """
+    # Create a directory for the MSA outputs
+    msa_dir="${seqFile.baseName}_msa"
+    mkdir -p "\$msa_dir"
+
+    # Read the FASTA file and extract the headers
+    grep '^>' $seqFile | while read -r line; do
+        # Remove the leading '>'
+        header=\$(echo "\$line" | sed 's/^>//')
+        # Replace unsafe characters with underscores
+        sanitized_header=\$(echo "\$header" | tr -c '[:alnum:]_' '_')
+        # Create the output file name
+        output_file="${seqFile.baseName}_\${sanitized_header}.a3m"
+        # Write stub content
+        echo "Stub content for \$line" > "\$output_file"
+    done
+    """
+
+
 }
 
 
 process Create_batchs_csv {
     tag "$sequence_name"
+
+    conda 'nextflow.yml'
 
     input:
     tuple val(sequence_name), path(msaFolder)
@@ -139,14 +161,20 @@ process Create_batchs_csv {
     val(batch_size)
     val(tool)
     val(models_to_use)
-    path(script)
 
     output:
     path("${sequence_name}_batches.csv")  //Output JSON file with batch details
 
     script:
     """
-    python3 create_batches_csv.py $predictions_per_model $batch_size "$models_to_use" "$sequence_name" "$tool"
+    create_batches_csv.py $predictions_per_model $batch_size "$models_to_use" "$sequence_name" "$tool"
+    """
+
+    stub:
+    """
+    which python
+    python -c "import numpy; print(numpy.__version__)"
+    create_batches_csv.py $predictions_per_model $batch_size "$models_to_use" "$sequence_name" "$tool"
     """
 }
 
@@ -196,15 +224,23 @@ process RUN_inference {
         --recycle-early-stop-tolerance $recycle_early_stop_tolerance \
         --stop-at-score $stop_at_score 
     """
-}
-
-    // $use_dropout \
-    // $disable_cluster_profile
+        // $use_dropout \
+        // $disable_cluster_profile
     
-// BOOL_use_dropout=$use_dropout
+    // BOOL_use_dropout=$use_dropout
     // if $BOOl_disable_cluster_profile; then
     //     echo "Parameter --disable-cluster-profile set"
     //     disable_cluster_profile="--disable-cluster-profile"
+
+
+    stub:
+    """
+    echo "Running in stub mode for batch $id_batch"
+    # Simulate output files
+    mkdir -p result_${sequence_name}_${run_name}_${id_batch}
+    echo "Stub output for $sequence_name, batch $id_batch" > result_${sequence_name}_${run_name}_${id_batch}/prediction_stub.txt
+    """
+}
 
 process Extract_Scores {
     tag { "Extract Score for $sequence_name #$id_batch" }
@@ -218,6 +254,10 @@ process Extract_Scores {
     script:
     """
     extract_score.py $id_batch $sequence_name $batch_start $batch_end $batch_model $resultsDir
+    """
+    stub:
+    """
+    touch ${id_batch}_stub_output.csv
     """
 }
 
@@ -241,5 +281,11 @@ process Gather_scores {
         tail -n +2 \$csv_file >> temp
     done
     mv temp final_combined_scores.csv
+    """
+
+    stub:
+    """
+    ls 
+    echo 'File,ID_Batch,Sequence_Name,Batch_Start,Batch_End,Batch_Model,Ranking_PTM,Ranking_IPTM,Ranking_Debug' > final_combined_scores.csv
     """
 }

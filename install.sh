@@ -53,10 +53,8 @@ install_env () {
 
   if [[ $env == "nextflow" ]]; then
     echo "Installing Nextflow"
-    conda create -n nextflow -y
+    CONDA_OVERRIDE_CUDA="11.8" conda env create -f nextflow.yml
     conda activate nextflow
-    conda install -c bioconda nextflow -y
-    echo "Nextflow installed successfully."
 
   elif [[ $env == "massivefold" ]]; then
     echo "Installing MassiveFold environment"

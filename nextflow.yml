@@ -1,0 +1,8 @@
+name: nextflow
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - nextflow
+  - python=3.12
+  - numpy
