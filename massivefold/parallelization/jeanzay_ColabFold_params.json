@@ -1,7 +1,7 @@
 {
     "massivefold": {
         "run_massivefold_plots": "../massivefold/massivefold_plots.py",
-        "data_dir": "/gpfsdswork/dataset/ColabFold/230517",
+        "data_dir": "$DSDIR/ColabFold/230517",
         "jobfile_headers_dir": "./headers",
         "jobfile_templates_dir": "../massivefold/parallelization/templates",
         "output_dir": "./output",
