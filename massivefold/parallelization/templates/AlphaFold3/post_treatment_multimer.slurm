@@ -24,6 +24,10 @@ time $${scripts_dir}/unifier.py \
 echo "$${scripts_dir}/organize_outputs.py --batches_path $$output"
 time $${scripts_dir}/organize_outputs.py --batches_path $$output
 
+# Reducing batches file by extracting msas and templates
+echo "$${scripts_dir}/lighten_pkl.py $$output"
+time $${scripts_dir}/lighten_pkl.py $$output
+
 # plots
 echo "Generating plots"
 
