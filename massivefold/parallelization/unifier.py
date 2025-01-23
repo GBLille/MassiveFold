@@ -349,7 +349,7 @@ def af3_move_and_rename(df, output_dir):
     if not os.path.exists(path_to_confidence):
       os.makedirs(path_to_confidence)
     model_confidence_file = os.path.join(pred["original_dir"], 'summary_confidences.json')
-    new_confidence_file = os.path.join(os.path.dirname(pred["original_dir"]), "confidences", pred["ranked_name"].replace('.cif', '.json'))
+    new_confidence_file = os.path.join(os.path.dirname(pred["original_dir"]), "confidences", f'{pred["prediction_name"]}.json')
     cp(model_confidence_file, new_confidence_file)
 
     model_no_rank = os.path.join(os.path.dirname(pred["original_dir"]), '_'.join(os.path.basename(new_cif_name).split('_')[2:]))

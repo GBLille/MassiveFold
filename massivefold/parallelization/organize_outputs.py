@@ -67,7 +67,7 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
         pred_batch_map[prediction],
         jobname,
         'confidences',
-        f"ranked_{i}_{pred_new_name.replace('.cif', '.json')}") 
+        f"{pred_new_name.replace('.cif', '.json')}") 
       global_confidence_path = os.path.join(all_batches_path, 'confidences')
       if not os.path.exists(global_confidence_path):
         os.makedirs(global_confidence_path)
@@ -76,7 +76,7 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
         mv(old_confidence_path, new_confidence_path)
       except FileNotFoundError as e:
         print(e)
-        print(f"{pred_batch_map[prediction]}/confidences/ranked_{i}_{pred_new_name.replace('.cif', '.json')} not found")
+        print(f"{pred_batch_map[prediction]}/confidences/{pred_new_name.replace('.cif', '.json')} not found")
 
     # Move pdb files and rename with rank
     old_pdb_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pred_new_name) 
