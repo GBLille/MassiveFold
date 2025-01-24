@@ -103,6 +103,7 @@ workflow {
 process RUN_alignment {
     tag "$seqFile.baseName"
     publishDir "result/$runName/alignment"
+    label 'collabfold'
 
     input:
     path(seqFile)
@@ -180,9 +181,9 @@ process Create_batchs_csv {
 
 process RUN_inference {
     tag " $sequence_name | batch#$id_batch"
-
     publishDir "result/prediction/$sequence_name/$batch_model/$id_batch"
-
+    label 'collabfold'
+    
     input:
     tuple val(id_batch), val(sequence_name), val(batch_start), val(batch_end), val(batch_model), path(msaFolder)
     val(run_name)
