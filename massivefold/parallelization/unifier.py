@@ -76,17 +76,18 @@ def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
   records = list(SeqIO.parse(fasta_path, "fasta"))
   entities = all_params['AF3_run']['entities']
 
+
   assert len(records) == len(entities), \
   f"The number of entities in {json_params} should be the same as in {fasta_path}."
   assert len(records) < len(all_chain_ids), \
   f"Using more than {len(all_chain_ids)} is currently unsupported"
-  
-  glycans = []
 
-  if not glycans:
-    print("No glycan modification on input")
-  else:
+  ligand = all_params['AF3_run']['ligand']
+  glycans = []
+  if glycans:
     print("{len(glycans)} detected on folowing entities:") #TO-DO: add entities nature in log
+  else:
+    print("No glycan modification on input")
 
   sequence_dicts = []
   for entity, record, chain_id in zip(entities, records, all_chain_ids):
@@ -108,17 +109,13 @@ def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
 def convert_input(args, tool):
   fasta_file = args['input']
   input_dir = os.path.dirname(fasta_file)
-
   if tool == 'ColabFold':
     adapted_input_dir =  f"{input_dir}/converted_for_colabfold/" 
-    if not os.path.exists(adapted_input_dir):
-      os.makedirs(adapted_input_dir)
+    os.makedirs(adapted_input_dir, exist_ok=True)
     convert_colabfold_fasta(fasta_file)
-
   elif tool == 'AlphaFold3':
     adapted_input_dir = f"{input_dir}/alphafold3_json_requests/" 
-    if not os.path.exists(adapted_input_dir):
-      os.makedirs(adapted_input_dir)
+    os.makedirs(adapted_input_dir, exist_ok=True)
     create_alphafold3_json(fasta_file, adapted_input_dir)
 
 def set_alphafold3_parameters(af3_input: dict, parameters: list):
@@ -131,9 +128,22 @@ def set_alphafold3_parameters(af3_input: dict, parameters: list):
         af3_input["sequences"][i][entity][param] = []
   return af3_input
 
+
+def af3_alter_input(batch_input_json, af3_params):
+  alteration_params = ["unpairedMsa", "pairedMsa", "templates"]
+  altered_values = {
+    "unpairedMsa": "false",
+    "pairedMsa": "false",
+    "templates": "false"
+  }
+  alteration = [ i for i in af3_params if i in alteration_params and af3_params[i] == altered_values[i] ]
+  if alteration:
+    print(f"Input alteration parameters in use: {', '.join(alteration)}")
+    batch_input_json = set_alphafold3_parameters(batch_input_json, alteration)
+  return batch_input_json
+
 def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
   sequence = os.path.basename(os.path.dirname(os.path.dirname(input_json)))
-  experimental_params = ["unpairedMsa", "pairedMsa", "templates"]
 
   all_params = json.load(open(params_json, 'r'))
   massivefold_params = all_params["massivefold"]
@@ -141,28 +151,19 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
   logs_dir = massivefold_params["logs_dir"]
   output_dir = massivefold_params["output_dir"]
 
-
+  # modify input file according to MassiveFold parameters
   batch_input_json = json.load(open(input_json, 'r'))
-
-  experimental = [ i for i in af3_params if i in experimental_params and af3_params[i] == "false" ]
-  if experimental:
-    print(f"Experimental parameters in use: {', '.join(experimental)}")
-    batch_input_json = set_alphafold3_parameters(batch_input_json, experimental)
-
+  batch_input_json = af3_alter_input(batch_input_json, af3_params)
   batch_filename = os.path.basename(batches)
   run_name = batch_filename.replace(f"{sequence}_", "").replace("_batches.json", "")
 
+  # distribute input file for each batches of the run
   batches = json.load(open(batches, 'r'))
   for batch in batches:
     starting_seed = random.randint(0, 1_000_000)
     num_seeds = int(batches[batch]['end']) - int(batches[batch]['start']) + 1
     model_seeds = [ starting_seed  + i for i in range(num_seeds)]
-    alphafold3_input = os.path.join(
-      output_dir,
-      sequence,
-      run_name,
-      f"af3_batch_{batch}.json")
-    #os.makedirs(os.path.dirname(alphafold3_input))
+    alphafold3_input = os.path.join(output_dir, sequence, run_name, f"af3_batch_{batch}.json")
     single_batch = batch_input_json.copy()
     single_batch['name'] = 'batch_' + batch
     single_batch['modelSeeds'] = model_seeds
@@ -298,6 +299,24 @@ def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset
   
   create_colabfold_ranking(all_preds, output_path, preset)
 
+def convert_output(tool):
+  if tool not in ["ColabFold", "AlphaFold3"]:
+    print(f"No conversion needed for {tool} output")
+    return
+  with open(FLAGS.batches_file, 'r') as batches_json:
+    all_batches_infos = json.load(batches_json)
+  batches = [ batch for batch in os.listdir(FLAGS.to_convert) if batch.startswith('batch_') ]
+  batches = sorted(batches, key=lambda x: int(x.split('_')[1]))
+
+  for batch in batches:
+    batch_number = batch.split('_')[1]
+    batch_shift = int(all_batches_infos[batch_number]['start'])
+    if tool == "ColabFold":
+      convert_colabfold_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
+      move_output(FLAGS.to_convert, batch)
+    elif tool == "AlphaFold3":
+      convert_alphafold3_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
+
 def convert_colabfold_output(output_path:str, pred_shift:int):
   pkls = [ file for file in os.listdir(output_path) if file.endswith('.pickle') ]
   pdbs = [ file for file in os.listdir(output_path) if file.endswith('.pdb') and 'rank' in file ]
@@ -312,6 +331,52 @@ def convert_colabfold_output(output_path:str, pred_shift:int):
   renamed_pdbs = rename_pdb(pdbs, output_path, pred_shift, sep=sep)
   rank_predictions(output_path, pdbs, renamed_pdbs.values(), preset=sep)
   rename_pkl(pkls, output_path, pred_shift, sep=sep)
+
+def convert_alphafold3_output(output_path: str, pred_shift: int):
+  df_ranking_scores = pd.read_csv(os.path.join(output_path, "ranking_scores.csv"))
+  seed_dirs = [ os.path.join(output_path, seed) for seed in os.listdir(output_path) if seed.startswith('seed-')]
+  seed_dirs = sorted(
+    seed_dirs,
+    key=lambda x: (
+      int(os.path.basename(x).replace('seed-', '').split('_sample')[0]),
+      int(os.path.basename(x).split('_sample-')[1])
+    )
+  )
+  seeds = [ int(os.path.basename(x).replace('seed-', '').split('_sample')[0]) for x in seed_dirs ]
+  num_samples = 1 + max([ int(os.path.basename(x).split('sample-')[1]) for x in seed_dirs ])
+
+  seeds_to_0 = [ seed - seeds[0] for seed in seeds ]
+  pred_nb = [ pred*num_samples for pred in seeds_to_0 ]
+  samples = [ i%num_samples for i, _ in enumerate(pred_nb) ]
+  pred_nb = [ pred + i%num_samples for i, pred in enumerate(pred_nb) ]
+  
+  df = pd.DataFrame( {
+    "pred_nb": pred_nb,
+    "original_dir": seed_dirs,
+    "seed": seeds,
+    "sample": samples 
+  })
+  df = df.merge(df_ranking_scores, on=["seed", "sample"], how="left")
+  df["pred_nb"] += pred_shift * num_samples
+  to_add = {}
+  for seed in seed_dirs:
+    pred_metrics = prediction_metrics(seed, "multimer")
+    for metric in pred_metrics:
+      if metric not in to_add:
+        to_add[metric] = [pred_metrics[metric]]
+      else:
+        to_add[metric].append(pred_metrics[metric])
+  for new_metric in to_add:
+    df[new_metric] = to_add[new_metric]
+
+  df["prediction_name"] = "af3" + "_seed_" + df["seed"].astype(str) \
+    + "_sample_" + df["sample"].astype(str) + "_pred_" + df["pred_nb"].astype(str)
+  df["pkl_name"] = "result_" + df["prediction_name"] + ".pkl"
+  df = exctract_plddts_create_pkl(df, output_path)
+  df = df.sort_values(['ranking_score', 'iptm', 'ptm', 'mean_plddt'], ascending=False, ignore_index=True)
+  df['rank'] = df.index
+  df["ranked_name"] = "ranked_" + df["rank"].astype(str) + "_" + df["prediction_name"] + ".cif"
+  af3_move_and_rename(df, output_path)
 
 def prediction_metrics(input_dir: str, nature: str):
   prediction_confs = os.path.join(input_dir, 'summary_confidences.json')
@@ -381,85 +446,26 @@ def exctract_plddts_create_pkl(df, output_dir):
   updated_df = pd.DataFrame(pred_list)
   return updated_df
 
-def convert_alphafold3_output(output_path: str, pred_shift: int):
-  df_ranking_scores = pd.read_csv(os.path.join(output_path, "ranking_scores.csv"))
-  seed_dirs = [ os.path.join(output_path, seed) for seed in os.listdir(output_path) if seed.startswith('seed-')]
-  seed_dirs = sorted(
-    seed_dirs,
-    key=lambda x: (
-      int(os.path.basename(x).replace('seed-', '').split('_sample')[0]),
-      int(os.path.basename(x).split('_sample-')[1])
-    )
-  )
-  seeds = [ int(os.path.basename(x).replace('seed-', '').split('_sample')[0]) for x in seed_dirs ]
-  num_samples = 1 + max([ int(os.path.basename(x).split('sample-')[1]) for x in seed_dirs ])
-
-  seeds_to_0 = [ seed - seeds[0] for seed in seeds ]
-  pred_nb = [ pred*num_samples for pred in seeds_to_0 ]
-  samples = [ i%num_samples for i, _ in enumerate(pred_nb) ]
-  pred_nb = [ pred + i%num_samples for i, pred in enumerate(pred_nb) ]
-  
-  df = pd.DataFrame( {
-    "pred_nb": pred_nb,
-    "original_dir": seed_dirs,
-    "seed": seeds,
-    "sample": samples 
-  })
-  df = df.merge(df_ranking_scores, on=["seed", "sample"], how="left")
-  df["pred_nb"] += pred_shift * num_samples
-  to_add = {}
-  for seed in seed_dirs:
-    pred_metrics = prediction_metrics(seed, "multimer")
-    for metric in pred_metrics:
-      if metric not in to_add:
-        to_add[metric] = [pred_metrics[metric]]
-      else:
-        to_add[metric].append(pred_metrics[metric])
-  for new_metric in to_add:
-    df[new_metric] = to_add[new_metric]
-
-  df["prediction_name"] = "af3" + "_seed_" + df["seed"].astype(str) \
-    + "_sample_" + df["sample"].astype(str) + "_pred_" + df["pred_nb"].astype(str)
-  df["pkl_name"] = "result_" + df["prediction_name"] + ".pkl"
-  df = exctract_plddts_create_pkl(df, output_path)
-  df = df.sort_values(['ranking_score', 'iptm', 'ptm', 'mean_plddt'], ascending=False, ignore_index=True)
-  df['rank'] = df.index
-  df["ranked_name"] = "ranked_" + df["rank"].astype(str) + "_" + df["prediction_name"] + ".cif"
-  af3_move_and_rename(df, output_path)
-
 def main(argv):
-  
   assert FLAGS.conversion and FLAGS.to_convert, \
   'Parameter --conversion and --to_convert are mandatory.'
   
   if FLAGS.conversion == 'input':
-    assert os.path.isfile(FLAGS.to_convert) and FLAGS.to_convert.endswith('.fasta')
+    assert os.path.isfile(FLAGS.to_convert) and FLAGS.to_convert.endswith('.fasta'), \
+    f"Fasta file is invalid {FLAGS.to_convert}"
     convert_input({"input": FLAGS.to_convert}, FLAGS.tool)
 
   elif FLAGS.conversion == 'input_inference':
-    assert os.path.isfile(FLAGS.batches_file) and FLAGS.batches_file.endswith('.json')
-    assert os.path.isfile(FLAGS.to_convert) and FLAGS.to_convert.endswith('.json')
-    prepare_inference({"input": FLAGS.to_convert,
-                       "params": FLAGS.json_params,
-                       "batches": FLAGS.batches_file},
-                      FLAGS.tool)
+    assert os.path.isfile(FLAGS.batches_file) and FLAGS.batches_file.endswith('.json'), \
+    f"Json batches file is invalid: {FLAGS.batches_file}"
+    assert os.path.isfile(FLAGS.to_convert) and FLAGS.to_convert.endswith('.json'), \
+    f"Json request file is invalid: {FLAGS.to_convert}"
+    arguments = {"input": FLAGS.to_convert, "params": FLAGS.json_params, "batches": FLAGS.batches_file}
+    prepare_inference(arguments, FLAGS.tool)
 
   elif FLAGS.conversion == 'output':
-    assert FLAGS.batches_file
-    with open(FLAGS.batches_file, 'r') as batches_json:
-      all_batches_infos = json.load(batches_json)
-
-    batches = [ batch for batch in os.listdir(FLAGS.to_convert) if batch.startswith('batch_') ]
-    batches = sorted(batches, key=lambda x: int(x.split('_')[1]))
-
-    for batch in batches:
-      batch_number = batch.split('_')[1]
-      batch_shift = int(all_batches_infos[batch_number]['start'])
-      if FLAGS.tool == "ColabFold":
-        convert_colabfold_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
-        move_output(FLAGS.to_convert, batch)
-      elif FLAGS.tool == "AlphaFold3":
-        convert_alphafold3_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
+    assert FLAGS.batches_file, 'Json batches file (--batches_file) is mandatory for output conversion (--conversion output)'
+    convert_output(FLAGS.tool)
 
 if __name__ == "__main__": 
   app.run(main)
