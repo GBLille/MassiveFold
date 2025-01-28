@@ -1,4 +1,4 @@
-name: nextflow
+name: massivefold-nf
 channels:
   - conda-forge
   - defaults

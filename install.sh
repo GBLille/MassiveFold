@@ -51,10 +51,20 @@ install_env () {
   env=$1
   source $(conda info --base)/etc/profile.d/conda.sh
 
+  if [ -n "$( command -v mamba )" ]; then
+      CONDA_BIN=$( command -v mamba )
+      echo Using mamba.
+  elif [ -n "$( command -v conda )" ]; then
+      CONDA_BIN=$( command -v conda )
+      echo Using conda.
+  else
+      echo Neither mamba nor conda is present, exiting.
+      return 1
+  fi
+
   if [[ $env == "nextflow" ]]; then
     echo "Installing Nextflow"
-    CONDA_OVERRIDE_CUDA="11.8" conda env create -f nextflow.yml
-    conda activate nextflow
+    CONDA_OVERRIDE_CUDA="11.8" $CONDA_BIN env create -f mf-nextflow.yml
 
   elif [[ $env == "massivefold" ]]; then
     echo "Installing MassiveFold environment"
@@ -108,7 +118,7 @@ while true; do
       db_cf=true
       shift 2
       ;;
-    --install-nextflow)
+    --env-nextflow)
       install_nextflow=true
       shift 1
       ;;
@@ -134,7 +144,7 @@ USAGE="\
 On Jean Zay cluster:\n\
   ./install.sh\n\
 Otherwise
-./install.sh [--install-nextflow] [--only-envs] || --alphafold-db str --alphafold3-db str --colabfold-db str [--no-env]
+./install.sh [--env-nextflow] [--only-envs] || --alphafold-db str --alphafold3-db str --colabfold-db str [--no-env]
 ./install -h for more details"
 
 

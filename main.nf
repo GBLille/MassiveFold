@@ -3,11 +3,11 @@ nextflow.enable.dsl = 2
 // Define the help message
 def helpMessage = '''
 Usage:
-    nextflow main.nf --sequence example/H1140.fasta --run test --database_dir ~/data/public/colabfold/ -profile docker
+    nextflow main.nf --sequence <path_to_sequences_file> --run <run_name> --database_dir <path_to_colabfold_db> -profile docker
 Required arguments:
     --sequence: path(s) of the sequence(s) to infer, should be a 'fasta' file or a list of files separated by commas.
     --run: name chosen for the run to organize outputs.
-    --database_dir : ~/data/public/colabfold
+    --database_dir : path to the local directory where the ColabFold database is located.
 
 Optional arguments:
     --parameters: json file's path containing the parameters used for this run.
@@ -26,8 +26,8 @@ Optional flags:
                  in --sequence and uses the longest prediction time found to compute the maximal number of predictions per batch.
     --recompute_msas: purges previous alignment step and recomputes MSAs.
 
-Example:
-    ./nextflow main.nf --sequence example/H1140.fasta --run test --database_dir ~/data/public/colabfold/ -profile docker -resume
+Example in the environment of a virtual machine in the IFB-Biosphere cloud:
+    nextflow main.nf --sequence examples/H1140.fasta --run test --database_dir ~/data/public/colabfold/ -profile docker -resume
 '''
 
 workflow {
