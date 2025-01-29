@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 USAGE="\
 ./run_massivefold.sh -s str -r str -p int -f str -t str [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]\n\
 ./run_massivefold.sh -h for more details "
@@ -19,7 +18,7 @@ Usage: $USAGE\n\
     -t| --tool: (default: 'AFmassive') Use either AFmassive, AlphaFold3 or ColabFold in structure prediction for MassiveFold\n\
 \n\
   Facultative arguments:\n\
-    -b| --batch_size: (default: 25) number of predictions per batch, should not be higher than -p.\n\
+    -b| --batch_size: (default: 25) number of predictions per batch. If -b > -p, batch size will be set to -p value.\n\
     -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).\n\
     -w| --wall_time: (default: 20) total time available for calibration computations, unit is hours.\n\
     -m| --msas_precomputed: path to directory that contains computed msas.\n\
@@ -109,22 +108,22 @@ while true; do
   esac
 done
 
+
 # check mandatory args
-if
+if 
   [ -z "$sequence_file" ] ||
-  [ -z "$tool" ] ||
   [ -z "$run_name" ] ||
   [ -z "$parameters_file" ]; then
   echo -e "Usage: $USAGE"
+  echo "Argument(s) missing"
+  exit 1
+elif [ -z "$tool" ] || ([[ $tool != "AFmassive" && $tool != "ColabFold" && $tool != "AlphaFold3" ]]); then
+  echo -e "Usage: $USAGE"
+  echo "Tool (-t) value should be set to 'AFmassive', 'AlphaFold3' or 'ColabFold'"
   exit 1
 fi
 
 echo "Tool used is $tool"
-
-if [[ $tool != "AFmassive" && $tool != "ColabFold" && $tool != "AlphaFold3" ]]; then
-  echo "Tool value is either 'AFmassive', 'AlphaFold3' or 'ColabFold'"
-  exit 1
-fi
 
 output_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['massivefold']['output_dir'])")
 logs_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['massivefold']['logs_dir'])")
