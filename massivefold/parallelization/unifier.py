@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import os
 from absl import flags, app
-from Bio.PDB.MMCIFParser import MMCIFParser
 from Bio import SeqIO
 import pickle
 from shutil import move as mv, copy as cp
@@ -76,13 +75,21 @@ def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
   records = list(SeqIO.parse(fasta_path, "fasta"))
   entities = all_params['AF3_run']['entities']
 
-
+  # possible entities: "protein", "rna", "dna", "ligand"
   assert len(records) == len(entities), \
   f"The number of entities in {json_params} should be the same as in {fasta_path}."
   assert len(records) < len(all_chain_ids), \
   f"Using more than {len(all_chain_ids)} is currently unsupported"
 
   ligand = all_params['AF3_run']['ligand']
+  for lig in ligand:
+    if lig["ccdCodes"] and lig["smiles"]:
+      raise ValueError(f"Chose either 'ccdCodes' or 'smiles' for ligand: {lig}")
+    elif not lig["ccdCodes"] and not lig["smiles"]:
+      continue
+    elif lig["ccdCodes"] or lig["smiles"]:
+      records.append(lig)
+
   glycans = []
   if glycans:
     print("{len(glycans)} detected on folowing entities:") #TO-DO: add entities nature in log
@@ -121,6 +128,8 @@ def convert_input(args, tool):
 def set_alphafold3_parameters(af3_input: dict, parameters: list):
   for i, sequence in enumerate(af3_input["sequences"]):
     entity = list(sequence.keys())[0]
+    if sequence != "protein":
+      continue
     for param in parameters:
       if param == "unpairedMsa" or param == "pairedMsa":
         af3_input['sequences'][i][entity][param] = ""
@@ -190,7 +199,8 @@ _pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pkl"
   if FLAGS.do_rename:
     for old in pkl_files:
       new = new_names[old]
-      mv(f"{output_path}/{old}", f"{output_path}/{new}")
+      #mv(f"{output_path}/{old}", f"{output_path}/{new}")
+      cp(f"{output_path}/{old}", f"{output_path}/{new}")
 
   return new_names
 
@@ -209,7 +219,8 @@ _ptm_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pdb"
   if FLAGS.do_rename:
     for old in pdb_files:
       new = new_names[old]
-      mv(f"{output_path}/{old}", f"{output_path}/{new}")
+      #mv(f"{output_path}/{old}", f"{output_path}/{new}")
+      cp(f"{output_path}/{old}", f"{output_path}/{new}")
 
   map_old_to_new = {
     f"alphafold2{old.split('alphafold2')[1].replace('.pdb', '')}": f"model{new_names[old].split('model')[1].replace('.pdb', '')}"
@@ -269,11 +280,11 @@ def move_output(output_path:str, batch):
     if FLAGS.do_rename:
       shutil.move(source, destination)
 
-def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset):
+def rank_colabfold_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset):
   jobname = [ name for name in os.listdir(output_path) if name.endswith('a3m') ]
   jobname = jobname[0].split('.')[0]
 
-  pickle_files = map(lambda x: f"{jobname}_all_{x.replace('.pdb', '.pickle').split('_unrelaxed_')[1]}", pdb_files)
+  pickle_files = map(lambda x: x.replace("_unrelaxed_", "_all_").replace('.pdb', '.pickle'), pdb_files)
   all_preds = pd.DataFrame()
 
   for pickle_name, pdb_name in zip(list(pickle_files), new_pdb_names):
@@ -282,20 +293,13 @@ def rank_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset
     pred_name = f"model_{pdb_name.split('_model_')[1].split('.')[0]}"
     with open(f"{output_path}/{pickle_name}", 'rb') as pickle_scores:
       scores = pickle.load(pickle_scores)
-      if preset == 'multimer':
-        new_pred = pd.DataFrame([{
-          'prediction': pred_name,
-          'iptm': scores['iptm'],
-          'ptm': scores['ptm'],
-          'iptm+ptm': 0.8 * scores['iptm'] + 0.2 * scores['ptm']
-          }])
-      elif preset == 'ptm':
-        new_pred = pd.DataFrame([{
-          'prediction': pred_name,
-          'ptm': scores['ptm'],
-          'plddts': scores['mean_plddt'],
-          }])
-      all_preds = pd.concat([all_preds, new_pred], ignore_index=True)
+    content = {"prediction": pred_name, "ptm": scores["ptm"]}
+    if "iptm" in scores:
+      content.update({"iptm": scores["iptm"], 'iptm+ptm': 0.8 * scores['iptm'] + 0.2 * scores['ptm']})
+    if "mean_plddt" in scores:
+      content.update({"plddts": scores["mean_plddt"]})
+    new_pred = pd.DataFrame([content])
+    all_preds = pd.concat([all_preds, new_pred], ignore_index=True)
   
   create_colabfold_ranking(all_preds, output_path, preset)
 
@@ -320,16 +324,16 @@ def convert_output(tool):
 def convert_colabfold_output(output_path:str, pred_shift:int):
   pkls = [ file for file in os.listdir(output_path) if file.endswith('.pickle') ]
   pdbs = [ file for file in os.listdir(output_path) if file.endswith('.pdb') and 'rank' in file ]
+
   if 'multimer' in pdbs[0]:
     sep = 'multimer'
   elif 'ptm' in pdbs[0]:
     sep = 'ptm'
   else:
     raise ValueError('Neither multimer nor monomer_ptm, an error occured somewhere')
-
   # rename files
   renamed_pdbs = rename_pdb(pdbs, output_path, pred_shift, sep=sep)
-  rank_predictions(output_path, pdbs, renamed_pdbs.values(), preset=sep)
+  rank_colabfold_predictions(output_path, pdbs, renamed_pdbs.values(), preset=sep)
   rename_pkl(pkls, output_path, pred_shift, sep=sep)
 
 def convert_alphafold3_output(output_path: str, pred_shift: int):
@@ -372,7 +376,7 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
   df["prediction_name"] = "af3" + "_seed_" + df["seed"].astype(str) \
     + "_sample_" + df["sample"].astype(str) + "_pred_" + df["pred_nb"].astype(str)
   df["pkl_name"] = "result_" + df["prediction_name"] + ".pkl"
-  df = exctract_plddts_create_pkl(df, output_path)
+  df = extract_plddts_create_pkl(df, output_path)
   df = df.sort_values(['ranking_score', 'iptm', 'ptm', 'mean_plddt'], ascending=False, ignore_index=True)
   df['rank'] = df.index
   df["ranked_name"] = "ranked_" + df["rank"].astype(str) + "_" + df["prediction_name"] + ".cif"
@@ -387,6 +391,7 @@ def prediction_metrics(input_dir: str, nature: str):
   return metrics
 
 def plddts_from_cif(cif_filename):
+  from Bio.PDB.MMCIFParser import MMCIFParser
   pdb_parser = MMCIFParser(QUIET=True)
   structure = pdb_parser.get_structure(
     'strct',
@@ -427,7 +432,7 @@ def af3_move_and_rename(df, output_dir):
     ranking_file = os.path.join(output_dir, f"ranking_{score_ranking}.json")
     json.dump(all_scores[score_ranking], open(ranking_file, 'w'), indent=4)
 
-def exctract_plddts_create_pkl(df, output_dir):
+def extract_plddts_create_pkl(df, output_dir):
   pred_list = df.to_dict(orient="records")
   for pred in pred_list:
     model_cif_name = os.path.join(pred["original_dir"], 'model.cif')
