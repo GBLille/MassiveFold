@@ -39,23 +39,23 @@
     Output: {output}/{sequence}/msas_alphafold3/msas_alphafold3_data.json  
 
 - Batch creation (all tools) and batch setup (AlphaFold3)  
-  F. ```bash python {scripts_dir}/batching.py  
-          --sequence_name={sequence}  
-          --run_name={run}  
-          --predictions_per_model={predictions_per_model}  
-          --batch_size={batch_size}  
-          --models_to_use={models_to_use}  
-          --path_to_parameters={tool}_params.json  
+  F. ```bash python {scripts_dir}/batching.py \
+          --sequence_name={sequence} \
+          --run_name={run} \
+          --predictions_per_model={predictions_per_model} \
+          --batch_size={batch_size} \
+          --models_to_use={models_to_use} \
+          --path_to_parameters={tool}_params.json \
           --tool {tool}```  
     Input: {tool}_params.json, ...(others are described in the command above.)  
     Output: {sequence}\_{run}_batches.json  
     N.B. : After being used for the following jobs as an input, this json file containing batches information is moved to the {log_dir}/{sequence}/{run}/ directory.  
 
-  G. ```bash python {scripts_dir}/unifier.py  
-          --conversion input_inference  
-          --to_convert {output}/{sequence}/msas_alphafold3/msas_alphafold3_data.json  
-          --json_params {tool}_params.json  
-          --batches_file {sequence}_{run}_batches.json  
+  G. ```bash python {scripts_dir}/unifier.py \
+          --conversion input_inference \
+          --to_convert {output}/{sequence}/msas_alphafold3/msas_alphafold3_data.json \
+          --json_params {tool}_params.json \
+          --batches_file {sequence}_{run}_batches.json \
           --tool AlphaFold3```  
     Input: Described in the command above.  
     Output: {output}/{sequence}/{run}/af3_batch_[i].json (With i going from 0 to n, n being the number of batches minus one)  
@@ -65,11 +65,11 @@
     Input: Batches information that are stored in the {sequence}\_{run}\_batches.json. They can be easily retrieved with the {script_dir}/get_batch.py script.  
     Output: {output}/{sequence}/{run}/batch_[i]/ (With i going from 0 to n, n being the number of batches minus one)  
 
-  I. ```bash colabfold_batch  
-          {output}/{sequence}/msas_colabfold/  
-          {output}/batch_[i]  
-          --save-all  
-          --num-models 1  
+  I. ```bash colabfold_batch \
+          {output}/{sequence}/msas_colabfold/ \
+          {output}/batch_[i] \
+          --save-all \
+          --num-models 1 \
           --num-seeds ({batch_[i]_end} - {batch_[i]_start} + 1)```  
     Input: Batches information that are stored in the {sequence}\_{run}\_batches.json. They can be easily retrieved with the {script_dir}/get_batch.py script.  
     Output: {output}/{sequence}/{run}/batch_[i]/ (With i going from 0 to n, n being the number of batches minus one)  
