@@ -36,7 +36,7 @@ time python3 $$(which $${mf_plots_path}) \
 
 if [[ $$pkl_format == "light" ]]; then
   echo "Reducing pkl size"
-  $${scripts_dir}/lighten_pkl.py $${output}
+  $${scripts_dir}/lighten_output.py $${output}
   rm $${output}/*.pkl
 elif [[ $$pkl_format == "none" ]]; then
   echo "Not keeping pkl files"

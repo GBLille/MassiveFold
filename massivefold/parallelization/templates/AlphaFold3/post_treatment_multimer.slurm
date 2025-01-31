@@ -25,8 +25,8 @@ echo "$${scripts_dir}/organize_outputs.py --batches_path $$output"
 time $${scripts_dir}/organize_outputs.py --batches_path $$output
 
 # Reducing batches file by extracting msas and templates
-echo "$${scripts_dir}/lighten_pkl.py $$output"
-time $${scripts_dir}/lighten_pkl.py $$output
+echo "$${scripts_dir}/lighten_output.py $$output"
+time $${scripts_dir}/lighten_output.py $$output
 
 # plots
 echo "Generating plots"
