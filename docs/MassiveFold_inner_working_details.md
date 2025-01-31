@@ -12,7 +12,7 @@
   - {predictions_per_model}: given as an input (-p), number of prediction per NN model (for AF2 based model) or diffusion seed (AF3).
   - {batch_size}: given as an input (-b), number of predictions (-p) to fit in a single batch.
   - {concat_sequences}: arbitrary name given by ColabFold for the a3m msas file. Irrelevant in the process as the filename is used nowhere.
-  - {batch_[i]_start}, {batch_[i]_end}, {batch_[i]_model}, value of the batch i entries in the {sequence}_{run}_batches.json file., 
+  - {batch_[i]_start}, {batch_[i]_end}, {batch_[i]_model}, value of the batch i entries in the {sequence}\_{run}_batches.json file., 
 
 # Describing each step from the inner working diagram
 - unifier.py to use standard fasta format with tools that demand specific format  
@@ -48,7 +48,7 @@
           --path_to_parameters={tool}_params.json  
           --tool {tool}```  
     Input: {tool}_params.json, ...(others are described in the command above.)  
-    Output: {sequence}_{run}_batches.json  
+    Output: {sequence}\_{run}_batches.json  
     N.B. : After being used for the following jobs as an input, this json file containing batches information is moved to the {log_dir}/{sequence}/{run}/ directory.  
 
   G. ```bash python {scripts_dir}/unifier.py  
@@ -62,7 +62,7 @@
 
 - Inference on GPU  
   H. ```bash run_AFmassive.py --use_precomputed_msa=trues --start_prediction={batch_[i]_start} --end_prediction={batch_[i]_end} --models_to_use={batch_[i]_model}```  
-    Input: Batches information that are stored in the {sequence}_{run}_batches.json. They can be easily retrieved with the {script_dir}/get_batch.py script.  
+    Input: Batches information that are stored in the {sequence}\_{run}\_batches.json. They can be easily retrieved with the {script_dir}/get_batch.py script.  
     Output: {output}/{sequence}/{run}/batch_[i]/ (With i going from 0 to n, n being the number of batches minus one)  
 
   I. ```bash colabfold_batch  
@@ -71,7 +71,7 @@
           --save-all  
           --num-models 1  
           --num-seeds ({batch_[i]_end} - {batch_[i]_start} + 1)```  
-    Input: Batches information that are stored in the {sequence}_{run}_batches.json. They can be easily retrieved with the {script_dir}/get_batch.py script.  
+    Input: Batches information that are stored in the {sequence}\_{run}\_batches.json. They can be easily retrieved with the {script_dir}/get_batch.py script.  
     Output: {output}/{sequence}/{run}/batch_[i]/ (With i going from 0 to n, n being the number of batches minus one)  
     N.B: The output in each 'batch_[i]' subdirectory is formatted as any ColabFold output  
 
