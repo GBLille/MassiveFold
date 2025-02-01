@@ -61,6 +61,7 @@ def convert_colabfold_fasta(fasta_path:str):
   with open(f"{fasta_dir}/converted_for_colabfold/{fasta_file}.fasta", 'w') as output:
     output.write(converted)
 
+
 def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
   json_params = os.path.realpath(FLAGS.json_params)
   assert os.path.exists(json_params) and json_params.endswith('.json'), \
@@ -71,39 +72,20 @@ def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
   json_template = os.path.realpath(os.path.join(template_dir, "AlphaFold3", "af3_input.json"))
   json_input = json.load(open(json_template, 'r'))
 
-  all_chain_ids = string.ascii_uppercase + string.ascii_lowercase
-  records = list(SeqIO.parse(fasta_path, "fasta"))
+  parsed_records = list(SeqIO.parse(fasta_path, "fasta"))
   entities = all_params['AF3_run']['entities']
 
-  # possible entities: "protein", "rna", "dna", "ligand"
-  assert len(records) == len(entities), \
+  # possible entities: "protein", "dna", "rna"
+  assert len(parsed_records) == len(entities), \
   f"The number of entities in {json_params} should be the same as in {fasta_path}."
-  assert len(records) < len(all_chain_ids), \
+  all_chain_ids = string.ascii_uppercase
+  assert len(parsed_records) < len(all_chain_ids), \
   f"Using more than {len(all_chain_ids)} is currently unsupported"
 
-  ligand = all_params['AF3_run']['ligand']
-  for lig in ligand:
-    if lig["ccdCodes"] and lig["smiles"]:
-      raise ValueError(f"Chose either 'ccdCodes' or 'smiles' for ligand: {lig}")
-    elif not lig["ccdCodes"] and not lig["smiles"]:
-      continue
-    elif lig["ccdCodes"] or lig["smiles"]:
-      records.append(lig)
-
-  glycans = []
-  if glycans:
-    print("{len(glycans)} detected on folowing entities:") #TO-DO: add entities nature in log
-  else:
-    print("No glycan modification on input")
-
-  sequence_dicts = []
-  for entity, record, chain_id in zip(entities, records, all_chain_ids):
-    all_sequences = [sequence[list(sequence.keys())[0]]["sequence"] for sequence in sequence_dicts]
-    if f"{record.seq}" not in all_sequences:
-      sequence_dicts.append({entity:  {"id": [chain_id], "sequence": f"{record.seq}"}})
-    else:
-      index = all_sequences.index(f"{record.seq}")
-      sequence_dicts[index][entities[index]]["id"].append(chain_id)
+  records = []
+  for entity, record in zip(entities, parsed_records):
+    records.append({"entity": entity, "sequence_type": "sequence", "seq": str(record.seq)})
+  sequence_dicts = af3_records_to_sequences(records, used_ids=[])
 
   # create AlphaFold3 input as json
   fasta_file = os.path.basename(fasta_path).split('.fa')[0]
@@ -137,7 +119,6 @@ def set_alphafold3_parameters(af3_input: dict, parameters: list):
         af3_input["sequences"][i][entity][param] = []
   return af3_input
 
-
 def af3_alter_input(batch_input_json, af3_params):
   alteration_params = ["unpairedMsa", "pairedMsa", "templates"]
   altered_values = {
@@ -151,6 +132,73 @@ def af3_alter_input(batch_input_json, af3_params):
     batch_input_json = set_alphafold3_parameters(batch_input_json, alteration)
   return batch_input_json
 
+def af3_add_input_entity(batch_input_json, af3_params):
+  ligand = af3_params['ligand']
+  
+  additional_records = []
+  for lig in ligand:
+    if lig["ccdCodes"] and lig["smiles"]:
+      raise ValueError(f"Chose either 'ccdCodes' or 'smiles' for ligand: {lig}")
+    elif not lig["ccdCodes"] and not lig["smiles"]:
+      continue
+    elif lig["ccdCodes"]:
+      additional_records.append({"entity": "ligand", "sequence_type": "ccdCodes", "seq": lig["ccdCodes"]})
+    elif lig["smiles"]:
+      additional_records.append({"entity": "ligand", "sequence_type": "smiles", "seq": lig["smiles"]})
+
+  PTMs = []
+  #TO-DO: add PTMs to entities
+  if PTMs:
+    print("{len(PTMs)} detected on folowing entities:") 
+  else:
+    print("No post-translational modification on the sequences.")
+
+  # add the entities to the input json
+  used_ids = []
+  for chain in batch_input_json["sequences"]:
+    ids = chain[list(chain.keys())[0]]["id"]
+    if isinstance(ids, list):
+      used_ids.extend(ids)
+    elif isinstance(ids, str):
+      used_ids.append(ids)
+
+  # add the extra sequences (e.g ligands)
+  additional_sequences = af3_records_to_sequences(additional_records, used_ids)
+  batch_input_json["sequences"].extend(additional_sequences)
+
+  # display the recorded entities for the run launched
+  simplified = []
+  for i, obj  in enumerate(batch_input_json["sequences"]):
+    entity = list(obj.keys())[0]
+    values = {}
+    for j in batch_input_json["sequences"][i][entity]:
+      if j != "pairedMsa" and j != "unpairedMsa" and j != "templates": # skip large entries
+        values[j] = batch_input_json["sequences"][i][entity][j]
+    simplified.append({entity: values})
+  print(json.dumps(simplified, indent=4))
+
+  return batch_input_json
+
+def af3_records_to_sequences(records, used_ids): 
+  sequence_dicts = []
+  all_chain_ids = string.ascii_uppercase
+  all_chain_ids = [ i for i in all_chain_ids if i not in used_ids ]
+  remaining_records = records.copy()
+
+  # Record format: {"entity": entity, "sequence_type": "sequence|ccdCodes|smiles" "seq": record}
+  all_sequences = []
+  all_entities = []
+  for record, chain_id in zip(records, all_chain_ids):
+    if record["seq"] not in all_sequences:
+      sequence_dicts.append({record["entity"]:  {"id": chain_id, record["sequence_type"]: record["seq"]}})
+      all_sequences.append(record["seq"])
+      all_entities.append(record["entity"])
+    else:
+      index = all_sequences.index(record["seq"])
+      sequence_dicts[index][all_entities[index]]["id"] = [sequence_dicts[index][all_entities[index]]["id"]]
+      sequence_dicts[index][all_entities[index]]["id"].append(chain_id)
+  return sequence_dicts
+
 def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
   sequence = os.path.basename(os.path.dirname(os.path.dirname(input_json)))
 
@@ -162,7 +210,10 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
 
   # modify input file according to MassiveFold parameters
   batch_input_json = json.load(open(input_json, 'r'))
+
   batch_input_json = af3_alter_input(batch_input_json, af3_params)
+  batch_input_json = af3_add_input_entity(batch_input_json, af3_params)
+
   batch_filename = os.path.basename(batches)
   run_name = batch_filename.replace(f"{sequence}_", "").replace("_batches.json", "")
 
@@ -185,7 +236,7 @@ def prepare_inference(args, tool):
   if tool == "AlphaFold3":
     get_alphafold3_batch_input(input, params, batches)
 
-def rename_pkl(pkl_files:list, output_path:str, pred_shift:int, sep:str):
+def rename_colabfold_pkl(pkl_files:list, output_path:str, pred_shift:int, sep:str):
   extract = lambda x: int(x.split('_')[-1].replace('.pickle', ''))
   seed = sorted(list(map(extract, pkl_files)))[0]
   if sep == 'multimer':
@@ -204,7 +255,7 @@ _pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pkl"
 
   return new_names
 
-def rename_pdb(pdb_files:list, output_path:str, pred_shift:int, sep:str):
+def rename_colabfold_pdb(pdb_files:list, output_path:str, pred_shift:int, sep:str):
   extract = lambda x: int(x.split('_')[-1].replace('.pdb', ''))
   seed = sorted(list(map(extract, pdb_files)))[0]
   print(f"Seed used: {seed}")
@@ -332,9 +383,9 @@ def convert_colabfold_output(output_path:str, pred_shift:int):
   else:
     raise ValueError('Neither multimer nor monomer_ptm, an error occured somewhere')
   # rename files
-  renamed_pdbs = rename_pdb(pdbs, output_path, pred_shift, sep=sep)
+  renamed_pdbs = rename_colabfold_pdb(pdbs, output_path, pred_shift, sep=sep)
   rank_colabfold_predictions(output_path, pdbs, renamed_pdbs.values(), preset=sep)
-  rename_pkl(pkls, output_path, pred_shift, sep=sep)
+  rename_colabfold_pkl(pkls, output_path, pred_shift, sep=sep)
 
 def convert_alphafold3_output(output_path: str, pred_shift: int):
   df_ranking_scores = pd.read_csv(os.path.join(output_path, "ranking_scores.csv"))
@@ -456,11 +507,17 @@ def main(argv):
   'Parameter --conversion and --to_convert are mandatory.'
   
   if FLAGS.conversion == 'input':
+    tools = ["ColabFold", "AlphaFold3"]
+    if FLAGS.tool not in tools:
+      print(f"No input conversion needed with {tool}.")
     assert os.path.isfile(FLAGS.to_convert) and FLAGS.to_convert.endswith('.fasta'), \
     f"Fasta file is invalid {FLAGS.to_convert}"
     convert_input({"input": FLAGS.to_convert}, FLAGS.tool)
 
   elif FLAGS.conversion == 'input_inference':
+    tools = ["AlphaFold3"]
+    if FLAGS.tool not in tools:
+      print(f"No input preparation in anticipation of inference for {tool}.")
     assert os.path.isfile(FLAGS.batches_file) and FLAGS.batches_file.endswith('.json'), \
     f"Json batches file is invalid: {FLAGS.batches_file}"
     assert os.path.isfile(FLAGS.to_convert) and FLAGS.to_convert.endswith('.json'), \
@@ -469,6 +526,9 @@ def main(argv):
     prepare_inference(arguments, FLAGS.tool)
 
   elif FLAGS.conversion == 'output':
+    tools = ["ColabFold", "AlphaFold3"]
+    if FLAGS.tool not in tools:
+      print(f"No output standardization for {tool}.")
     assert FLAGS.batches_file, 'Json batches file (--batches_file) is mandatory for output conversion (--conversion output)'
     convert_output(FLAGS.tool)
 
