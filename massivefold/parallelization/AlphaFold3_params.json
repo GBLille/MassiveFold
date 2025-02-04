@@ -1,16 +1,22 @@
 {
     "massivefold": {
-        "pkl_format":"full"
+        "pkl_format": "full"
     },
-    "custom_params": {
-    },
+    "custom_params": {},
     "AF3_run": {
         "entities": [],
+        "ligand": [
+            {"ccdCodes": [""], "smiles": ""},
+        ],
+        "PTMs": [
+            {"type": "", "sequence": "", "positions": []}
+        ],
+        "model_preset": "multimer",
+        "max_template_date": "2024-11-28",
+        "num_diffusion_samples": "5",
         "unpairedMsa": "true",
         "pairedMsa": "true",
-        "templates": "ture",
-        "model_preset": "multimer",
-        "max_template_date": "2024-11-28"
+        "templates": "true"
     },
     "plots": {
         "MF_plots_top_n_predictions": "10",

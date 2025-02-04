@@ -247,7 +247,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
       raise ValueError(f"Chose either 'ccdCodes' or 'smiles' for ligand: {lig}")
     elif not lig["ccdCodes"] and not lig["smiles"]:
       continue
-    elif lig["ccdCodes"]:
+    elif lig["ccdCodes"] and lig["ccdCodes"][0]:
       additional_records.append({"entity": "ligand", "sequence_type": "ccdCodes", "seq": lig["ccdCodes"]})
     elif lig["smiles"]:
       additional_records.append({"entity": "ligand", "sequence_type": "smiles", "seq": lig["smiles"]})
@@ -255,7 +255,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
   PTMs = af3_params["PTMs"]
   if PTMs:
     for i, ptm in enumerate(PTMs):
-      if ptm and ptm["type"] == "glycosylation":
+      if ptm and ptm["sequence"] and ptm["type"] == "glycosylation":
         for pos in list(map(int, ptm["positions"])):
           additional_records.append(
             {
