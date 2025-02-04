@@ -258,6 +258,11 @@ def af3_add_input_entity(batch_input_json, af3_params):
   if PTMs:
     for i, ptm in enumerate(PTMs):
       if ptm and ptm["sequence"] and ptm["type"] == "glycosylation":
+        print(
+          f"- Glycosylation: \n{ptm['sequence']}"
+          f"\nAt positions {', '.join(list(map(str, ptm['positions'])))} on:\n"
+          f"{next(iter(batch_input_json['sequences'][i].values()))['sequence']}" 
+        )
         for pos in list(map(int, ptm["positions"])):
           additional_records.append(
             {
@@ -267,16 +272,12 @@ def af3_add_input_entity(batch_input_json, af3_params):
               "on_chain_index": i,
               "at_position": pos
             })
-    # Show the sequences and bonds in the run's input
-    display = [
-      f"- {ptm['type']}: \n{ptm['sequence']}\nAt positions {', '.join(list(map(str, ptm['positions'])))} on:\n"
-      f"{next(iter(batch_input_json['sequences'][i].values()))['sequence']}" 
-      for i, ptm in enumerate(PTMs) if ptm
-    ]
-    print(f"\n{len(PTMs)} PTMs detected:\n\n" + '\n'.join(display) + "\n")
+
+  PTMs = [ ptm for ptm in PTMs if ptm and ptm['sequences'] ]
+  if PTMs:
+    print(f"\n{len(PTMs)} PTMs detected")
   else:
     print("No post-translational modification on the sequences.")
-
   # add the extra sequences (e.g ligands)
   additional_sequences, bonds = af3_records_to_sequences(additional_records, batch_input_json)
   batch_input_json["sequences"].extend(additional_sequences)
