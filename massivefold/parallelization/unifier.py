@@ -191,7 +191,8 @@ def af3_records_to_sequences(records, batch_input_json):
   }
   used_ids = []
   for chain in batch_input_json["sequences"]:
-    ids = chain[list(chain.keys())[0]]["id"]
+    ids = chain[next(iter(chain.values()))]["id"]
+    #ids = chain[list(chain.keys())[0]]["id"]
     if isinstance(ids, list):
       useds_ids.extend(ids)
     elif isinstance(ids, str):
