@@ -193,7 +193,7 @@ def af3_records_to_sequences(records, batch_input_json):
   for chain in batch_input_json["sequences"]:
     if not chain:
       continue
-    ids = chain[next(iter(chain.values()))]["id"]
+    ids = chain[next(iter(chain.keys()))]["id"]
     if isinstance(ids, list):
       useds_ids.extend(ids)
     elif isinstance(ids, str):
@@ -245,13 +245,14 @@ def af3_add_input_entity(batch_input_json, af3_params):
   
   additional_records = []
   for lig in ligand:
-    if lig["ccdCodes"] and lig["smiles"]:
+    is_ccdcodes = True if lig['ccdCodes'] and lig['ccdCodes'][0] else False
+    if is_ccdcodes and lig['smiles']:
       raise ValueError(f"Chose either 'ccdCodes' or 'smiles' for ligand: {lig}")
-    elif not lig["ccdCodes"] and not lig["smiles"]:
+    elif not is_ccdcodes and not lig["smiles"]:
       continue
-    elif lig["ccdCodes"] and lig["ccdCodes"][0]:
+    elif is_ccdcodes:
       additional_records.append({"entity": "ligand", "sequence_type": "ccdCodes", "seq": lig["ccdCodes"]})
-    elif lig["smiles"]:
+    elif lig['smiles']:
       additional_records.append({"entity": "ligand", "sequence_type": "smiles", "seq": lig["smiles"]})
 
   PTMs = af3_params["PTMs"]
