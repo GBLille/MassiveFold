@@ -6,7 +6,7 @@
     "AF3_run": {
         "entities": [],
         "ligand": [
-            {"ccdCodes": [""], "smiles": ""},
+            {"ccdCodes": [""], "smiles": ""}
         ],
         "PTMs": [
             {"type": "", "sequence": "", "positions": []}
