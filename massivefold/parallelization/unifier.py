@@ -85,7 +85,7 @@ def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
   records = []
   for entity, record in zip(entities, parsed_records):
     records.append({"entity": entity, "sequence_type": "sequence", "seq": str(record.seq)})
-  sequence_dicts, bonds = af3_records_to_sequences(records, used_ids=[])
+  sequence_dicts, bonds = af3_records_to_sequences(records, json_input)
 
   # create AlphaFold3 input as json
   fasta_file = os.path.basename(fasta_path).split('.fa')[0]
@@ -168,7 +168,8 @@ def af3_resolve_glycan(glycan_str, chain_id):
     "Glc": "GLC", "a-Glc": "GLC", "b-Glc": "BGC",
     "Man": "MAN", "a-Man": "BMA", "b-Man": "BMA",
     "Fuc": "FUC", "a-Fuc": "FCA", "b-Fuc": "FCB",
-    "GlcNAc": "NAG", "Glc2NAc": "NAG"
+    "GlcNAc": "NAG", "Glc2NAc": "NAG",
+    "GalNAc": "NGA", "Gal2NAc": "NGA"
   }
   state = {
     'ccdCodes': [],
@@ -181,30 +182,54 @@ def af3_resolve_glycan(glycan_str, chain_id):
   ccdCodes, bondedAtomPairs = state['ccdCodes'], state['bondedAtomPairs']
   return ccdCodes, bondedAtomPairs
 
-def af3_records_to_sequences(records, used_ids): 
+def af3_records_to_sequences(records, batch_input_json): 
+  glycosylation_attachment = {
+    'N': {"atom": 'ND2', "sugar": ["NAG"]},
+    'S': {"atom": 'OG', "sugar": ["NGA", "NAG", "MAN"]},
+    'T': {"atom": 'OG1', "sugar": ["NGA", "NAG", "MAN"]},
+    'K': {"atom": 'O', "sugar": ["GAL"]}
+  }
+  used_ids = []
+  for chain in batch_input_json["sequences"]:
+    ids = chain[list(chain.keys())[0]]["id"]
+    if isinstance(ids, list):
+      useds_ids.extend(ids)
+    elif isinstance(ids, str):
+      used_ids.append(ids)
+
   sequence_dicts = []
   all_chain_ids = string.ascii_uppercase
   all_chain_ids = [ i for i in all_chain_ids if i not in used_ids ]
   remaining_records = records.copy()
   all_bonds = []
-
   # Record format: {"entity": entity, "sequence_type": "sequence|ccdCodes|smiles" "seq": record}
   all_sequences = []
   all_entities = []
   for record, chain_id in zip(records, all_chain_ids):
+    record_type = record["sequence_type"][:]
     if record["sequence_type"] == "glycosylation":
+      chain, position  = used_ids[record["on_chain_index"]], record["at_position"]
+      glycosylated_residue= [ 
+          next(iter(batch_input_json['sequences'][i].values()))['sequence'] for i in range(len(batch_input_json["sequences"]))
+          if chain in next(iter(batch_input_json['sequences'][i].values()))["id"]
+      ][0][position-1]
       ccdCodes, glycan_bondedAtomPairs = af3_resolve_glycan(record["seq"], chain_id) 
+      assert glycosylated_residue in glycosylation_attachment, \
+      f"'{glycosylated_residue}' is invalid residue for glycosylation. Valid one are among {list(glycosylation_attachment.keys())}"
+      assert ccdCodes[0] in glycosylation_attachment[glycosylated_residue]["sugar"], \
+      f"Wrong type of glycosylation on {glycosylated_residue}"
+
+      residue_atom = glycosylation_attachment[glycosylated_residue]["atom"]
       glycan_root = glycan_bondedAtomPairs[0][0].copy()
       glycan_root[2] = "C1"
-      bondedAtomPairs = [[[used_ids[record["on_chain_index"]], record["at_positions"][0], "X"], glycan_root]]
-
+      bondedAtomPairs = [[[chain, record["at_position"], residue_atom], glycan_root]]
       bondedAtomPairs.extend(glycan_bondedAtomPairs)
       all_bonds.extend(bondedAtomPairs)
-      record["sequence_type"] = "ccdCodes"
+      record_type  = "ccdCodes"
       record["seq"] = ccdCodes
 
     if record["seq"] not in all_sequences:
-      sequence_dicts.append({record["entity"]:  {"id": chain_id, record["sequence_type"]: record["seq"]}})
+      sequence_dicts.append({record["entity"]:  {"id": chain_id, record_type: record["seq"]}})
       all_sequences.append(record["seq"])
       all_entities.append(record["entity"])
     else:
@@ -227,50 +252,34 @@ def af3_add_input_entity(batch_input_json, af3_params):
     elif lig["smiles"]:
       additional_records.append({"entity": "ligand", "sequence_type": "smiles", "seq": lig["smiles"]})
 
-  ptm_disable = True
-  # TO-DO: find mean to get the atom name on the residue which holds the glycosylation
   PTMs = af3_params["PTMs"]
   if PTMs:
-    if not ptm_disable:
-      for i, ptm in enumerate(PTMs):
-        if ptm and ptm["type"] == "glycosylation":
+    for i, ptm in enumerate(PTMs):
+      if ptm and ptm["type"] == "glycosylation":
+        for pos in list(map(int, ptm["positions"])):
           additional_records.append(
             {
               "entity": "ligand",
               "sequence_type": ptm["type"],
               "seq": ptm["sequence"],
               "on_chain_index": i,
-              "at_positions": list(map(int, ptm["positions"]))
+              "at_position": pos
             })
-      # Show the sequences and bonds in the run's input
-      display = [
-        f"- {ptm['type']}: \n"
-        f"{ptm['sequence']}\n"
-        f"At positions {', '.join(list(map(str, ptm['positions'])))} on:\n"
-        f"{next(iter(batch_input_json['sequences'][i].values()))['sequence']}" 
-        for i, ptm in enumerate(PTMs) if ptm
-      ]
-      print(f"\n{len(PTMs)} PTMs detected:\n\n" + '\n'.join(display) + "\n")
-    else:
-      print("PTMs are not available for now.")
+    # Show the sequences and bonds in the run's input
+    display = [
+      f"- {ptm['type']}: \n{ptm['sequence']}\nAt positions {', '.join(list(map(str, ptm['positions'])))} on:\n"
+      f"{next(iter(batch_input_json['sequences'][i].values()))['sequence']}" 
+      for i, ptm in enumerate(PTMs) if ptm
+    ]
+    print(f"\n{len(PTMs)} PTMs detected:\n\n" + '\n'.join(display) + "\n")
   else:
     print("No post-translational modification on the sequences.")
 
-  # add the entities to the input json
-  fasta_ids = []
-  for chain in batch_input_json["sequences"]:
-    ids = chain[list(chain.keys())[0]]["id"]
-    if isinstance(ids, list):
-      fasta_ids.extend(ids)
-    elif isinstance(ids, str):
-      fasta_ids.append(ids)
-
   # add the extra sequences (e.g ligands)
-  additional_sequences, bonds = af3_records_to_sequences(additional_records, fasta_ids)
+  additional_sequences, bonds = af3_records_to_sequences(additional_records, batch_input_json)
   batch_input_json["sequences"].extend(additional_sequences)
   if bonds:
     batch_input_json["bondedAtomPairs"] = bonds
-
   # display the recorded entities for the run launched
   simplified = {"sequences": []}
   for i, obj  in enumerate(batch_input_json["sequences"]):
@@ -284,7 +293,6 @@ def af3_add_input_entity(batch_input_json, af3_params):
   if bonds:
     simplified["bondedAtomPairs"] = bonds
   print(json.dumps(simplified, indent=4))
-
   return batch_input_json
 
 
