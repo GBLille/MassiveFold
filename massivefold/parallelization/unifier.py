@@ -273,7 +273,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
               "at_position": pos
             })
 
-  PTMs = [ ptm for ptm in PTMs if ptm and ptm['sequences'] ]
+  PTMs = [ ptm for ptm in PTMs if ptm and ptm['sequence'] ]
   if PTMs:
     print(f"\n{len(PTMs)} PTMs detected")
   else:
