@@ -266,7 +266,7 @@ elif [[ $tool == "AFmassive" ]] && [ -d ${output_dir}/${sequence_name}/msas/ ]; 
   msas_precomputed="${output_dir}/${sequence_name}"
 elif [[ $tool == "AlphaFold3" ]] && [ -d ${output_dir}/${sequence_name}/msas_alphafold3/ ]; then
   echo -e "Detected msas compatible with af3 for ${sequence_name} at ${output_dir}/${sequence_name}/msas_alphafold3/, using them.\n"
-  msas_precomputed="${output_dir}/${sequence_name}"
+  msas_precomputed="${output_dir}/${sequence_name}/msas_alphafold3"
 elif [[ $tool == "ColabFold" ]] && [ -d ${output_dir}/${sequence_name}/msas_colabfold/ ]; then
   echo -e "Detected msas compatible with ColabFold for ${sequence_name} at ${output_dir}/${sequence_name}/msas_colabfold/, using them.\n"
   msas_precomputed="${output_dir}/${sequence_name}"
@@ -288,6 +288,7 @@ elif [[ $tool == "ColabFold" ]]; then
                          [[ -z \$msas_precomputed ]] )"
 fi
 
+
 if [ ! -z $wait_for_jobid ]; then
   echo "Waiting for alignment job $wait_for_jobid"
   ALIGNMENT_ID=$wait_for_jobid
@@ -298,7 +299,8 @@ elif eval $conditions_to_align; then
       --conversion input \
       --json_params $parameters_file \
       --to_convert $sequence_file \
-      --tool AlphaFold3
+      --tool AlphaFold3 \
+      || { echo "Initiation failed. Exiting."; exit 1; }
   fi
   echo "Running alignment for $sequence_name"
   if $only_msas; then
@@ -319,7 +321,6 @@ elif eval $conditions_to_align; then
     mkdir -p ${logs_dir}/${sequence_name}/${run_name}/
     mv ${sequence_name}_${run_name}_* ${logs_dir}/${sequence_name}/${run_name}/
     echo "Only run sequence alignment."
-
     exit 1
   fi
 elif [[ $tool == "AFmassive" ]] && [[ -d  $msas_precomputed/msas ]]; then
@@ -327,16 +328,17 @@ elif [[ $tool == "AFmassive" ]] && [[ -d  $msas_precomputed/msas ]]; then
   echo "Using AFmassive"
   mkdir -p ${output_dir}/${sequence_name}
   ln -s $(realpath $msas_precomputed/msas) ${output_dir}/${sequence_name}/
-elif [[ $tool == "AlphaFold3" ]] && [[ -f  $msas_precomputed/msas_alphafold3/msas_alphafold3_data.json ]]; then
+elif [[ $tool == "AlphaFold3" ]] && [[ -f $msas_precomputed/msas_alphafold3_data.json ]]; then
   echo "$msas_precomputed are valid."
   echo "Using AlphaFold3"
   mkdir -p ${output_dir}/${sequence_name}/${run_name}
   ./${scripts_dir}/unifier.py \
     --conversion input_inference \
-    --to_convert $msas_precomputed/msas_alphafold3/msas_alphafold3_data.json \
+    --to_convert $msas_precomputed/msas_alphafold3_data.json \
     --json_params $parameters_file \
     --batches_file ${sequence_name}_${run_name}_batches.json \
-    --tool AlphaFold3
+    --tool AlphaFold3 \
+    || { echo "Input preparation for inference has failed. Exiting."; exit 1; }
 elif [[ $tool == "ColabFold" ]] && [[ -d  $msas_precomputed/msas_colabfold ]]; then
   echo "$msas_precomputed are valid."
   echo "Using ColabFold"
