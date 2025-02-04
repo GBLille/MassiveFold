@@ -279,8 +279,10 @@ def af3_add_input_entity(batch_input_json, af3_params):
   else:
     print("No post-translational modification on the sequences.")
   # add the extra sequences (e.g ligands)
-  additional_sequences, bonds = af3_records_to_sequences(additional_records, batch_input_json)
-  batch_input_json["sequences"].extend(additional_sequences)
+  bonds = []
+  if additional_records:
+    additional_sequences, bonds = af3_records_to_sequences(additional_records, batch_input_json)
+    batch_input_json["sequences"].extend(additional_sequences)
   if bonds:
     batch_input_json["bondedAtomPairs"] = bonds
   # display the recorded entities for the run launched
