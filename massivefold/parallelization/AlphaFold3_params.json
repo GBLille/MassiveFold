@@ -4,7 +4,7 @@
     },
     "custom_params": {},
     "AF3_run": {
-        "entities": [],
+        "fasta_chains": [],
         "ligand": [
             {"ccdCodes": [""], "smiles": ""}
         ],

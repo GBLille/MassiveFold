@@ -31,7 +31,7 @@ mkdir -vp $${output_path}/
 path_to_msas=$${output_dir}/$${sequence_name}/$${run_name}/$${json_batch_input}
 
 source $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-alphafold3.0.1
+conda activate mf-alphafold-3.0.1
 #conda activate mf-alphafold3
 
 date

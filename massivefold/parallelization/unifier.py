@@ -73,7 +73,7 @@ def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
   json_input = json.load(open(json_template, 'r'))
 
   parsed_records = list(SeqIO.parse(fasta_path, "fasta"))
-  entities = all_params['AF3_run']['entities']
+  entities = all_params['AF3_run']['fasta_chains']
 
   # possible entities: "protein", "dna", "rna"
   assert len(parsed_records) == len(entities), \
