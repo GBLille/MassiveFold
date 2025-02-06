@@ -1,4 +1,4 @@
-name: mf-alphafold3.0.1
+name: mf-alphafold-3.0.1
 channels:
   - conda-forge
   - bioconda
