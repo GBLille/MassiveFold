@@ -59,6 +59,25 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
     else:
       pred_new_name = f"{prediction}.cif"
     
+    # Move confidence files (chain iptm etc)
+    confidence_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, 'confidences')
+    if os.path.exists(confidence_path):
+      old_confidence_path = os.path.join(
+        all_batches_path,
+        pred_batch_map[prediction],
+        jobname,
+        'confidences',
+        f"{pred_new_name.replace('.cif', '.json')}") 
+      global_confidence_path = os.path.join(all_batches_path, 'confidences')
+      if not os.path.exists(global_confidence_path):
+        os.makedirs(global_confidence_path)
+      new_confidence_path = os.path.join(global_confidence_path, f"ranked_{i}_{pred_new_name.replace('.cif', '.json')}")
+      try:
+        mv(old_confidence_path, new_confidence_path)
+      except FileNotFoundError as e:
+        print(e)
+        print(f"{pred_batch_map[prediction]}/confidences/{pred_new_name.replace('.cif', '.json')} not found")
+
     # Move pdb files and rename with rank
     old_pdb_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pred_new_name) 
     new_pdb_path = os.path.join(all_batches_path, f"ranked_{i}_{pred_new_name}")
@@ -67,6 +86,7 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
     except FileNotFoundError as e:
       print(e)
       print(f"{pred_batch_map[prediction]}/ranked_{i}_{pred_new_name} does not exist, probably score < --min_score.")
+
     # Move pkl files
     pkl_name = f"result_{prediction}.pkl"
     old_pkl_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pkl_name)
@@ -99,6 +119,13 @@ def main(argv):
       new_location = os.path.join(batch_dir, sequence_name)
       os.makedirs(new_location)
       output_files = [ os.path.join(batch_dir, i) for i in os.listdir(batch_dir) if i.endswith('.json') or i.endswith('.cif') or i.endswith('.pkl') ]
+
+      confidence_path = os.path.join(batch_dir, 'confidences')
+      new_confidence_path = os.path.join(new_location, 'confidences')
+
+      os.makedirs(new_confidence_path)
+      for confidence_file in os.listdir(confidence_path):
+        cp(os.path.join(confidence_path, confidence_file), new_confidence_path)
       for file in output_files: 
         new_file = os.path.join(new_location, os.path.basename(file))
         mv(file, new_file)

@@ -69,9 +69,9 @@ install_env () {
   elif [[ $env == "alphafold3" ]]; then
     echo "Installing alphafold3 environment"
     conda env create -f mf-alphafold3.yml
-    conda activate mf-alphafold3
+    conda activate mf-alphafold-3.0.1
     build_data
-    wget -O $CONDA_PREFIX/bin/run_alphafold.py https://raw.githubusercontent.com/google-deepmind/alphafold3/adb131f010d0b011586bc6caf3eda8e822e02f5a/run_alphafold.py
+    wget -O $CONDA_PREFIX/bin/run_alphafold.py https://raw.githubusercontent.com/google-deepmind/alphafold3/v3.0.1/run_alphafold.py
     sed -i '1i #!/usr/bin/env python' $CONDA_PREFIX/bin/run_alphafold.py
     chmod +x $CONDA_PREFIX/bin/run_alphafold.py
   fi

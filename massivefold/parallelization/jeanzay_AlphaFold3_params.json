@@ -22,6 +22,9 @@
     "AF3_run": {
         "entities": [],
         "model_preset": "multimer",
+        "unpairedMsa": "true",
+        "pairedMsa": "true",
+        "templates": "true",
         "max_template_date": "2024-11-28"
     },
     "plots": {

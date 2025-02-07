@@ -10,12 +10,15 @@ pkl_format=$pkl_format
 echo "$${scripts_dir}/unifier.py
   --batches_file $${batches_file}
   --conversion output
-  --to_convert $$output"
+  --to_convert $$output
+  --tool ColabFold
+  "
 
 time $${scripts_dir}/unifier.py \
   --batches_file $${batches_file} \
   --conversion output \
-  --to_convert $$output
+  --to_convert $$output \
+  --tool ColabFold
 
 # rename and move files
 echo "$${scripts_dir}/organize_outputs.py --batches_path $$output"
@@ -36,7 +39,7 @@ time python3 $$(which $${mf_plots_path}) \
 
 if [[ $$pkl_format == "light" ]]; then
   echo "Reducing pkl size"
-  $${scripts_dir}/lighten_pkl.py $${output}
+  $${scripts_dir}/lighten_output.py $${output}
   rm $${output}/*.pkl
 elif [[ $$pkl_format == "none" ]]; then
   echo "Not keeping pkl files"
@@ -48,3 +51,11 @@ else
 fi
 
 date
+
+mkdir $${output}/log
+output_logs_path=$$(realpath $${output}/log)
+cp -r ${logs_dir}/$${sequence_name}/$${run_name}/* $${output}/log/
+cd $${output}/log 
+zip ../logs.zip *
+rm $$output_logs_path/*
+mv ../logs.zip .

@@ -1,4 +1,4 @@
-name: mf-alphafold3
+name: mf-alphafold-3.0.1
 channels:
   - conda-forge
   - bioconda
@@ -9,7 +9,11 @@ dependencies:
   - gxx
   - zlib
   - python=3.12
+  - biopython=1.81
+  - pandas
+  - absl-py
   - hmmer=3.4
   - pip
   - pip:
-    - git+https://github.com/google-deepmind/alphafold3@adb131f010d0b011586bc6caf3eda8e822e02f5a
+    - git+https://github.com/google-deepmind/alphafold3@v3.0.1
+    - glypy

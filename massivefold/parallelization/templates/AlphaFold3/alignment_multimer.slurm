@@ -11,7 +11,9 @@ logs_dir=$logs_dir
 scripts_dir=$scripts_dir
 
 source $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-alphafold3
+conda activate mf-alphafold-3.0.1
+
+#conda activate mf-alphafold3
 json_path=${input_dir}/alphafold3_json_requests/$${sequence_name}.json
 
 date
@@ -42,7 +44,7 @@ date
 conda deactivate
 
 if [[ -n $${mf_following_msas}  ]] && [[ $${mf_following_msas} == "true"  ]]; then
-  echo "Inference will folow after this MSAS step. Preparing batches..."
+  echo "Inference will follow after this MSAs step. Preparing batches..."
   mkdir $${output}/$${sequence_name}/$${run_name}
   json_params=$json_params
   json_msas=$${output}/$${sequence_name}/msas_alphafold3/msas_alphafold3_data.json

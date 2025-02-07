@@ -24,8 +24,8 @@ time python3 $$(which $${mf_plots_path}) \
 
 if [[ $$pkl_format == "light" ]]; then
   echo "Reducing pkl size"
-  echo "$${scripts_dir}/lighten_pkl.py $${output}"
-  time $${scripts_dir}/lighten_pkl.py $${output}
+  echo "$${scripts_dir}/lighten_output.py $${output}"
+  time $${scripts_dir}/lighten_output.py $${output}
   echo "rm $${output}/*.pkl"
   rm $${output}/*.pkl
 elif [[ $$pkl_format == "none" ]]; then
@@ -38,3 +38,11 @@ else
 fi
 
 date
+
+mkdir $${output}/log
+output_logs_path=$$(realpath $${output}/log)
+cp -r ${logs_dir}/$${sequence_name}/$${run_name}/* $${output}/log/
+cd $${output}/log 
+zip ../logs.zip *
+rm $$output_logs_path/*
+mv ../logs.zip .
