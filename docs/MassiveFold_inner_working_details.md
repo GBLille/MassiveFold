@@ -81,11 +81,11 @@
     N.B: The output in each 'batch_[i]' subdirectory is formatted as any AlphaFold3 output  
 
 - Standardize the outputs from original tool format to AF2 standard format  
-  K ```bash python {scripts_dir}/unifier.py --conversion output--to_convert {output}/{sequence}/{run}/ --batches_file {sequence}_{run}_batches.json --tool ColabFold```  
+  K. ```bash python {scripts_dir}/unifier.py --conversion output --to_convert {output}/{sequence}/{run}/ --batches_file {sequence}_{run}_batches.json --tool ColabFold```  
     Input: Batch directory, each batch containing ColabFold output  
     Output: ColabFold output in each batch subdirectories formatted as the standard AF2 output  
 
-  L. ```bash python {scripts_dir}/unifier.py --conversion output--to_convert {output}/{sequence}/{run}/ --batches_file {sequence}_{run}_batches.json --tool AlphaFold3```  
+  L. ```bash python {scripts_dir}/unifier.py --conversion output --to_convert {output}/{sequence}/{run}/ --batches_file {sequence}_{run}_batches.json --tool AlphaFold3```  
     Input: Batch directory, each batch containing AlphaFold3 output  
     Output: AlphaFold3 output in each batch subdirectories formatted as the standard AF2 output  
 
