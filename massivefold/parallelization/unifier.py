@@ -27,8 +27,8 @@ flags.DEFINE_string(
   'To convert')
 flags.DEFINE_enum(
   'tool',
-  "ColabFold",
-  ["ColabFold", "AlphaFold3"],
+  None,
+  ["AFmassive", "ColabFold", "AlphaFold3"],
   "Chose the tool from which the input/output should be unified.")
 flags.DEFINE_string(
   "json_params",
@@ -58,9 +58,11 @@ def convert_colabfold_fasta(fasta_path:str):
 
   converted = f"{ids[:-1]}\n{sequences[:-1]}"
   
-  with open(f"{fasta_dir}/converted_for_colabfold/{fasta_file}.fasta", 'w') as output:
+  output_fasta = f"{fasta_dir}/converted_for_colabfold/{fasta_file}.fasta"
+  with open(output_fasta, 'w') as output:
     output.write(converted)
-
+  
+  print(f"Fasta file has been successfully converted for ColabFold at {output_fasta}\n")
 
 def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
   json_params = os.path.realpath(FLAGS.json_params)
@@ -195,7 +197,7 @@ def af3_records_to_sequences(records, batch_input_json):
       continue
     ids = chain[next(iter(chain.keys()))]["id"]
     if isinstance(ids, list):
-      useds_ids.extend(ids)
+      used_ids.extend(ids)
     elif isinstance(ids, str):
       used_ids.append(ids)
 
@@ -612,7 +614,8 @@ def main(argv):
   if FLAGS.conversion == 'input':
     tools = ["ColabFold", "AlphaFold3"]
     if FLAGS.tool not in tools:
-      print(f"No input conversion needed with {tool}.")
+      print(f"No input conversion needed with {FLAGS.tool}.")
+      return 
     assert os.path.isfile(FLAGS.to_convert) and FLAGS.to_convert.endswith('.fasta'), \
     f"Fasta file is invalid {FLAGS.to_convert}"
     convert_input({"input": FLAGS.to_convert}, FLAGS.tool)
@@ -620,7 +623,8 @@ def main(argv):
   elif FLAGS.conversion == 'input_inference':
     tools = ["AlphaFold3"]
     if FLAGS.tool not in tools:
-      print(f"No input preparation in anticipation of inference for {tool}.")
+      print(f"No input preparation in anticipation of inference for {FLAGS.tool}.")
+      return  
     assert os.path.isfile(FLAGS.batches_file) and FLAGS.batches_file.endswith('.json'), \
     f"Json batches file is invalid: {FLAGS.batches_file}"
     assert os.path.isfile(FLAGS.to_convert) and FLAGS.to_convert.endswith('.json'), \
@@ -631,7 +635,8 @@ def main(argv):
   elif FLAGS.conversion == 'output':
     tools = ["ColabFold", "AlphaFold3"]
     if FLAGS.tool not in tools:
-      print(f"No output standardization for {tool}.")
+      print(f"No output standardization for {FLAGS.tool}.")
+      return 
     assert FLAGS.batches_file, 'Json batches file (--batches_file) is mandatory for output conversion (--conversion output)'
     convert_output(FLAGS.tool)
 

@@ -38,3 +38,11 @@ else
 fi
 
 date
+
+mkdir $${output}/log
+output_logs_path=$$(realpath $${output}/log)
+cp -r ${logs_dir}/$${sequence_name}/$${run_name}/* $${output}/log/
+cd $${output}/log 
+zip ../logs.zip *
+rm $$output_logs_path/*
+mv ../logs.zip .

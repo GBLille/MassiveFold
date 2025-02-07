@@ -10,12 +10,15 @@ pkl_format=$pkl_format
 echo "$${scripts_dir}/unifier.py
   --batches_file $${batches_file}
   --conversion output
-  --to_convert $$output"
+  --to_convert $$output
+  --tool ColabFold
+  "
 
 time $${scripts_dir}/unifier.py \
   --batches_file $${batches_file} \
   --conversion output \
-  --to_convert $$output
+  --to_convert $$output \
+  --tool ColabFold
 
 # rename and move files
 echo "$${scripts_dir}/organize_outputs.py --batches_path $$output"
@@ -48,3 +51,11 @@ else
 fi
 
 date
+
+mkdir $${output}/log
+output_logs_path=$$(realpath $${output}/log)
+cp -r ${logs_dir}/$${sequence_name}/$${run_name}/* $${output}/log/
+cd $${output}/log 
+zip ../logs.zip *
+rm $$output_logs_path/*
+mv ../logs.zip .

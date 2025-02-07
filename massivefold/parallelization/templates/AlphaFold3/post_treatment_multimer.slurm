@@ -42,3 +42,11 @@ time python3 $$(which $${mf_plots_path}) \
   --chosen_plots=$MF_plots_chosen_plots \
 
 date
+
+mkdir $${output}/log
+output_logs_path=$$(realpath $${output}/log)
+cp -r ${logs_dir}/$${sequence_name}/$${run_name}/* $${output}/log/
+cd $${output}/log 
+zip ../logs.zip *
+rm $$output_logs_path/*
+mv ../logs.zip .

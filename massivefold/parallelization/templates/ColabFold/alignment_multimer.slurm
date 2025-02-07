@@ -16,14 +16,6 @@ else
   exit 1
 fi
 
-echo "./$${scripts_dir}/unifier.py
-  --conversion input
-  --to_convert $$fafile"
-
-./$${scripts_dir}/unifier.py \
-  --conversion input \
-  --to_convert $$fafile
-
 fafile=${input_dir}/converted_for_colabfold/$${sequence_name}.fasta
 
 msas_output="$${output}/$${sequence_name}/msas_colabfold/"

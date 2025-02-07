@@ -41,11 +41,21 @@ def extract_af3_batch_input_msas(directory: str, json_files: list):
 
         # first the msas
         for msas in ["unpairedMsa", "pairedMsa"]:
+          # skip chains with no alignments (ligands)
+          if not msas in data["sequences"][i][entity] or not data["sequences"][i][entity][msas]:
+            continue
+          """
+          alignments = data["sequences"][i][entity][msas]
+          if not alignments:
+            continue
+          """
           fileout = os.path.join(directory, f"{entity}_{entity_count[entity]}_{msas}.a3m")
           msas_templates_paths[f"{entity}_{entity_count[entity]}"][msas] = fileout
           with open(fileout, 'w') as msas_file:
             msas_file.write(data["sequences"][i][entity][msas])
         # then the templates
+        if not "templates" in data["sequences"][i][entity] or not data["sequences"][i][entity]["templates"]:
+          continue
         templates = data["sequences"][i][entity]["templates"]
         msas_templates_paths[f"{entity}_{entity_count[entity]}"]["templates"] = {}
         for n, template in enumerate(templates):
@@ -61,11 +71,15 @@ def extract_af3_batch_input_msas(directory: str, json_files: list):
       entity_count[entity] += 1
       # first the msas
       for msas in ["unpairedMsa", "pairedMsa"]:
+        if not msas in data["sequences"][i][entity] or not data["sequences"][i][entity][msas]:
+          continue
         data["sequences"][i][entity][msas] = ""
         path_of_msas = msas_templates_paths[f"{entity}_{entity_count[entity]}"][msas]
         data["sequences"][i][entity][f"{msas}Path"] = path_of_msas
 
         # then the templates
+        if not "templates" in data["sequences"][i][entity] or not data["sequences"][i][entity]["templates"]:
+          continue
         templates = data["sequences"][i][entity]["templates"]
         for n, template in enumerate(templates):
           data["sequences"][i][entity]["templates"][n]["mmcif"] = ""
