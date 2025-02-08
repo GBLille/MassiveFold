@@ -98,55 +98,33 @@ def find_single_run_predictions(all_runs_path: str, run_name: str, ordered_names
 
 def rank_all(all_runs_path, all_runs, output_path, ranking_type="debug"):
   runs = [ os.path.join(all_runs_path, run) for run in all_runs ]
-  ranking_key_score = ''
+
   all_models = pd.DataFrame()
   os.makedirs(output_path, exist_ok=True)
 
   for run in runs:
     single_run_models = pd.DataFrame()
-    ranking_path = os.path.join(run, f'ranking_{ranking_type}.json')
+    ranking_path = os.path.join(run, f'ranking_debug.json')
+    ranking_score_path = os.path.join(run, f'ranking_{ranking_type}.json')
     with open(ranking_path, 'r') as local_ranking_file:
       local_rank = json.load(local_ranking_file)
-    if not ranking_key_score:
-      ranking_key_score = list(local_rank.keys())[0]
     
-    scores = list(local_rank[ranking_key_score].values())
-    model_names = local_rank["order"]
 
+    model_names = local_rank["order"]
+    score_ranking = json.load(open(ranking_score_path, 'r'))
+    ranking_key_score = list(score_ranking.keys())[0]
+    scores = [ score_ranking[ranking_key_score][model] for model in model_names ]
     try:
       predictions = find_single_run_predictions(all_runs_path, run, model_names)
     except AssertionError as e:
       print(f"Assertion error: {str(e)[:300]}...")
       delete_symlinks(all_runs_path, all_runs)
       sys.exit()
-    """
-    reconstruct_prediction = lambda x, y: f"ranked_{y}_unrelaxed_{x}.pdb"
-    predictions = list(map(reconstruct_prediction, model_names, range(len(model_names))))
-    
-    check_files_existence = lambda x: os.path.isfile(os.path.join(run, x))
-  
-    files_existence = list(map(check_files_existence, predictions))
-    if not all(files_existence):
-      indices = np.logical_not(files_existence).astype(int)
-      not_found = list(np.array(predictions)[indices.astype(bool)])
-      get_relaxed_version = lambda x: x.replace('unrelaxed', 'relaxed')
-      relaxed_predictions = list(map(get_relaxed_version, not_found))
-      relaxed_files_existence = list(map(check_files_existence, relaxed_predictions)) 
-      if not all(relaxed_files_existence):
-        secondary_indices = np.logical_not(relaxed_files_existence).astype(int)
-        secondary_not_found = list(np.array(not_found)[secondary_indices.astype(bool)])
-        print(f'/!\\ some predictions are not found in the run {run}, needs investigation')
-        print(f"Predictions not present: {', '.join(secondary_not_found)}\n")
-        delete_symlinks(all_runs_path, all_runs)
-        sys.exit()
-    """
     single_run_models['file'] = predictions
     single_run_models[ranking_key_score] = scores
     parameter_set = os.path.basename(os.path.normpath(run))
     single_run_models['parameters'] = parameter_set
     single_run_models["model_name"] = model_names
-    #columns_order = ['parameters', 'file', ranking_key_score]
-    #single_run_models = single_run_models[columns_order]
     all_models = pd.concat([all_models, single_run_models], axis=0) 
   
   all_models = all_models.sort_values(ranking_key_score, ascending=False, ignore_index=True)
@@ -155,8 +133,6 @@ def rank_all(all_runs_path, all_runs, output_path, ranking_type="debug"):
   all_models = all_models[columns_order]
   
   all_models_csv = all_models[ [col for col in all_models.columns if col != "model_name"] ]
-  all_models_csv.to_csv(os.path.join(all_runs_path, 'ranking.csv'), index=None)
-  print(all_models)
   return all_models
 
 def move_and_rename(all_runs_path, run_names, output_path, ranking, do_include_pickles, do_include_rank):
@@ -262,6 +238,7 @@ def main():
     output_path = os.path.join(runs_path, 'all_pdbs')
   sequence_name = os.path.basename(os.path.realpath(runs_path))
 
+  ranking_types = ["debug", "iptm", "ptm", "plddt"]
   ignored_dir = ['all_pdbs', 'all_runs', 'msas', 'msas_colabfold', "msas_alphafold3"]
   ignore_runs = [ run.replace('/', '') for run in args.runs_to_ignore ]
   ignored_dir.extend(ignore_runs)
@@ -277,14 +254,28 @@ def main():
   # create ranking json files
   delete_symlinks(runs_path, runs)
   create_symlink_without_ranked(runs_path, runs)
-  ranked_predictions = rank_all(runs_path, runs, output_path) 
+
+  for i, ranking_type in enumerate(ranking_types):
+    try:
+      ranked_predictions = rank_all(runs_path, runs, output_path, ranking_type) 
+    except FileNotFoundError as e:
+      print(f"No ranking for {ranking_type} metric.")
+    if i == 0:
+      whole_prediction_ranking = ranked_predictions
+    else:
+      new_metric = [ column_new for column_new in ranked_predictions.columns if column_new not in whole_prediction_ranking.columns ]
+      whole_prediction_ranking[new_metric] = ranked_predictions[new_metric]
+
+  assert not whole_prediction_ranking.empty
+  print(whole_prediction_ranking)
+  whole_prediction_ranking.to_csv(os.path.join(runs_path, 'ranking.csv'), index=None)
 
   if not args.only_ranking:
     pred_run_map = create_global_ranking(runs_path, runs, output_path) 
     print(f"Gathering {sequence_name}'s runs")
     if args.include_pickles:
       print("Pickle files are also included in the gathering.")
-    move_and_rename(runs_path, pred_run_map, output_path, ranked_predictions, args.include_pickles, args.include_rank)
+    move_and_rename(runs_path, pred_run_map, output_path, whole_prediction_ranking, args.include_pickles, args.include_rank)
   elif os.path.exists(output_path):
     rm(output_path)
   delete_symlinks(runs_path, runs)
