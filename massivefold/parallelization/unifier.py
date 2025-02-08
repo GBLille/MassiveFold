@@ -180,27 +180,23 @@ def af3_resolve_glycan(glycan_str, chain_id):
     'residue_counter': [1],
     'map_code': iupac_to_ccd
   }
-  glycan_traversal(parsed_glycan.root, parent_index=None, linkage=None, state=state)
-  ccdCodes, bondedAtomPairs = state['ccdCodes'], state['bondedAtomPairs']
-  return ccdCodes, bondedAtomPairs
+  if hasattr(parsed_glycan, "root"):
+    glycan_traversal(parsed_glycan.root, parent_index=None, linkage=None, state=state)
+  else:
+    state['ccdCodes'].append(state['map_code'][parsed_glycan.serialize(name="iupac_lite")])
 
-def af3_records_to_sequences(records, batch_input_json): 
+  return state['ccdCodes'], state['bondedAtomPairs']
+
+def af3_records_to_sequences(records, fasta_ids_sequences): 
   glycosylation_attachment = {
     'N': {"atom": 'ND2', "sugar": ["NAG"]},
     'S': {"atom": 'OG', "sugar": ["NGA", "NAG", "MAN"]},
     'T': {"atom": 'OG1', "sugar": ["NGA", "NAG", "MAN"]},
     'K': {"atom": 'O', "sugar": ["GAL"]}
   }
-  used_ids = []
-  for chain in batch_input_json["sequences"]:
-    if not chain:
-      continue
-    ids = chain[next(iter(chain.keys()))]["id"]
-    if isinstance(ids, list):
-      used_ids.extend(ids)
-    elif isinstance(ids, str):
-      used_ids.append(ids)
 
+  used_ids = list({}.keys())
+  used_ids = list(fasta_ids_sequences.keys())
   sequence_dicts = []
   all_chain_ids = string.ascii_uppercase
   all_chain_ids = [ i for i in all_chain_ids if i not in used_ids ]
@@ -213,10 +209,8 @@ def af3_records_to_sequences(records, batch_input_json):
     record_type = record["sequence_type"][:]
     if record["sequence_type"] == "glycosylation":
       chain, position  = used_ids[record["on_chain_index"]], record["at_position"]
-      glycosylated_residue= [ 
-          next(iter(batch_input_json['sequences'][i].values()))['sequence'] for i in range(len(batch_input_json["sequences"]))
-          if chain in next(iter(batch_input_json['sequences'][i].values()))["id"]
-      ][0][position-1]
+      glycosylated_residue = fasta_ids_sequences[chain][position-1]
+
       ccdCodes, glycan_bondedAtomPairs = af3_resolve_glycan(record["seq"], chain_id) 
       assert glycosylated_residue in glycosylation_attachment, \
       f"'{glycosylated_residue}' is invalid residue for glycosylation. Valid one are among {list(glycosylation_attachment.keys())}"
@@ -224,8 +218,14 @@ def af3_records_to_sequences(records, batch_input_json):
       f"Wrong type of glycosylation on {glycosylated_residue}"
 
       residue_atom = glycosylation_attachment[glycosylated_residue]["atom"]
-      glycan_root = glycan_bondedAtomPairs[0][0].copy()
-      glycan_root[2] = "C1"
+      if glycan_bondedAtomPairs:
+        glycan_root = glycan_bondedAtomPairs[0][0].copy()
+        glycan_root[2] = "C1"
+      elif not glycan_bondedAtomPairs and len(ccdCodes) == 1:
+        glycan_root = [chain_id, 1, "C1"]
+      else:
+        raise ValueError(f"No bondedAtomPairs found while more than 1 ccdCodes foud: ccdCodes: {ccdCodes}")
+
       bondedAtomPairs = [[[chain, record["at_position"], residue_atom], glycan_root]]
       bondedAtomPairs.extend(glycan_bondedAtomPairs)
       all_bonds.extend(bondedAtomPairs)
@@ -243,6 +243,19 @@ def af3_records_to_sequences(records, batch_input_json):
   return sequence_dicts, all_bonds
 
 def af3_add_input_entity(batch_input_json, af3_params):
+  fasta_ids_sequences = {}
+  for chain in batch_input_json["sequences"]:
+    if not chain:
+      continue
+    entity = chain[next(iter(chain.keys()))]
+    ids = entity["id"]
+    if isinstance(ids, list):
+      for id in ids:
+        fasta_ids_sequences[id] = entity["sequence"]
+    elif isinstance(ids, str):
+      fasta_ids_sequences[ids] = entity["sequence"]
+
+  used_ids = list(fasta_ids_sequences.keys())
   ligand = af3_params['ligand']
   
   additional_records = []
@@ -264,7 +277,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
         print(
           f"- Glycosylation: \n{ptm['sequence']}"
           f"\nAt positions {', '.join(list(map(str, ptm['positions'])))} on:\n"
-          f"{next(iter(batch_input_json['sequences'][i].values()))['sequence']}" 
+          f"{fasta_ids_sequences[used_ids[i]]}"
         )
         for pos in list(map(int, ptm["positions"])):
           additional_records.append(
@@ -284,7 +297,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
   # add the extra sequences (e.g ligands)
   bonds = []
   if additional_records:
-    additional_sequences, bonds = af3_records_to_sequences(additional_records, batch_input_json)
+    additional_sequences, bonds = af3_records_to_sequences(additional_records, fasta_ids_sequences)
     batch_input_json["sequences"].extend(additional_sequences)
   if bonds:
     batch_input_json["bondedAtomPairs"] = bonds
