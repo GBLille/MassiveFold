@@ -1,8 +1,14 @@
 name: massivefold-nf
 channels:
   - conda-forge
+  - bioconda
   - defaults
 dependencies:
-  - nextflow
   - python=3.12
+  - nextflow
   - numpy
+  - pandas
+  - biopython
+  - absl-py
+  - pip
+  

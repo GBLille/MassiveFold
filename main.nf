@@ -1,4 +1,8 @@
 nextflow.enable.dsl = 2
+import groovy.json.JsonSlurper
+import java.nio.file.Path
+import java.nio.file.Paths
+
 
 // Define the help message
 def helpMessage = '''
@@ -10,25 +14,25 @@ Required arguments:
     --database_dir : path to the local directory where the ColabFold database is located.
 
 Optional arguments:
+    --tool_to_use <str>: (default: 'ColabFold') Use either AFmassive or ColabFold in structure prediction for MassiveFold.
+    --msas_precomputed <path>: path to directory that contains computed MSAs.
     --parameters: json file's path containing the parameters used for this run.
     --predictions_per_model: number of predictions computed for each neural network model.
     --batch_size <int>: (default: 25) number of predictions per batch, should not be higher than --predictions_per_model.
     --calibration_from <path>: path of a previous run to calibrate the batch size from (see --calibrate).
     --wall_time <int>: (default: 20) total time available for calibration computations, unit is hours.
-    --msas_precomputed <path>: path to directory that contains computed MSAs.
     --top_n_models <int>: uses the n neural network models with best ranking confidence from this run's path.
-    --jobid <str>: job ID of an alignment job to wait for inference, skips the alignments.
-
-Optional flags:
-    --tool_to_use <str>: (default: 'ColabFold') Use either AFmassive or ColabFold in structure prediction for MassiveFold.
     --only_msas: only compute alignments, the first step of MassiveFold.
-    --calibrate: calibrate --batch_size value. Searches from the previous runs for the same 'fasta' path given
-                 in --sequence and uses the longest prediction time found to compute the maximal number of predictions per batch.
-    --recompute_msas: purges previous alignment step and recomputes MSAs.
-
+    
 Example in the environment of a virtual machine in the IFB-Biosphere cloud:
     nextflow main.nf --sequence examples/H1140.fasta --run test --database_dir ~/data/public/colabfold/ -profile docker -resume
 '''
+
+// Load the JSON file
+def loadJson( fileName ) {
+    def jsonSlurper = new JsonSlurper()
+    return jsonSlurper.parse(new File(fileName))
+}
 
 workflow {
     // Display the help message if requested
@@ -44,41 +48,48 @@ workflow {
         exit 1
     }
 
+    // Treatment of the Multi-Sequence Alignment (MSA)
+    def msa_results
+    log.info("Running with: ${params.tool}")
     def seqFiles = files(params.sequence)
 
-    // Log inputs
-    log.info("Sequence files: ${seqFiles}")
+    if (params.tool == 'ColabFold') {
+        // Parse the JSON configuration
+        def config = loadJson(params.config_tool)
+        //println config.CF_run
+        // FAIRE EN SORTE DE RECUPERE LES INFOS NECESSAIRES DANS UNE CHANNEL OU DANS PLUSIEURS ? 
 
-    def msa_results
-    if (params.msas_precomputed) {
-        // Use precomputed alignments
-        log.info("Using precomputed MSAs: ${params.msas_precomputed}")
-        log.info('Skipping alignment step as precomputed alignments are provided.')
-        msa_results = Channel
-            .fromPath(params.msas_precomputed)
-            .map { precomputed_msa -> tuple(precomputed_msa.baseName, precomputed_msa) }
+        fastafile_unified = Unifier_colabfold(seqFiles)
         
-    } else {
-        // Run alignment process
-        msa_results = RUN_alignment(seqFiles, params.run, params.database_dir, params.pair_strategy)
-    }
-
-    // Generate the batches channel (seqname, json_path)
-    batches_csv = Create_batchs_csv(
-        msa_results,
-        params.predictions_per_model,
-        params.batch_size,
-        "ColabFold",
-        "")
-
-    batches_msa = batches_csv.splitCsv(header: true)
-        .combine(msa_results)
-        .map { pair ->
-            def (batch, msapath, truc) = pair
-            return batch.values() + [truc]
+        if (params.msas_precomputed) {
+            // Use precomputed alignments
+            log.info("Using precomputed MSAs: ${params.msas_precomputed}")
+            msa_results = Channel
+                .fromPath(params.msas_precomputed)
+                .map { precomputed_msa -> tuple(precomputed_msa.baseName, precomputed_msa) }
+        } else {
+            // Run alignment process
+            msa_results = Alignement_with_colabfold(fastafile_unified, params.database_dir, params.pair_strategy)
         }
-        
-    res_prediction= RUN_inference(
+
+        batch_json = Create_batchs(fastafile_unified, params.run, params.predictions_per_model, params.batch_size, params.config_tool, params.tool)
+
+    batchs = batch_json
+        .map { path -> 
+            File file = path.toFile()
+            def jsonSlurper = new JsonSlurper()
+            def jsonData = jsonSlurper.parse(file)
+
+            // Emit each JSON entry as (start, end, model)
+            return jsonData.collect { key, value -> tuple(key, value.start, value.end, value.model) }
+        }
+        .flatten()
+        .collate( 4 )
+
+
+    batches_msa = batchs.combine(msa_results)
+
+    res_prediction= Run_inference_colabfold(
             batches_msa,
             params.run,
             params.database_dir,
@@ -89,25 +100,67 @@ workflow {
             params.disable_cluster_profile
         )
     
-        // Run the 'Extract_Scores' process for each batch
-    extract_results = Extract_Scores(res_prediction )
+    out = Standardize_output_colabfold(fastafile_unified, batch_json, res_prediction.collect())
 
-    scores_files = extract_results.collect { v ->  v[5] } 
-    //log.info("Collected CSV files: ${scores_files.view()}")
+    } else if (params.tool == 'AlphaFold3') {
+        fastafile_unified = Unifier_AlphaFold3(seqFiles)
+        if (params.msas_precomputed) {
+            // Use precomputed alignments
+            log.info("Using precomputed MSAs: ${params.msas_precomputed}")
+            msa_results = Channel
+                .fromPath(params.msas_precomputed)
+                .map { precomputed_msa -> tuple(precomputed_msa.baseName, precomputed_msa) }
+        } else {
+            // Run alignment process
+            msa_results = Alignement_with_colabfold(fastafile_unified, params.database_dir, params.pair_strategy)
+        }
+    } else {
+        // Handle case where the tool is not recognized
+        log.error("Unsupported tool: ${params.tool}")
+        exit 1
+    }
 
-    // Gather all CSVs into a final combined CSV
-    final_scores = Gather_scores(scores_files ) // Collect all the CSV files created by Extract_ScoresAndRanking
 
 }
 
-process RUN_alignment {
+process Unifier_colabfold {
+    input:
+    path sequence
+
+    output:
+    path "input/converted_for_colabfold/${sequence.baseName}.fasta"
+
+    script:
+    """
+    mkdir -p input
+    cp $sequence input/.
+    unifier.py --conversion input --to_convert input/${sequence.baseName}.fasta --tool ColabFold
+    """
+}
+
+process Unifier_alphafold3 {
+    input:
+    path sequence
+
+    output:
+    path "${input_dir}/alphafold3_json_requests/${sequence.baseName}.fasta"
+
+    script:
+    """
+    mkdir input
+    cp $sequence input/.
+    unifier.py --conversion input --to_convert input/${sequence.baseName}.fasta --tool AlphaFold3 --json_params AlphaFold3_params.json
+    """
+}
+
+
+process Alignement_with_colabfold {
     tag "$seqFile.baseName"
-    publishDir "result/$runName/alignment"
+    publishDir "result/${seqFile.baseName}/alignment"
     label 'colabfold'
 
     input:
     path(seqFile)
-    val(runName)
     path(data_dir)
     val(pair_strategy)
 
@@ -125,7 +178,7 @@ process RUN_alignment {
         exit 1
     fi
 
-    time colabfold_search $seqFile $data_dir ${seqFile.baseName}_msa --pairing_strategy \${pairing_strategy}
+    colabfold_search $seqFile $data_dir ${seqFile.baseName}_msa --pairing_strategy \${pairing_strategy}
     """
 
     stub:
@@ -146,48 +199,87 @@ process RUN_alignment {
         echo "Stub content for \$line" > "\$output_file"
     done
     """
-
-
 }
 
 
-process Create_batchs_csv {
-    tag "$sequence_name"
-
-    conda 'nextflow.yml'
+process RUN_alignment{
+    tag "$seqFile.baseName"
+    publishDir "result/${seqFile.baseName}/alignment"
+    label 'colabfold'
 
     input:
-    tuple val(sequence_name), path(msaFolder)
-    val(predictions_per_model)
-    val(batch_size)
-    val(tool)
-    val(models_to_use)
+    path(seqFile)
+    path(data_dir)
+    val(pair_strategy)
 
     output:
-    path("${sequence_name}_batches.csv")  //Output JSON file with batch details
+    tuple val(seqFile.baseName), path("${seqFile.baseName}_msa*")
 
     script:
     """
-    create_batches_csv.py $predictions_per_model $batch_size "$models_to_use" "$sequence_name" "$tool"
+    if [[ ${pair_strategy} == "greedy" ]]; then
+        pairing_strategy=0
+    elif [[ ${pair_strategy} == "complete" ]]; then
+        pairing_strategy=1
+    else
+        echo "ValueError: --pair_strategy '${pair_strategy}'"
+        exit 1
+    fi
+
+    colabfold_search $seqFile $data_dir ${seqFile.baseName}_msa --pairing_strategy \${pairing_strategy}
     """
 
     stub:
     """
-    which python
-    python -c "import numpy; print(numpy.__version__)"
-    create_batches_csv.py $predictions_per_model $batch_size "$models_to_use" "$sequence_name" "$tool"
+    # Create a directory for the MSA outputs
+    msa_dir="${seqFile.baseName}_msa"
+    mkdir -p "\$msa_dir"
+
+    # Read the FASTA file and extract the headers
+    grep '^>' $seqFile | while read -r line; do
+        # Remove the leading '>'
+        header=\$(echo "\$line" | sed 's/^>//')
+        # Replace unsafe characters with underscores
+        sanitized_header=\$(echo "\$header" | tr -c '[:alnum:]_' '_')
+        # Create the output file name
+        output_file="${seqFile.baseName}_\${sanitized_header}.a3m"
+        # Write stub content
+        echo "Stub content for \$line" > "\$output_file"
+    done
+    """
+}
+process Create_batchs {
+    input:
+    path sequence
+    val run
+    val predictions_per_model
+    val batch_size
+    val config_tool
+    val tool
+
+    output:
+    path "*.json"
+
+    script:
+    """
+    batching.py --sequence_name=${sequence.baseName} \
+                       --run_name=${run} \
+                       --predictions_per_model=${predictions_per_model} \
+                       --batch_size=${batch_size} \
+                       --path_to_parameters=${config_tool} \
+                       --tool ${tool}
     """
 }
 
-process RUN_inference {
+
+process Run_inference_colabfold {
     tag " $sequence_name | batch#$id_batch"
-    publishDir "result/prediction/$sequence_name/$batch_model/$id_batch"
     label 'colabfold'
 
     input:
-    tuple val(id_batch), val(sequence_name), val(batch_start), val(batch_end), val(batch_model), path(msaFolder)
+    tuple val(id_batch), val(batch_start), val(batch_end), val(batch_model), val(sequence_name) , path(msaFolder)
     val(run_name)
-    path(data_dir)
+    val(data_dir)
     val(num_recycle)
     val(recycle_early_stop_tolerance)
     val(use_dropout)
@@ -195,11 +287,12 @@ process RUN_inference {
     val(disable_cluster_profile)
 
     output:
-    tuple val(id_batch), val(sequence_name), val(batch_start), val(batch_end), val(batch_model), path("*")
-    
+    //tuple val(id_batch), val(sequence_name), val(batch_start), val(batch_end), val(batch_model), path("res_*")
+    path "res_*"
+
     script:
     """
-    export JAX_PLATFORMS=cpu
+    #export JAX_PLATFORMS=cpu
     random_seed=\$(shuf -i 0-1000000 -n 1)
     echo $batch_model
     num_models=\$(echo $batch_model | cut -d "_" -f 2)
@@ -213,8 +306,8 @@ process RUN_inference {
     echo "$msaFolder"
     colabfold_batch \
         ${msaFolder} \
-        res_${sequence_name}_${run_name}_${id_batch} \
         --data ${data_dir} \
+        res_${sequence_name}_${run_name}_${id_batch} \
         --save-all \
         --random-seed \$random_seed \
         --num-seeds \$num_seeds \
@@ -243,50 +336,23 @@ process RUN_inference {
     """
 }
 
-process Extract_Scores {
-    tag { "Extract Score for $sequence_name #$id_batch" }
-    
-    input:
-    tuple val(id_batch), val(sequence_name), val(batch_start), val(batch_end), val(batch_model), path(resultsDir)
 
-    output:
-    tuple val(id_batch), val(sequence_name), val(batch_start), val(batch_end), val(batch_model),path("*.csv")
+process Standardize_output_colabfold {
+    publishDir "result/prediction/${seqFile.baseName}/"
 
-    script:
-    """
-    extract_score.py $id_batch $sequence_name $batch_start $batch_end $batch_model $resultsDir
-    """
-    stub:
-    """
-    touch ${id_batch}_stub_output.csv
-    """
-}
+    input: 
+    path seqFile 
+    path batchjson
+    path colabfold_batch_files
 
-process Gather_scores {
-    publishDir "result"
 
-    input:
-    path csv_files
-
-    output:
-    path("final_combined_scores.csv")
+    output: 
+    path colabfold_batch_files
 
     script:
     """
-    # Combine all CSVs into a single final CSV
-    echo 'File,ID_Batch,Sequence_Name,Batch_Start,Batch_End,Batch_Model,Ranking_PTM,Ranking_IPTM,Ranking_Debug' > temp
-
-    # Iterate over each CSV file and append its contents to the temp file and after final_combined_scores.csv
-    for csv_file in *.csv; do
-        # Skip the header (first line) and append the rest to the final file
-        tail -n +2 \$csv_file >> temp
-    done
-    mv temp final_combined_scores.csv
-    """
-
-    stub:
-    """
-    ls 
-    echo 'File,ID_Batch,Sequence_Name,Batch_Start,Batch_End,Batch_Model,Ranking_PTM,Ranking_IPTM,Ranking_Debug' > final_combined_scores.csv
+    unifier.py --conversion output --to_convert . --batches_file $batchjson --tool ColabFold
+    organize_outputs.py --batches_path .
     """
 }
+
