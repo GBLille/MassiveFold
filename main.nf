@@ -7,17 +7,17 @@ import java.nio.file.Paths
 // Define the help message
 def helpMessage = '''
 Usage:
-    nextflow main.nf --sequence <path_to_sequences_file> --run <run_name> --database_dir <path_to_colabfold_db> -profile docker
-Required arguments:
+    nextflow main.nf --sequence <path> --run <name> --database_dir <path> [-options]
+    Required arguments:
     --sequence: path(s) of the sequence(s) to infer, should be a 'fasta' file or a list of files separated by commas.
     --run: name chosen for the run to organize outputs.
-    --database_dir : path to the local directory where the ColabFold database is located.
+    --database_dir : path to the local directory where the tool database is located.
 
 Optional arguments:
-    --tool_to_use <str>: (default: 'ColabFold') Use either AFmassive or ColabFold in structure prediction for MassiveFold.
+    --tool <str>: (default: 'ColabFold') Use either AFmassive, ColabFold or ... in structure prediction for MassiveFold.
     --msas_precomputed <path>: path to directory that contains computed MSAs.
-    --parameters: json file's path containing the parameters used for this run.
-    --predictions_per_model: number of predictions computed for each neural network model.
+    --parameters <path>: json file's path containing the parameters used for this run.
+    --predictions_per_model <int>: number of predictions computed for each neural network model.
     --batch_size <int>: (default: 25) number of predictions per batch, should not be higher than --predictions_per_model.
     --calibration_from <path>: path of a previous run to calibrate the batch size from (see --calibrate).
     --wall_time <int>: (default: 20) total time available for calibration computations, unit is hours.
@@ -53,6 +53,8 @@ workflow {
     log.info("Running with: ${params.tool}")
     def seqFiles = files(params.sequence)
 
+
+    // Check the Tool used and apply the appropriate workflow
     if (params.tool == 'ColabFold') {
         // Parse the JSON configuration
         def config = loadJson(params.config_tool)
@@ -74,17 +76,28 @@ workflow {
 
         batch_json = Create_batchs(fastafile_unified, params.run, params.predictions_per_model, params.batch_size, params.config_tool, params.tool)
 
+    // Process the batch JSON file to extract and structure batch information
     batchs = batch_json
+        // Map each path in the batch_json channel to its corresponding data
         .map { path -> 
+            // Convert the path to a File object
             File file = path.toFile()
+            
+            // Create a JSON parser to read the file
             def jsonSlurper = new JsonSlurper()
+            
+            // Parse the JSON file into a Groovy object
             def jsonData = jsonSlurper.parse(file)
 
-            // Emit each JSON entry as (start, end, model)
+            // Transform the JSON data into a list of tuples
+            // Each entry in the JSON is converted to a tuple containing : key, start, end, model
             return jsonData.collect { key, value -> tuple(key, value.start, value.end, value.model) }
         }
+        // Flatten the list of lists into a single list of tuples
         .flatten()
-        .collate( 4 )
+        // Group the flattened tuples into chunks of 4 elements each
+        // This ensures each batch is represented as a single item in the channel
+        .collate(4)
 
 
     batches_msa = batchs.combine(msa_results)
@@ -102,7 +115,12 @@ workflow {
     
     out = Standardize_output_colabfold(fastafile_unified, batch_json, res_prediction.collect())
 
-    } else if (params.tool == 'AlphaFold3') {
+    } 
+    else if (params.tool == 'AFMassive') {
+        //
+        log.info("Do stuff")
+    }
+    else if (params.tool == 'AlphaFold3') {
         fastafile_unified = Unifier_AlphaFold3(seqFiles)
         if (params.msas_precomputed) {
             // Use precomputed alignments
@@ -113,6 +131,7 @@ workflow {
         } else {
             // Run alignment process
             msa_results = Alignement_with_colabfold(fastafile_unified, params.database_dir, params.pair_strategy)
+            // To be continued 
         }
     } else {
         // Handle case where the tool is not recognized
