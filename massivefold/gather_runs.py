@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import re
 import json
 import sys
 import argparse
@@ -80,12 +81,14 @@ def find_single_run_predictions(all_runs_path: str, run_name: str, ordered_names
   full_filenames = []
   if is_alphafold2:
     for i, pred in enumerate(ordered_names):
-      if "_unrelaxed_" in pred:
-        full_filenames.append(f"ranked_{str(i)}_unrelaxed_{pred}.pdb")
-      elif "_relaxed_" in pred:
-        full_filenames.append(f"ranked_{str(i)}_relaxed_{pred}.pdb")
-      else:
+      prefix = f"ranked_{str(i)}_"
+      suffix = f"{pred}.pdb"
+      all_preds = os.listdir(os.path.join(all_runs_path, run_name))
+      matches = [ i for i in all_preds if i.startswith(prefix) and i.endswith(suffix) ]
+      if len(matches) == 0 or len(matches) > 1:
         do_not_exist.append(f"(ranked_{str(i)} => {pred})")
+      else:
+        full_filenames.append(matches[0])
   elif is_alphafold3:
     full_filenames = [ f"ranked_{i}_{pred}.cif" for i, pred in enumerate(ordered_names) ]
   
@@ -136,6 +139,7 @@ def rank_all(all_runs_path, all_runs, output_path, ranking_type="debug"):
   return all_models
 
 def move_and_rename(all_runs_path, run_names, output_path, ranking, do_include_pickles, do_include_rank):
+  score_key = ranking.columns[1]
   global_rank_order = ranking.to_dict(orient="records")
   models, runs, predictions, scores, mapped_names = [], [], [], [], []
   for i, prediction in enumerate(global_rank_order):
@@ -143,7 +147,7 @@ def move_and_rename(all_runs_path, run_names, output_path, ranking, do_include_p
     prediction_old_file = prediction["file"]
     model_name = prediction["model_name"]
     global_rank = prediction["global_rank"]
-    ranking_score = prediction["ranking_score"]
+    ranking_score = prediction[score_key]
     # copy the features if found
     if i == 0:
       features_old_name = os.path.join(all_runs_path, prediction_run_name, "features.pkl")
@@ -185,7 +189,7 @@ def move_and_rename(all_runs_path, run_names, output_path, ranking, do_include_p
       print("--include_pickles should be fixed, not working anymore.")
   
   if do_include_rank:
-    mapping = {"model": models, "run": runs, "prediction": predictions, "score": scores, "mapped_name": mapped_names}
+    mapping = {"model": models, "run": runs, "prediction": predictions, score_key: scores, "mapped_name": mapped_names}
     pd.DataFrame(mapping).to_csv(os.path.join(output_path, 'map.csv'), index=False)
 
 def create_symlink_without_ranked(all_runs_path, runs):
