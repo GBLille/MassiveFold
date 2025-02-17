@@ -83,16 +83,16 @@ MassiveFold was developed to run massive sampling with [AFmassive](https://githu
 git clone https://github.com/GBLille/MassiveFold.git
 ```
 
-For AFmassive runs, two additional installation steps are required to use MassiveFold for AFmassive runs:
+For AFmassive runs, two additional installation steps are required to use MassiveFold:
 - Download [sequence databases](https://github.com/GBLille/AFmassive?tab=readme-ov-file#sequence-databases)
 - Retrieve the [neural network (NN) models parameters](https://github.com/GBLille/AFmassive?tab=readme-ov-file#alphafold-neural-network-model-parameters)
 
-For ColabFold runs, two additional installation steps are required to use MassiveFold for AFmassive runs:
+For ColabFold runs, two additional installation steps are required to use MassiveFold:
 - Download [sequence databases](https://github.com/sokrypton/ColabFold?tab=readme-ov-file#generating-msas-for-large-scale-structurecomplex-predictions)
 - Retrieve the [neural network (NN) models parameters](https://github.com/GBLille/AFmassive?tab=readme-ov-file#alphafold-neural-network-model-parameters)
-and move them to a 'params' folder in the sequence databases folder
+and move them to a 'params' folder in the sequence databases folder (same parameters as AFmassive)
 
-For AlphaFold3 runs, two additional installation steps are required to use MassiveFold for AFmassive runs:
+For AlphaFold3 runs, two additional installation steps are required to use MassiveFold:
 - Download [sequence databases](https://github.com/google-deepmind/alphafold3/blob/main/docs/installation.md#obtaining-genetic-databases)
 - Retrieve the [neural network (NN) models parameters](https://github.com/google-deepmind/alphafold3?tab=readme-ov-file#obtaining-model-parameters)
 
