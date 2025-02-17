@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os
-import re
 import json
 import sys
 import argparse
@@ -80,10 +79,10 @@ def find_single_run_predictions(all_runs_path: str, run_name: str, ordered_names
   do_not_exist = []
   full_filenames = []
   if is_alphafold2:
+    all_preds = os.listdir(os.path.join(all_runs_path, run_name))
     for i, pred in enumerate(ordered_names):
       prefix = f"ranked_{str(i)}_"
       suffix = f"{pred}.pdb"
-      all_preds = os.listdir(os.path.join(all_runs_path, run_name))
       matches = [ i for i in all_preds if i.startswith(prefix) and i.endswith(suffix) ]
       if len(matches) == 0 or len(matches) > 1:
         do_not_exist.append(f"(ranked_{str(i)} => {pred})")
@@ -111,7 +110,6 @@ def rank_all(all_runs_path, all_runs, output_path, ranking_type="debug"):
     ranking_score_path = os.path.join(run, f'ranking_{ranking_type}.json')
     with open(ranking_path, 'r') as local_ranking_file:
       local_rank = json.load(local_ranking_file)
-    
 
     model_names = local_rank["order"]
     score_ranking = json.load(open(ranking_score_path, 'r'))
@@ -143,36 +141,37 @@ def move_and_rename(all_runs_path, run_names, output_path, ranking, do_include_p
   global_rank_order = ranking.to_dict(orient="records")
   models, runs, predictions, scores, mapped_names = [], [], [], [], []
   for i, prediction in enumerate(global_rank_order):
-    prediction_run_name = prediction["parameters"]
+    run_name = prediction["parameters"]
     prediction_old_file = prediction["file"]
     model_name = prediction["model_name"]
     global_rank = prediction["global_rank"]
     ranking_score = prediction[score_key]
     # copy the features if found
     if i == 0:
-      features_old_name = os.path.join(all_runs_path, prediction_run_name, "features.pkl")
+      features_old_name = os.path.join(all_runs_path, run_name, "features.pkl")
       features_new_name = os.path.join(output_path, "features.pkl")
       try:
         cp(features_old_name, features_new_name)
       except FileNotFoundError:
-        print(f'features.pkl not found in {prediction_run_name} run')
+        print(f'features.pkl not found in {run_name} run')
 
     # copy the predictions
-    old_pdb_path = os.path.join(all_runs_path, prediction_run_name, prediction_old_file)
+    old_pdb_path = os.path.join(all_runs_path, run_name, prediction_old_file)
     if old_pdb_path.endswith('.pdb'):
       structure_extension = 'pdb'
     elif old_pdb_path.endswith('.cif'):
       structure_extension = "cif"
-    new_pdb_path = os.path.join(output_path, f"{model_name}.{structure_extension}")
+    pdb_file = f"{run_name}_{model_name}.{structure_extension}"
 
     if do_include_rank:
-      new_pdb_path = os.path.join(output_path, f"ranked_{global_rank - 1}_{prediction_run_name}_{model_name}.{structure_extension}")
+      pdb_file = f"ranked_{global_rank - 1}_" + pdb_file
       models.append(global_rank)
-      runs.append(prediction_run_name)
+      runs.append(run_name)
       predictions.append(os.path.basename(old_pdb_path))
       scores.append(ranking_score)
-      mapped_names.append(os.path.basename(new_pdb_path))
+      mapped_names.append(os.path.basename(pdb_file))
       
+    new_pdb_path = os.path.join(output_path, pdb_file)
     cp(old_pdb_path, new_pdb_path)
     
     try:
@@ -273,6 +272,7 @@ def main():
   assert not whole_prediction_ranking.empty
   print(whole_prediction_ranking)
   whole_prediction_ranking.to_csv(os.path.join(runs_path, 'ranking.csv'), index=None)
+  whole_prediction_ranking.to_csv(os.path.join(output_path, 'ranking.csv'), index=None)
 
   if not args.only_ranking:
     pred_run_map = create_global_ranking(runs_path, runs, output_path) 
