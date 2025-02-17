@@ -61,7 +61,7 @@ def find_single_run_predictions(all_runs_path: str, run_name: str, ordered_names
   is_alphafold2 = False
   is_alphafold3 = False
   names_contain_NN_model_names = [
-      True if "model" and "multimer" in pred
+      True if "model" and ("multimer" in pred or "ptm" in pred)
       else False
       for pred in ordered_names
  ]
