@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 import pandas as pd
 from os import symlink
-from shutil import copy  as cp, rmtree as rm
+from shutil import copy as cp, rmtree as rm
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 parser.add_argument('--runs_path', help='Path to the runs you want to gather', required=True)
@@ -174,18 +174,15 @@ def move_and_rename(all_runs_path, run_names, output_path, ranking, do_include_p
     new_pdb_path = os.path.join(output_path, pdb_file)
     cp(old_pdb_path, new_pdb_path)
     
-    try:
-      if do_include_pickles:
-        pickles_path = os.path.join(all_runs_path, run_names[prediction])
-        local_pred_name = f"model_{prediction.split('model_')[1]}" 
-        if os.path.exists(os.path.join(pickles_path, 'light_pkl')):
-          pickles_path = os.path.join(pickles_path, 'light_pkl')
+    if do_include_pickles:
+      prediction_name = prediction["parameters"]  + "_" + prediction["model_name"]
+      pickles_path = os.path.join(all_runs_path, run_names[prediction_name])
+      if os.path.exists(os.path.join(pickles_path, 'light_pkl')):
+        pickles_path = os.path.join(pickles_path, 'light_pkl')
 
-        old_pdb_path = os.path.join(pickles_path, f"result_{local_pred_name}.pkl") 
-        new_pdb_path = os.path.join(output_path, f"{prediction}.pkl")
-        cp(old_pdb_path, new_pdb_path)
-    except:
-      print("--include_pickles should be fixed, not working anymore.")
+      old_pdb_path = os.path.join(pickles_path, f"result_{prediction['model_name']}.pkl") 
+      new_pdb_path = os.path.join(output_path, f"{prediction_name}.pkl")
+      cp(old_pdb_path, new_pdb_path)
   
   if do_include_rank:
     mapping = {"model": models, "run": runs, "prediction": predictions, score_key: scores, "mapped_name": mapped_names}
