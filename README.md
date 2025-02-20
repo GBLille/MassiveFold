@@ -316,7 +316,7 @@ git clone https://github.com/GBLille/MassiveFold.git
 
 To use AlphaFold3, copy your weights to the `~/af3_datadir` directory and run the following command:
 ```bash
-ln -s /gpfsdsdir/dataset/Alphafold3/* ~/af3_datadir/
+ln -s $DSDIR/Alphafold3/* ~/af3_datadir/
 ```
 
 The same [file architecture](#tree) is built, follow the [usage](#usage) section to use MassiveFold.
@@ -382,13 +382,35 @@ or in the `AlphaFold3_params.json` file, for instance
 ```json
 "AF3_run":
 {
-    "entities": ["protein","protein"],
-    "model_preset": "multimer",
-    "max_template_date": "2024-11-28"
+    "fasta_chains": ["protein","protein"],
+        "ligand": [
+            {
+                "ccdCodes": [
+                    ""
+                ],
+                "smiles": ""
+            }
+        ],
+        "PTMs": [
+            {
+                "type": "",
+                "sequence": "",
+                "positions": []
+            }
+        ],
+        "model_preset": "multimer",
+        "max_template_date": "2024-11-28",
+        "num_diffusion_samples": "5",
+        "unpairedMsa": "true",
+        "pairedMsa": "true",
+        "templates": "true"
+
 }
 ```
 
-**N.B.**: `"entities"` has to be filled before starting a run because no default value is provided.
+**N.B.**: `"fasta_chains"` has to be filled before starting a run because no default value is provided. It specifies the 
+type of each chain of the fasta file among `"protein"`, `"dna"` and `"rna"`. In this example, the two chains in the fasta 
+file are proteins.
 
 Then you can set the parameters of the **custom_params** section if necessary and the 
 [plots section](#massivefold_plots-output-representation).
@@ -493,7 +515,7 @@ the longest prediction duration. These options have to be coupled with the `-w` 
 adapt this walltime value to the one of the job). For instance:
 
 ```bash
-./run_massivefold.sh -s ./input/H1140.fasta -r 1005_preds -p 67 -f AFmassive_params.json -c -w 10
+./run_massivefold.sh -s ./input/H1140.fasta -r 1005_preds -p 67 -f AFmassive_params.json -c -w 10 -t AFmassive
 ```
 
 ### Parameters
@@ -515,7 +537,7 @@ The **massivefold** section designates the whole run parameters.
 {
     "run_massivefold": "run_AFmassive.py",
     "run_massivefold_plots": "../massivefold/massivefold_plots.py",
-    "data_dir": "/gpfsdswork/dataset/Alphafold-2024-04",
+    "data_dir": "$DSDIR/Alphafold-2024-04",
     "uniref_database": "",
     "jobfile_headers_dir": "./headers",
     "jobfile_templates_dir": "../massivefold/parallelization/templates",
