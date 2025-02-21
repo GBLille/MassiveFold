@@ -1,3 +1,6 @@
+source $$(conda info --base)/etc/profile.d/conda.sh
+conda activate mf-colabfold-1.5.5
+
 # variables to adapt: used for alignment
 sequence_name=$sequence_name
 run_name=$run_name
