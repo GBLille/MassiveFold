@@ -383,12 +383,12 @@ or in the `AlphaFold3_params.json` file, for instance
 "AF3_run":
 {
     "fasta_chains": ["protein","protein"],
-    "ligand": [
-        {"ccdCodes": [""], "smiles": ""}
-    ],
-    "PTMs": [
-        {"type": "", "sequence": "", "positions": []}
-    ],
+     "ligand": [
+            {"ccdCodes": [""], "smiles": ""}
+     ],
+     "PTMs": [
+            [{"type": "", "sequence": "", "positions": []}]
+     ],
     "model_preset": "multimer",
     "max_template_date": "2024-11-28",
     "num_diffusion_samples": "5",
@@ -624,23 +624,33 @@ modification on the corresponding sequence.
 ```json
 "AF3_run":
 {
-    "fasta_chains": ["protein","protein"],
+     "fasta_chains": ["protein","protein"],
         "ligand": [
-            {"ccdCodes": ["NAG"], "smiles": ""}, 
-            {"ccdCodes": ["KGM"], "smiles": ""}, 
+            {"ccdCodes": ["NAG"], "smiles": ""},
+            {"ccdCodes": ["KGM"], "smiles": ""},
             {"ccdCodes": [""], "smiles": "CC(=O)OC1=CC=CC=C1C(=O)O"}
         ],
         "PTMs": [
-            {
-                "type": "glycosylation",
-                "sequence": "Gal(1-4)GlcNAc(1-2)Man(1-3)[Gal(1-4)GlcNAc(1-2)[Gal(1-4)GlcNAc(1-6)]Man(1-6)]Man(1-4)GlcNAc(1-4)[Fuc(1-6)]GlcNAc",
-                "positions": [36]
-            },
-            {
-                "type": "glycosylation",
-                "sequence": "Gal(1-4)GlcNAc(1-2)Man(1-3)[Gal(1-4)GlcNAc(1-2)[Gal(1-4)GlcNAc(1-6)]Man(1-6)]Man(1-4)GlcNAc(1-4)[Fuc(1-6)]GlcNAc",
-                "positions": [74,84]
-            } 
+            [
+                {
+                  "type": "glycosylation",
+                  "sequence": "Gal(1-4)GlcNAc(1-2)Man(1-3)[Gal(1-4)GlcNAc(1-2)[Gal(1-4)GlcNAc(1-6)]Man(1-6)]Man(1-4)GlcNAc(1-4)[Fuc(1-6)]GlcNAc",
+                  "positions": [36]
+                }
+
+            ],
+            [
+                {
+                  "type": "glycosylation",
+                  "sequence": "Gal(1-4)GlcNAc(1-2)Man(1-3)[Gal(1-4)GlcNAc(1-2)[Gal(1-4)GlcNAc(1-6)]Man(1-6)]Man(1-4)GlcNAc(1-4)[Fuc(1-6)]GlcNAc",
+                  "positions": [74,84]
+                },
+                {
+                  "type": "glycosylation",
+                  "sequence": "GlcNAc",
+                  "positions": [21,25]
+                }
+            ]
         ],
         "model_preset": "multimer",
         "max_template_date": "2024-11-28",
@@ -767,8 +777,8 @@ MassiveFold is currently using the ColabFold 1.5.5 conda environment. It runs `c
 `colabfold_batch` for structure inference. Unfortunately, in this version, `colabfold_batch` doesn't allow to take a 
 templates file as input, which means it would run the templates search for every inference job, which is not optimal.  
 To be able to use templates with ColabFold, you can directly load the `mf-colabfold-1.5.5` environment and run 
-`colabfold_batch` with the appropriate parameters (see `colabfold_batch -h`). With default parameters for alignments and templates research, it 
-will query the MSA server.  
+`colabfold_batch` with the appropriate parameters, the `--save-all` parameter being mandatory (see `colabfold_batch -h`). 
+With default parameters for alignments and templates research, it will query the MSA server.  
 In case you would like to format the ColabFold output files to get the MassiveFold format, you need to put the ColabFold 
 ouput files in a `batch_0` subfolder folder following the MassiveFold output file architecture :
 ```txt
@@ -788,6 +798,8 @@ python3 ../massivefold/parallelization/unifier.py \
 python3 ../massivefold/parallelization/organize_outputs.py \
     --batches_path output/<sequence>/<run>/
 ```
+
+To generate plots, you can then use the `massivefold_plots.py` script as described [here](#massivefold_plots-output-representation).
 
 ## Citation
 
