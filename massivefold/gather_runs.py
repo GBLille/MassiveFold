@@ -92,8 +92,8 @@ def find_single_run_predictions(all_runs_path: str, run_name: str, ordered_names
     full_filenames = [ f"ranked_{i}_{pred}.cif" for i, pred in enumerate(ordered_names) ]
   
   # check if these reconstituted files exist
-  check_files_existence = lambda x: os.path.isfile(os.path.join(all_runs_path, run_name, x))
-  do_not_exist.extend([ pred for pred in full_filenames if not check_files_existence(pred) ])
+  does_file_exist = lambda x: os.path.isfile(os.path.join(all_runs_path, run_name, x))
+  do_not_exist.extend([ pred for pred in full_filenames if not does_file_exist(pred) ])
   assert not do_not_exist, f'Some files ({len(do_not_exist)}) for run {run_name} were not found: {", ".join(do_not_exist)}'
 
   return full_filenames
