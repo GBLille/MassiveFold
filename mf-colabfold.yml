@@ -1,4 +1,4 @@
-name: mf-colabfold
+name: mf-colabfold-1.5.5
 channels:
   - bioconda
   - conda-forge

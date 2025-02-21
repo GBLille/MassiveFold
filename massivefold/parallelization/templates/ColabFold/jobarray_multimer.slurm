@@ -1,6 +1,7 @@
 
 source $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-colabfold
+conda activate mf-colabfold-1.5.5
+#conda activate mf-colabfold
 
 sequence_name=$sequence_name
 run_name=$run_name

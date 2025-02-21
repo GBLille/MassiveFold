@@ -13,7 +13,6 @@ scripts_dir=$scripts_dir
 source $$(conda info --base)/etc/profile.d/conda.sh
 conda activate mf-alphafold-3.0.1
 
-#conda activate mf-alphafold3
 json_path=${input_dir}/alphafold3_json_requests/$${sequence_name}.json
 
 date
