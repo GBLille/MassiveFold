@@ -627,6 +627,7 @@ def af3_extract_plddts_create_pkl(df, output_dir):
 def main(argv):
   assert FLAGS.conversion and FLAGS.to_convert, \
   'Parameter --conversion and --to_convert are mandatory.'
+  assert FLAGS.tool, "Please specify the tool used for prediction."
   
   if FLAGS.conversion == 'input':
     tools = ["ColabFold", "AlphaFold3"]
