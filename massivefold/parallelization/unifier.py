@@ -16,7 +16,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_enum(
   'conversion',
   None,
-  ['input', 'input_inference', 'output'],
+  ['input', 'input_inference', 'output', 'output_singular'],
   "What to convert."
   "'input' to get the fasta format of colabfold from a traditionnal multichain pdb."
   "'output' to transform colabfold output to the alphafold one.")
@@ -232,13 +232,15 @@ def af3_records_to_sequences(records, fasta_ids_sequences):
       record_type  = "ccdCodes"
       record["seq"] = ccdCodes
 
+    # either create new entity or add id to existing one
     if record["seq"] not in all_sequences:
       sequence_dicts.append({record["entity"]:  {"id": chain_id, record_type: record["seq"]}})
       all_sequences.append(record["seq"])
       all_entities.append(record["entity"])
     else:
       index = all_sequences.index(record["seq"])
-      sequence_dicts[index][all_entities[index]]["id"] = [sequence_dicts[index][all_entities[index]]["id"]]
+      if isinstance(sequence_dicts[index][all_entities[index]]["id"], str):
+        sequence_dicts[index][all_entities[index]]["id"] = [ sequence_dicts[index][all_entities[index]]["id"] ]
       sequence_dicts[index][all_entities[index]]["id"].append(chain_id)
   return sequence_dicts, all_bonds
 
@@ -270,26 +272,28 @@ def af3_add_input_entity(batch_input_json, af3_params):
     elif lig['smiles']:
       additional_records.append({"entity": "ligand", "sequence_type": "smiles", "seq": lig["smiles"]})
 
+  supported_ptms = ["glycosylation"]
   PTMs = af3_params["PTMs"]
   if PTMs:
-    for i, ptm in enumerate(PTMs):
-      if ptm and ptm["sequence"] and ptm["type"] == "glycosylation":
-        print(
-          f"- Glycosylation: \n{ptm['sequence']}"
-          f"\nAt positions {', '.join(list(map(str, ptm['positions'])))} on:\n"
-          f"{fasta_ids_sequences[used_ids[i]]}"
-        )
-        for pos in list(map(int, ptm["positions"])):
-          additional_records.append(
-            {
-              "entity": "ligand",
-              "sequence_type": ptm["type"],
-              "seq": ptm["sequence"],
-              "on_chain_index": i,
-              "at_position": pos
-            })
+    for i, single_chain_ptms in enumerate(PTMs):
+      for ptm in single_chain_ptms:
+        if ptm and ptm["sequence"] and ptm["type"] == "glycosylation":
+          print(
+            f"- Glycosylation: \n{ptm['sequence']}"
+            f"\nAt positions {', '.join(list(map(str, ptm['positions'])))} on:\n"
+            f"{fasta_ids_sequences[used_ids[i]]}"
+          )
+          for pos in list(map(int, ptm["positions"])):
+            additional_records.append(
+              {
+                "entity": "ligand",
+                "sequence_type": ptm["type"],
+                "seq": ptm["sequence"],
+                "on_chain_index": i,
+                "at_position": pos
+              })
 
-  PTMs = [ ptm for ptm in PTMs if ptm and ptm['sequence'] ]
+  PTMs = [ ptm for ptm in additional_records if ptm['sequence_type'] == "glycosylation" ]
   if PTMs:
     print(f"\n{len(PTMs)} PTMs detected")
   else:
@@ -652,6 +656,17 @@ def main(argv):
       return 
     assert FLAGS.batches_file, 'Json batches file (--batches_file) is mandatory for output conversion (--conversion output)'
     convert_output(FLAGS.tool)
+
+  elif FLAGS.conversion == "output_singular":
+    tools = ["ColabFold", "AlphaFold3"]
+    if FLAGS.tool not in tools:
+      print(f"No output standardization for {FLAGS.tool}.")
+      return
+    if FLAGS.tool == "ColabFold":
+      convert_colabfold_output(FLAGS.to_convert, 0)
+      move_output(os.path.dirname(os.path.realpath(FLAGS.to_convert)), "batch_0")
+    elif FLAGS.tool == "AlphaFold3":
+      convert_alphafold3_output(FLAGS.to_convert, 0)
 
 if __name__ == "__main__": 
   app.run(main)
