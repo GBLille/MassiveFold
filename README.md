@@ -1,8 +1,6 @@
-![header](imgs/header.png)
+![header](imgs/massivefold_logo.png)
 
 [![DOI](https://zenodo.org/badge/617429072.svg)](https://doi.org/10.5281/zenodo.13870060)
-
-# MassiveFold
 
 ## Table of contents
 <!-- TOC -->
@@ -383,28 +381,18 @@ or in the `AlphaFold3_params.json` file, for instance
 "AF3_run":
 {
     "fasta_chains": ["protein","protein"],
-        "ligand": [
-            {
-                "ccdCodes": [
-                    ""
-                ],
-                "smiles": ""
-            }
-        ],
-        "PTMs": [
-            {
-                "type": "",
-                "sequence": "",
-                "positions": []
-            }
-        ],
-        "model_preset": "multimer",
-        "max_template_date": "2024-11-28",
-        "num_diffusion_samples": "5",
-        "unpairedMsa": "true",
-        "pairedMsa": "true",
-        "templates": "true"
-
+    "ligand": [
+        {"ccdCodes": [""], "smiles": ""}
+    ],
+    "PTMs": [
+        {"type": "", "sequence": "", "positions": []}
+    ],
+    "model_preset": "multimer",
+    "max_template_date": "2024-11-28",
+    "num_diffusion_samples": "5",
+    "unpairedMsa": "true",
+    "pairedMsa": "true",
+    "templates": "true"
 }
 ```
 
@@ -619,6 +607,48 @@ available for AlphaFold3. The `recycles` plot is not available for AFmassive mon
 }
 ```
 
+### Using ligands and post-translational modifications with AlphaFold3
+
+In MassiveFold, ligands and post translational modifications are configured in the `AlphaFold3_params.json` file.
+For ligands, the `"ligand"` section has to be filled in with a CCD code **or** a SMILES code. In case of several, use several 
+entries in the JSON as in the following example.  
+For post-translational modifications, the `"PTMs"` section has to be filled in. The IUPAC code has to be used for PTMs.
+The PTMs section contains as many entries as the number of chains in the fasta file. One entry corresponds to one 
+modification on the corresponding sequence.  
+- `"type"` is the type of modification (e.g.: `glycosylation`) 
+- `"sequence"` is the sequence of the modification following the IUPAC code 
+- `"positions"` is a list of the positions on the (fasta) sequence where the modifications have to be linked  
+
+```json
+"AF3_run":
+{
+    "fasta_chains": ["protein","protein"],
+        "ligand": [
+            {"ccdCodes": ["NAG"], "smiles": ""}, 
+            {"ccdCodes": ["KGM"], "smiles": ""}, 
+            {"ccdCodes": [""], "smiles": "CC(=O)OC1=CC=CC=C1C(=O)O"}
+        ],
+        "PTMs": [
+            {
+                "type": "glycosylation",
+                "sequence": "Gal(1-4)GlcNAc(1-2)Man(1-3)[Gal(1-4)GlcNAc(1-2)[Gal(1-4)GlcNAc(1-6)]Man(1-6)]Man(1-4)GlcNAc(1-4)[Fuc(1-6)]GlcNAc",
+                "positions": [36]
+            },
+            {
+                "type": "glycosylation",
+                "sequence": "Gal(1-4)GlcNAc(1-2)Man(1-3)[Gal(1-4)GlcNAc(1-2)[Gal(1-4)GlcNAc(1-6)]Man(1-6)]Man(1-4)GlcNAc(1-4)[Fuc(1-6)]GlcNAc",
+                "positions": [74,84]
+            } 
+        ],
+        "model_preset": "multimer",
+        "max_template_date": "2024-11-28",
+        "num_diffusion_samples": "5",
+        "unpairedMsa": "true",
+        "pairedMsa": "true",
+        "templates": "true"
+}
+```
+
 ### Relaxation
 
 Because the relaxation takes time and resources to compute and that the MassiveFold process splits the predictions in 
@@ -729,6 +759,33 @@ set the `uniref_database` parameter in the AFmassive_params.json file to the upd
 MassiveFold can't run without SLURM. However, the `massivefold`, `mf-colabfold` and `mf-alphafold3` conda environments 
 created at the installation allow to use respectively AFmassive, ColabFold and AlphaFold3 without parallelization. 
 Their usage is detailed on their respective GitHub webpages.
+
+### Using templates with ColabFold
+MassiveFold is currently using the ColabFold 1.5.5 conda environment. It runs `colabfold_search` for the alignments and 
+`colabfold_batch` for structure inference. Unfortunately, in this version, `colabfold_batch` doesn't allow to take a 
+templates file as input, which means it would run the templates search for every inference job, which is not optimal.  
+To be able to use templates with ColabFold, you can directly load the `mf-colabfold-1.5.5` environment and run 
+`colabfold_batch` with the appropriate parameters (see `colabfold_batch -h`). With default parameters for alignments and templates research, it 
+will query the MSA server.  
+In case you would like to format the ColabFold output files to get the MassiveFold format, you need to put the ColabFold 
+ouput files in a `batch_0` subfolder folder following the MassiveFold output file architecture :
+```txt
+output
+└── <sequence name>
+    └── <run name>
+        └── batch_0 
+```
+Then, run the following scripts from the `massivefold_runs` folder, replacing `<sequence>` and `<run>` generic names 
+with yours.
+```commandline
+python3 ../massivefold/parallelization/unifier.py \
+    --to_convert output/<sequence>/<run>/batch_0/ \
+    --conversion output_singular \
+    --tool ColabFold
+
+python3 ../massivefold/parallelization/organize_outputs.py \
+    --batches_path output/<sequence>/<run>/
+```
 
 ## Citation
 
