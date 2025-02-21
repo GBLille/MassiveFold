@@ -18,6 +18,7 @@
   * [Parameters](#parameters)
     * [Parameters in run_massivefold.sh](#parameters-in-run_massivefoldsh)
     * [Parameters in the json file](#parameters-in-the-json-file)
+  * [Using ligands and post-translational modifications with AlphaFold3](#using-ligands-and-post-translational-modifications-with-alphafold3)
   * [Relaxation](#relaxation)
   * [Multiple runs gathering](#multiple-runs-gathering)
 * [massivefold_plots: output representation](#massivefold_plots-output-representation)
@@ -26,6 +27,7 @@
 * [Troubleshooting](#troubleshooting)
   * [Uniref](#uniref)
   * [Usage without SLURM](#usage-without-slurm)
+  * [Using templates with ColabFold](#using-templates-with-colabfold)
 * [Citation](#citation)
 * [Authors](#authors)
 <!-- TOC -->
