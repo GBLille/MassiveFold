@@ -1,4 +1,4 @@
-![header](imgs/massivefold_logo.png)
+![header](imgs/massivefold_logo.svg)
 
 [![DOI](https://zenodo.org/badge/617429072.svg)](https://doi.org/10.5281/zenodo.13870060)
 
