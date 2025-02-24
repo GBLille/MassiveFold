@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import re
 from absl import flags, app
 from Bio import SeqIO
 import pickle
@@ -336,8 +337,10 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
   batch_input_json = af3_alter_input(batch_input_json, af3_params)
   batch_input_json = af3_add_input_entity(batch_input_json, af3_params)
 
+  # find run_name
   batch_filename = os.path.basename(batches)
-  run_name = batch_filename.replace(f"{sequence}_", "").replace("_batches.json", "")
+  # batch file: <sequence>_<run>_batches.json
+  run_name = re.sub(fr"^{sequence}_", "", batch_filename).replace("_batches.json", "")
 
   # distribute input file for each batches of the run
   batches = json.load(open(batches, 'r'))
