@@ -64,7 +64,7 @@ install_env () {
     CONDA_OVERRIDE_CUDA="11.8" conda env create -f mf-colabfold.yml
 
   elif [[ $env == "afmassive" ]]; then
-    echo "Installing alphafold3 environment"
+    echo "Installing afmassive environment"
     conda env create -f mf-afmassive.yml
     conda activate mf-afmassive-1.1.5
     wget -O ${CONDA_PREFIX}/lib/python3.10/site-packages/alphafold/common/stereo_chemical_props.txt https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
