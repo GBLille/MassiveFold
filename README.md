@@ -33,10 +33,10 @@
 <!-- TOC -->
 
 
-MassiveFold is a tool that allows to massively expand the sampling of structure predictions by improving the computing 
+MassiveFold is a tool that allows to massively expand the sampling of structure predictions by improving the computation 
 of [AlphaFold](https://github.com/google-deepmind/alphafold) based predictions.
 
-It optimizes the parallelization of the structure inference by splitting the computing on CPU for alignments, running 
+It optimizes the parallelization of the structure inference by splitting the computation on CPU for alignments, running 
 automatically batches of structure predictions on GPU, and gathering the results in one global output directory, with a 
 global ranking and a variety of plots.
 
@@ -46,7 +46,7 @@ Wallner's [AFsample](https://github.com/bjornwallner/alphafoldv2.2.0/) that offe
 massive sampling.
 
 ## MassiveFold: parallelize protein structure prediction
-MassiveFold's design (see schematic below) is optimized for GPU cluster usage. It allows fast computing for massive 
+MassiveFold's design (see schematic below) is optimized for GPU cluster usage. It allows fast computation for massive 
 sampling by automatically splitting a large run of numerous predictions into several jobs. Each of these individual 
 jobs are computed on a single GPU node and their results are then gathered as a single output with each prediction 
 ranked on a global level instead of the level of each individual job.  
@@ -220,7 +220,7 @@ And specify them in the jobfile headers (such as here for `MassiveFold/headers/j
 The jobfiles for each step are built by combining the jobfile header that you have to create in 
 **MassiveFold/massivefold_runs/headers/** with the jobfile body in **massivefold/parallelization/templates/**.
 
-Only the headers have to be adapted in function of your computing infrastructure. They contain the parameters to give to 
+Only the headers have to be adapted in function of your computation infrastructure. They contain the parameters to give to 
 SLURM for the job running (#SBATCH parameters).
 Each of the three headers (`alignment`, `jobarray` and `post treatment`) must be located in the **headers** directory 
 (see [File architecture](#installation) section).
