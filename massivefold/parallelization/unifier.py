@@ -234,7 +234,7 @@ def af3_records_to_sequences(records, fasta_ids_sequences):
       record["seq"] = ccdCodes
 
     # either create new entity or add id to existing one
-    if record["seq"] not in all_sequences:
+    elif record["seq"] not in all_sequences:
       sequence_dicts.append({record["entity"]:  {"id": chain_id, record_type: record["seq"]}})
       all_sequences.append(record["seq"])
       all_entities.append(record["entity"])
@@ -245,23 +245,13 @@ def af3_records_to_sequences(records, fasta_ids_sequences):
       sequence_dicts[index][all_entities[index]]["id"].append(chain_id)
   return sequence_dicts, all_bonds
 
-def af3_add_input_entity(batch_input_json, af3_params):
-  fasta_ids_sequences = {}
-  for chain in batch_input_json["sequences"]:
-    if not chain:
-      continue
-    entity = chain[next(iter(chain.keys()))]
-    ids = entity["id"]
-    if isinstance(ids, list):
-      for id in ids:
-        fasta_ids_sequences[id] = entity["sequence"]
-    elif isinstance(ids, str):
-      fasta_ids_sequences[ids] = entity["sequence"]
-
-  used_ids = list(fasta_ids_sequences.keys())
-  ligand = af3_params['ligand']
-  
+def af3_entities_to_records(af3_params, fasta_ids_sequences):
   additional_records = []
+  ligand = af3_params['ligand']
+  PTMs = af3_params["PTMs"]
+  all_ptm_types = ["glycosylation", "phosphorylation"]
+  used_ids = list(fasta_ids_sequences.keys())
+  
   for lig in ligand:
     is_ccdcodes = True if lig['ccdCodes'] and lig['ccdCodes'][0] else False
     if is_ccdcodes and lig['smiles']:
@@ -273,39 +263,139 @@ def af3_add_input_entity(batch_input_json, af3_params):
     elif lig['smiles']:
       additional_records.append({"entity": "ligand", "sequence_type": "smiles", "seq": lig["smiles"]})
 
-  supported_ptms = ["glycosylation"]
-  PTMs = af3_params["PTMs"]
   if PTMs:
+    # af3_ptms_as_records(PTMs, 
+    # parse each chain's list of PTMs
     for i, single_chain_ptms in enumerate(PTMs):
       for ptm in single_chain_ptms:
-        if ptm and ptm["sequence"] and ptm["type"] == "glycosylation":
-          print(
-            f"- Glycosylation: \n{ptm['sequence']}"
-            f"\nAt positions {', '.join(list(map(str, ptm['positions'])))} on:\n"
-            f"{fasta_ids_sequences[used_ids[i]]}"
-          )
-          for pos in list(map(int, ptm["positions"])):
-            additional_records.append(
-              {
-                "entity": "ligand",
-                "sequence_type": ptm["type"],
-                "seq": ptm["sequence"],
-                "on_chain_index": i,
-                "at_position": pos
-              })
+        record = {}
+        record.update({"sequence_type": ptm["type"], "on_chain_index": i})
+        # add informations specific to modification
+        if ptm["type"] == "glycosylation":
+          if not "sequence" in ptm or not ptm["sequence"]:
+            print(ptm)
+            continue
+          record.update({"entity": "ligand", "seq": ptm["sequence"]})
 
-  PTMs = [ ptm for ptm in additional_records if ptm['sequence_type'] == "glycosylation" ]
+        elif ptm["type"] == "phosphorylation":
+          if not ptm["positions"]:
+            continue
+          record.update({"entity": "modifications", "seq": "PO3"})
+          ptm["sequence"] = "PO3"
+
+        # make one record per modification site (when multiple positions specified)
+        for pos in list(map(int, ptm["positions"])):
+          single_record = record.copy()
+          single_record["at_position"] = pos
+          additional_records.append(single_record)
+        # display modification info
+        print(
+          f"- {ptm['type'].capitalize()}: \n{ptm['sequence']}"
+          f"\nAt positions {', '.join(list(map(str, ptm['positions'])))} on:\n"
+          f"{fasta_ids_sequences[used_ids[i]]}"
+        )
+
+  PTMs = [ ptm for ptm in additional_records if ptm["sequence_type"] in all_ptm_types ]
   if PTMs:
     print(f"\n{len(PTMs)} PTMs detected")
   else:
     print("No post-translational modification on the sequences.")
-  # add the extra sequences (e.g ligands)
+  
+  return additional_records
+
+def af3_add_modifications(all_modifications, all_sequences):
+  modification_to_codes = {
+    'S': {
+      "phosphorylation": 'SEP'
+    },
+    'T': {
+      "phosphorylation": 'TPO'
+    },
+  }
+
+
+  # flatten the sequences to have only one chain id per entity
+  flattened = []
+  for sequence in all_sequences:
+    entity = list(sequence.keys())[0]
+    entity_ids = sequence[entity]["id"]
+    if isinstance(entity_ids, list):
+      for id in entity_ids:
+        entity_elements = {"id": id}
+        entity_elements.update({ e: sequence[entity][e] for e in sequence[entity] if e != "id" })
+        flattened.append({entity: entity_elements})
+    else:
+      flattened.append({entity: sequence[entity]})
+
+  flattened = sorted(flattened, key=lambda x: list(x.values())[0]['id'])
+  used_ids = [list(seq.values())[0]['id'] for seq in flattened]
+  all_chain_ids = string.ascii_uppercase
+  all_chain_ids = [ i for i in all_chain_ids if i not in used_ids ]
+  print(used_ids)
+
+  for modif in all_modifications:
+    on_chain, position, modif_type = modif["on_chain_index"], modif["at_position"] - 1, modif["sequence_type"]
+    id, chain = used_ids[on_chain]
+
+    print(modif["on_chain_index"])
+
+  """
+  for modif in all_modifications:
+    modif["track"] = {}
+    # find sequence to be modified
+    for index_of_sequence, _ in enumerate(all_sequences):
+      entity = list(all_sequences[index_of_sequence].keys())[0]
+      all_entity_ids = all_sequences[index_of_sequence][entity]["id"]
+      if chain in all_entity_ids:
+        modif["track"].update({"index": index_of_sequence, "entity": entity})
+    if not modif["track"]:
+      raise ErrorValue("Could not find the chain which is getting modified.")
+
+    residue_to_modify = all_sequences[modif["track"]["index"]][modif["track"]["entity"]]["sequence"][position]
+
+    assert residue_to_modify in modification_to_codes, \
+    f"{residue_to_modify} has no supported modifications ({residue_to_modify}{position})"
+    assert modif_type in modification_to_codes[residue_to_modify], \
+    f"{modif_type} is not a supported modifications for {residue_to_modify}"
+
+    {"ptmType": modification_to_codes[residue_to_modify][modif_type], "ptmPosition": position}
+  """
+  assert True is False
+  return all_sequences
+
+def af3_add_input_entity(batch_input_json, af3_params):
+  fasta_ids_sequences = {}
+  map_id_entity = {}
+  for chain in batch_input_json["sequences"]:
+    if not chain:
+      continue
+    entity_name = next(iter(chain.keys()))
+    entity = chain[entity_name]
+    light_chain = {entity_name: {i: entity[i] for i in entity if i in ["id", "sequence", "modifications"]}}
+    ids = entity["id"]
+    if isinstance(ids, list):
+      for id in ids:
+        fasta_ids_sequences[id] = entity["sequence"]
+        map_id_entity[id] = light_chain
+    elif isinstance(ids, str):
+      fasta_ids_sequences[ids] = entity["sequence"]
+      map_id_entity[ids] = light_chain
+
+  additional_records = af3_entities_to_records(af3_params, fasta_ids_sequences)
+
+  print(additional_records)
+  # add the extra sequences (e.g ligands, glycosylation)
   bonds = []
-  if additional_records:
-    additional_sequences, bonds = af3_records_to_sequences(additional_records, fasta_ids_sequences)
-    batch_input_json["sequences"].extend(additional_sequences)
+  sequence_types = ["ligand", "glycosylation"]
+  new_sequences_records = [ record for record in additional_records if record["sequence_type"] in sequence_types ]
+  additional_sequences, bonds = af3_records_to_sequences(new_sequences_records, fasta_ids_sequences)
+  batch_input_json["sequences"].extend(additional_sequences)
   if bonds:
     batch_input_json["bondedAtomPairs"] = bonds
+
+  modifications_types = ["phosphorylation"]
+  new_modifications_records = [ record for record in additional_records if record["sequence_type"] in modifications_types ]
+  batch_input_json["sequences"] = af3_add_modifications(new_modifications_records, batch_input_json["sequences"])
   # display the recorded entities for the run launched
   simplified = {"sequences": []}
   for i, obj  in enumerate(batch_input_json["sequences"]):
@@ -318,6 +408,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
 
   if bonds:
     simplified["bondedAtomPairs"] = bonds
+
   print(json.dumps(simplified, indent=4))
   return batch_input_json
 
@@ -333,7 +424,6 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
 
   # modify input file according to MassiveFold parameters
   batch_input_json = json.load(open(input_json, 'r'))
-
   batch_input_json = af3_alter_input(batch_input_json, af3_params)
   batch_input_json = af3_add_input_entity(batch_input_json, af3_params)
 
@@ -341,7 +431,6 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
   batch_filename = os.path.basename(batches)
   # batch file: <sequence>_<run>_batches.json
   run_name = re.sub(fr"^{sequence}_", "", batch_filename).replace("_batches.json", "")
-
   # distribute input file for each batches of the run
   batches = json.load(open(batches, 'r'))
   for batch in batches:
