@@ -99,8 +99,8 @@ For AlphaFold3 runs, two additional installation steps are required to use Massi
 2. **Install MassiveFold**
 
 We use an installation based on conda. The **install.sh** script we provide installs the conda environments using the 
-`environment.yml`, `mf-colabfold.yml` and `mf-alphafold3.yml` files. The first one is created for MassiveFold and 
-AFmassive, the second one is created for ColabFold and the last one for Alphafold3. It also creates the files 
+`environment.yml`, `mf-afmassive.yml`, `mf-colabfold.yml` and `mf-alphafold3.yml` files. The first one is created for MassiveFold, 
+the second one for AFmassive, the third for ColabFold and the last one for Alphafold3. It also creates the files 
 architecture and set paths according to this architecture in the `AFmassive_params.json` and/or `ColabFold_params.json` 
 and/or `AlphaFold3_params.json` parameters file.  
 
@@ -334,9 +334,9 @@ knowing that more memory allows to model larger systems.
 
 ## Uninstallation
 
-To uninstall MassiveFold, remove the three conda environments (`massivefold`, `mf-colabfold` and `mf-alphafold3`) and 
-remove the `MassiveFold` folder you cloned. Make sure you copy all the files and folders you want to keep 
-from the `output` and `log` directories somewhere else. 
+To uninstall MassiveFold, remove the three conda environments (`massivefold`, `mf-afmassive-1.1.5`, `mf-colabfold-1.5.5` and 
+`mf-alphafold-3.0.1`) and remove the `MassiveFold` folder you cloned. Make sure you copy all the files and folders you want 
+to keep from the `output` and `log` directories somewhere else. 
 
 ## Usage
 
@@ -775,8 +775,8 @@ set the `uniref_database` parameter in the AFmassive_params.json file to the upd
 
 ### Usage without SLURM
 
-MassiveFold can't run without SLURM. However, the `massivefold`, `mf-colabfold` and `mf-alphafold3` conda environments 
-created at the installation allow to use respectively AFmassive, ColabFold and AlphaFold3 without parallelization. 
+MassiveFold can't run without SLURM. However, the `mf-afmassive-1.1.5`, `mf-colabfold-1.5.5` and `mf-alphafold-3.0.1` 
+conda environments created at the installation allow to use respectively AFmassive, ColabFold and AlphaFold3 without parallelization. 
 Their usage is detailed on their respective GitHub webpages.
 
 ### Using templates with ColabFold
@@ -809,6 +809,8 @@ python3 ../massivefold/parallelization/organize_outputs.py \
 To generate plots, you can then use the `massivefold_plots.py` script as described [here](#massivefold_plots-output-representation).
 
 ## Citation
+
+If you use MassiveFold in your work, please cite:
 
 Raouraoua N. et al. **MassiveFold: unveiling AlphaFold’s hidden potential with optimized and parallelized massive 
 sampling**. 2024. **_Nature Computational Science_**, DOI: 10.1038/s43588-024-00714-4,  
