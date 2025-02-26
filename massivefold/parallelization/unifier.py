@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import re
+import copy
 from absl import flags, app
 from Bio import SeqIO
 import pickle
@@ -284,7 +285,7 @@ def af3_entities_to_records(af3_params, fasta_ids_sequences):
           ptm["sequence"] = "PO3"
 
         # make one record per modification site (when multiple positions specified)
-        for pos in list(map(int, ptm["positions"])):
+        for pos in list(sorted(map(int, ptm["positions"]))):
           single_record = record.copy()
           single_record["at_position"] = pos
           additional_records.append(single_record)
@@ -304,6 +305,7 @@ def af3_entities_to_records(af3_params, fasta_ids_sequences):
   return additional_records
 
 def af3_add_modifications(all_modifications, all_sequences):
+  """ Add the modifications specified in MassiveFold parameters to the AlphaFold3 input sequences."""
   modification_to_codes = {
     'S': {
       "phosphorylation": 'SEP'
@@ -312,9 +314,7 @@ def af3_add_modifications(all_modifications, all_sequences):
       "phosphorylation": 'TPO'
     },
   }
-
-
-  # flatten the sequences to have only one chain id per entity
+  # flatten the sequences to have one chain id per entity
   flattened = []
   for sequence in all_sequences:
     entity = list(sequence.keys())[0]
@@ -326,42 +326,49 @@ def af3_add_modifications(all_modifications, all_sequences):
         flattened.append({entity: entity_elements})
     else:
       flattened.append({entity: sequence[entity]})
-
   flattened = sorted(flattened, key=lambda x: list(x.values())[0]['id'])
   used_ids = [list(seq.values())[0]['id'] for seq in flattened]
-  all_chain_ids = string.ascii_uppercase
-  all_chain_ids = [ i for i in all_chain_ids if i not in used_ids ]
-  print(used_ids)
 
+  # organize modifications to pair one chain with one group of modifs
+  modif_per_chain = [ [] for i in range(len(flattened)) ]
   for modif in all_modifications:
-    on_chain, position, modif_type = modif["on_chain_index"], modif["at_position"] - 1, modif["sequence_type"]
-    id, chain = used_ids[on_chain]
+    modif_per_chain[modif["on_chain_index"]].append(modif)
+  # add modifs to each chains
+  modified_sequences = []
+  for i, (chain, chain_modifs) in enumerate(zip(flattened, modif_per_chain)):
+    entity, entity_modifications = list(chain.keys())[0], []
+    for modif in chain_modifs: # add all chain's modifications
+      modif_type, modif_position = modif["sequence_type"], modif["at_position"]
 
-    print(modif["on_chain_index"])
+      residue_to_modify = chain.copy()[entity]["sequence"][modif_position - 1]
+      assert residue_to_modify in modification_to_codes, \
+      f"{residue_to_modify} has no supported modifications ({residue_to_modify}{modif_position})"
+      assert modif_type in modification_to_codes[residue_to_modify], \
+      f"{modif_type} is not a supported modifications for {residue_to_modify}"
 
-  """
-  for modif in all_modifications:
-    modif["track"] = {}
-    # find sequence to be modified
-    for index_of_sequence, _ in enumerate(all_sequences):
-      entity = list(all_sequences[index_of_sequence].keys())[0]
-      all_entity_ids = all_sequences[index_of_sequence][entity]["id"]
-      if chain in all_entity_ids:
-        modif["track"].update({"index": index_of_sequence, "entity": entity})
-    if not modif["track"]:
-      raise ErrorValue("Could not find the chain which is getting modified.")
-
-    residue_to_modify = all_sequences[modif["track"]["index"]][modif["track"]["entity"]]["sequence"][position]
-
-    assert residue_to_modify in modification_to_codes, \
-    f"{residue_to_modify} has no supported modifications ({residue_to_modify}{position})"
-    assert modif_type in modification_to_codes[residue_to_modify], \
-    f"{modif_type} is not a supported modifications for {residue_to_modify}"
-
-    {"ptmType": modification_to_codes[residue_to_modify][modif_type], "ptmPosition": position}
-  """
-  assert True is False
-  return all_sequences
+      modif_record = {"ptmType": modification_to_codes[residue_to_modify][modif_type], "ptmPosition": modif_position}
+      entity_modifications.append(modif_record)
+    copied_chain = copy.deepcopy(chain)[entity]
+    copied_chain["modifications"].extend(entity_modifications)
+    modified_sequences.append({entity: copied_chain.copy()})
+  # un-flatten the sequence list to merge indentical sequence/modifications couples
+  merged = []
+  for i, sequence in enumerate(modified_sequences):
+    entity, insert_to = list(sequence.keys())[0], None
+    to_add = [sequence[entity]["sequence"], sequence[entity]["modifications"]]
+    for n, existing in enumerate(merged):
+      compa_entity = list(existing.keys())[0]
+      compa_to = [existing[compa_entity]["sequence"], existing[compa_entity]["modifications"]]
+      if to_add == compa_to:
+        insert_to = n
+        break
+    if insert_to != None: # same sequence/modifs found
+      if isinstance(merged[n][list(merged[n].keys())[0]]["id"], str):
+        merged[n][list(merged[n].keys())[0]]["id"] = [merged[n][list(merged[n].keys())[0]]["id"]]
+      merged[n][list(merged[n].keys())[0]]["id"].append(sequence[entity]["id"])
+    else:
+      merged.append(sequence)
+  return merged
 
 def af3_add_input_entity(batch_input_json, af3_params):
   fasta_ids_sequences = {}
@@ -402,7 +409,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
     entity = list(obj.keys())[0]
     values = {}
     for j in batch_input_json["sequences"][i][entity]:
-      if j != "pairedMsa" and j != "unpairedMsa" and j != "templates": # skip large entries
+      if j not in [ "pairedMsa", "unpairedMsa", "templates"]: # skip large entries
         values[j] = batch_input_json["sequences"][i][entity][j]
     simplified["sequences"].append({entity: values})
 
