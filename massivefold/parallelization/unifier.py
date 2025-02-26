@@ -325,9 +325,8 @@ def af3_add_modifications(all_modifications, all_sequences):
         entity_elements.update({ e: sequence[entity][e] for e in sequence[entity] if e != "id" })
         flattened.append({entity: entity_elements})
     else:
-      flattened.append({entity: sequence[entity]})
+      flattened.append(sequence)
   flattened = sorted(flattened, key=lambda x: list(x.values())[0]['id'])
-  used_ids = [list(seq.values())[0]['id'] for seq in flattened]
 
   # organize modifications to pair one chain with one group of modifs
   modif_per_chain = [ [] for i in range(len(flattened)) ]
@@ -337,6 +336,7 @@ def af3_add_modifications(all_modifications, all_sequences):
   modified_sequences = []
   for i, (chain, chain_modifs) in enumerate(zip(flattened, modif_per_chain)):
     entity, entity_modifications = list(chain.keys())[0], []
+    chain_data = copy.deepcopy(chain)[entity]
     for modif in chain_modifs: # add all chain's modifications
       modif_type, modif_position = modif["sequence_type"], modif["at_position"]
 
@@ -348,10 +348,9 @@ def af3_add_modifications(all_modifications, all_sequences):
 
       modif_record = {"ptmType": modification_to_codes[residue_to_modify][modif_type], "ptmPosition": modif_position}
       entity_modifications.append(modif_record)
-    copied_chain = copy.deepcopy(chain)[entity]
-    copied_chain["modifications"].extend(entity_modifications)
-    modified_sequences.append({entity: copied_chain.copy()})
-  # un-flatten the sequence list to merge indentical sequence/modifications couples
+    chain_data["modifications"].extend(entity_modifications)
+    modified_sequences.append({entity: chain_data.copy()})
+  # flatten sequences: multiple ids becomes one entry per id 
   merged = []
   for i, sequence in enumerate(modified_sequences):
     entity, insert_to = list(sequence.keys())[0], None
