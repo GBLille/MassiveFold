@@ -235,7 +235,7 @@ def af3_records_to_sequences(records, fasta_ids_sequences):
       record["seq"] = ccdCodes
 
     # either create new entity or add id to existing one
-    elif record["seq"] not in all_sequences:
+    if record["seq"] not in all_sequences:
       sequence_dicts.append({record["entity"]:  {"id": chain_id, record_type: record["seq"]}})
       all_sequences.append(record["seq"])
       all_entities.append(record["entity"])
@@ -390,18 +390,19 @@ def af3_add_input_entity(batch_input_json, af3_params):
       map_id_entity[ids] = light_chain
 
   additional_records = af3_entities_to_records(af3_params, fasta_ids_sequences)
+  # add the sequence modifications
+  modifications_types = ["phosphorylation"]
+  new_modifications_records = [ record for record in additional_records if record["sequence_type"] in modifications_types ]
+  batch_input_json["sequences"] = af3_add_modifications(new_modifications_records, batch_input_json["sequences"])
   # add the extra sequences (e.g ligands, glycosylation)
   bonds = []
   sequence_types = ["ligand", "glycosylation"]
   new_sequences_records = [ record for record in additional_records if record["sequence_type"] in sequence_types ]
   additional_sequences, bonds = af3_records_to_sequences(new_sequences_records, fasta_ids_sequences)
-  batch_input_json["sequences"].extend(additional_sequences)
   if bonds:
     batch_input_json["bondedAtomPairs"] = bonds
+  batch_input_json["sequences"].extend(additional_sequences)
 
-  modifications_types = ["phosphorylation"]
-  new_modifications_records = [ record for record in additional_records if record["sequence_type"] in modifications_types ]
-  batch_input_json["sequences"] = af3_add_modifications(new_modifications_records, batch_input_json["sequences"])
   # display the recorded entities for the run launched
   simplified = {"sequences": []}
   for i, obj  in enumerate(batch_input_json["sequences"]):
