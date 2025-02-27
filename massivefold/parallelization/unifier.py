@@ -286,8 +286,10 @@ def af3_entities_to_records(af3_params, fasta_ids_sequences):
 
         # make one record per modification site (when multiple positions specified)
         for pos in list(sorted(map(int, ptm["positions"]))):
-          single_record = record.copy()
+          single_record = copy.deepcopy(record)
           single_record["at_position"] = pos
+          assert pos <= len(fasta_ids_sequences[used_ids[i]]), \
+          f"{ptm['type']} position {pos} is higher than the total length of the sequence ({len(fasta_ids_sequences[used_ids[i]])})"
           additional_records.append(single_record)
         # display modification info
         print(
@@ -388,8 +390,6 @@ def af3_add_input_entity(batch_input_json, af3_params):
       map_id_entity[ids] = light_chain
 
   additional_records = af3_entities_to_records(af3_params, fasta_ids_sequences)
-
-  print(additional_records)
   # add the extra sequences (e.g ligands, glycosylation)
   bonds = []
   sequence_types = ["ligand", "glycosylation"]
