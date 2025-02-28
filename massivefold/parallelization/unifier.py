@@ -396,8 +396,8 @@ def af3_add_input_entity(batch_input_json, af3_params):
   batch_input_json["sequences"] = af3_add_modifications(new_modifications_records, batch_input_json["sequences"])
   # add the extra sequences (e.g ligands, glycosylation)
   bonds = []
-  sequence_types = ["ligand", "glycosylation"]
-  new_sequences_records = [ record for record in additional_records if record["sequence_type"] in sequence_types ]
+  sequence_types = "ligand"
+  new_sequences_records = [ record for record in additional_records if record["entity"] == sequence_types ]
   additional_sequences, bonds = af3_records_to_sequences(new_sequences_records, fasta_ids_sequences)
   if bonds:
     batch_input_json["bondedAtomPairs"] = bonds
