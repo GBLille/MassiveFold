@@ -126,8 +126,13 @@ def rank_all(all_runs_path, all_runs, output_path, ranking_type="debug"):
     parameter_set = os.path.basename(os.path.normpath(run))
     single_run_models['parameters'] = parameter_set
     single_run_models["model_name"] = model_names
-    all_models = pd.concat([all_models, single_run_models], axis=0) 
+    if "iptm+ptm" in single_run_models:
+      single_run_models = single_run_models.rename(columns={"iptm+ptm": "confidence_score"})
+    if "ranking_score" in single_run_models:
+      single_run_models = single_run_models.rename(columns={"ranking_score": "confidence_score"})
+    all_models = pd.concat([all_models, single_run_models], axis=0)
   
+  ranking_key_score = "confidence_score" if (ranking_key_score == "iptm+ptm" or ranking_key_score == "ranking_score") else ranking_key_score
   all_models = all_models.sort_values(ranking_key_score, ascending=False, ignore_index=True)
   all_models['global_rank'] = all_models[ranking_key_score].rank(ascending=False, method='min').astype(int)
   columns_order = ['global_rank', ranking_key_score, 'parameters', 'file', "model_name"]
