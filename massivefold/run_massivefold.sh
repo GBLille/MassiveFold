@@ -292,7 +292,7 @@ if [ ! -z $wait_for_jobid ]; then
   ALIGNMENT_ID=$wait_for_jobid
   waiting_for_alignment=true
 elif eval $conditions_to_align; then
-  ./${scripts_dir}/unifier.py \
+  ${scripts_dir}/unifier.py \
     --conversion input \
     --json_params $parameters_file \
     --to_convert $sequence_file \
@@ -335,7 +335,7 @@ else
     ln -s $(realpath $msas_precomputed/msas) ${output_dir}/${sequence_name}/
   elif [[ $tool == "AlphaFold3" ]]; then
     mkdir -p ${output_dir}/${sequence_name}/${run_name}
-    ./${scripts_dir}/unifier.py \
+    ${scripts_dir}/unifier.py \
       --conversion input_inference \
       --to_convert $msas_precomputed/msas_alphafold3_data.json \
       --json_params $parameters_file \
