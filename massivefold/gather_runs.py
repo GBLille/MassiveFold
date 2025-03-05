@@ -18,36 +18,27 @@ parser.add_argument('--output_path', help="Path to the output of the runs gather
 parser.add_argument('--only_ranking', help="Skips the run gathering, only output a csv ranking file", required=False, action='store_true')
 parser.add_argument('--include_pickles', help="If specified, include the .pkl pickle" 
 " files in the gathered results stored in <OUTPUT_PATH>", required=False, action='store_true')
-parser.add_argument('--include_rank', help="Include a ranking (ambiguous for ties resolving)" 
+parser.add_argument('--include_rank', help="Include a ranking (ambiguous for ties resolving) on 0.8 x iptm + 0.2 x ptm" 
 "in the name of the ranked files, also provides a mapping from original files to the gathered files.", required=False, action='store_true')
 
-def create_global_ranking(all_runs_path, runs, output_path, ranking_type="debug"):
-  map_pred_run = {}
-  whole_ranking = {}
-  runs = [ os.path.join(all_runs_path, run) for run in runs ]
-  ranking_key_score = ''
-  try:
-    os.mkdir(output_path)
-  except FileExistsError:
-    pass
-  for run in runs:
-    ranking_path = os.path.join(run, f'ranking_{ranking_type}.json')
-    run_name = os.path.basename(run)
-    with open(ranking_path, 'r') as local_ranking_file:
-      local_rank = json.load(local_ranking_file)
-      if not ranking_key_score:
-        ranking_key_score = list(local_rank.keys())[0]
-    local_rank[ranking_key_score] = \
-    {f"{run_name}_{pred}": local_rank[ranking_key_score][pred] for pred in local_rank[ranking_key_score]}
-    local_rank['order'] = [f"{run_name}_{pred}" for pred in local_rank['order']]
-    map_pred_run.update({pred: run_name for pred in local_rank['order']})
-    whole_ranking.update(local_rank[ranking_key_score])
-  sorted_predictions = sorted(whole_ranking.items(), key=lambda x:x[1], reverse=True)
-  iptm_ptm = dict(sorted_predictions)
-  order = sorted(whole_ranking, reverse=True, key=whole_ranking.get)
-  global_ranking = {ranking_key_score: iptm_ptm, 'order': order}
-  with open(f"{output_path}/ranking_{ranking_type}.json", 'w') as fileout:
-    fileout.write(json.dumps(global_ranking, indent=4)) 
+def global_rank_to_json(ranking, output_path):
+  map_pred_run = dict(zip(list(ranking["parameters"] + "_" + ranking["model_name"]), list(ranking['parameters'])))
+  info = ['global_rank', 'parameters', 'file', "model_name"]
+  for metric in ranking.columns:
+    if metric in info:
+      continue
+
+    ranking_type = metric
+    if metric == 'iptm+ptm' or metric == 'ranking_score':
+      ranking_type = "debug"
+    df = ranking[~ranking[metric].isna()].copy()
+    df = df.sort_values(metric, ascending=False, ignore_index=True)
+    order = list(df["parameters"] + "_" + df["model_name"])
+    model_scores = dict(zip(order, list(df[metric])))
+    global_ranking = {metric: model_scores, "order": order}
+    with open(f"{output_path}/ranking_{ranking_type}.json", 'w') as fileout:
+      fileout.write(json.dumps(global_ranking, indent=4)) 
+
   return map_pred_run
 
 def find_single_run_predictions(all_runs_path: str, run_name: str, ordered_names: list):
@@ -104,15 +95,16 @@ def rank_all(all_runs_path, all_runs, output_path, ranking_type="debug"):
   all_models = pd.DataFrame()
   os.makedirs(output_path, exist_ok=True)
 
+  ranked_per_run = {}
   for run in runs:
     single_run_models = pd.DataFrame()
     ranking_path = os.path.join(run, f'ranking_debug.json')
-    ranking_score_path = os.path.join(run, f'ranking_{ranking_type}.json')
+    run_score_path = os.path.join(run, f'ranking_{ranking_type}.json')
     with open(ranking_path, 'r') as local_ranking_file:
       local_rank = json.load(local_ranking_file)
 
     model_names = local_rank["order"]
-    score_ranking = json.load(open(ranking_score_path, 'r'))
+    score_ranking = json.load(open(run_score_path, 'r'))
     ranking_key_score = list(score_ranking.keys())[0]
     scores = [ score_ranking[ranking_key_score][model] for model in model_names ]
     try:
@@ -126,20 +118,10 @@ def rank_all(all_runs_path, all_runs, output_path, ranking_type="debug"):
     parameter_set = os.path.basename(os.path.normpath(run))
     single_run_models['parameters'] = parameter_set
     single_run_models["model_name"] = model_names
-    if "iptm+ptm" in single_run_models:
-      single_run_models = single_run_models.rename(columns={"iptm+ptm": "confidence_score"})
-    if "ranking_score" in single_run_models:
-      single_run_models = single_run_models.rename(columns={"ranking_score": "confidence_score"})
-    all_models = pd.concat([all_models, single_run_models], axis=0)
+    ranked_per_run[os.path.basename(run)] = single_run_models
+    #all_models = pd.concat([all_models, single_run_models], axis=0)
   
-  ranking_key_score = "confidence_score" if (ranking_key_score == "iptm+ptm" or ranking_key_score == "ranking_score") else ranking_key_score
-  all_models = all_models.sort_values(ranking_key_score, ascending=False, ignore_index=True)
-  all_models['global_rank'] = all_models[ranking_key_score].rank(ascending=False, method='min').astype(int)
-  columns_order = ['global_rank', ranking_key_score, 'parameters', 'file', "model_name"]
-  all_models = all_models[columns_order]
-  
-  all_models_csv = all_models[ [col for col in all_models.columns if col != "model_name"] ]
-  return all_models
+  return ranked_per_run
 
 def move_and_rename(all_runs_path, run_names, output_path, ranking, do_include_pickles, do_include_rank):
   score_key = ranking.columns[1]
@@ -175,10 +157,10 @@ def move_and_rename(all_runs_path, run_names, output_path, ranking, do_include_p
       predictions.append(os.path.basename(old_pdb_path))
       scores.append(ranking_score)
       mapped_names.append(os.path.basename(pdb_file))
-      
+
     new_pdb_path = os.path.join(output_path, pdb_file)
     cp(old_pdb_path, new_pdb_path)
-    
+
     if do_include_pickles:
       prediction_name = prediction["parameters"]  + "_" + prediction["model_name"]
       pickles_path = os.path.join(all_runs_path, run_names[prediction_name])
@@ -188,7 +170,7 @@ def move_and_rename(all_runs_path, run_names, output_path, ranking, do_include_p
       old_pdb_path = os.path.join(pickles_path, f"result_{prediction['model_name']}.pkl") 
       new_pdb_path = os.path.join(output_path, f"{prediction_name}.pkl")
       cp(old_pdb_path, new_pdb_path)
-  
+
   if do_include_rank:
     mapping = {"model": models, "run": runs, "prediction": predictions, score_key: scores, "mapped_name": mapped_names}
     pd.DataFrame(mapping).to_csv(os.path.join(output_path, 'map.csv'), index=False)
@@ -218,7 +200,7 @@ def delete_symlinks(all_runs_path, runs):
 
 def check_all_runs(all_runs_path, ignored_directories, ranking_type='debug'):
   considered_runs = []
-  
+
   for run in os.listdir(all_runs_path):
     if run not in ignored_directories:
       ranking_path = os.path.join(all_runs_path, run, f'ranking_{ranking_type}.json')
@@ -234,6 +216,49 @@ def check_all_runs(all_runs_path, ignored_directories, ranking_type='debug'):
   print(f"These are the following runs gathered in the output:\n{formated_runs}\n")
   return considered_runs
 
+def create_global_ranking(runs, runs_path, output_path, ranking_types):
+  all_metrics_ranking = []
+  for i, ranking_type in enumerate(ranking_types):
+    try:
+      ranking_per_run = rank_all(runs_path, runs, output_path, ranking_type) 
+      all_metrics_ranking.append(ranking_per_run)
+    except FileNotFoundError as e:
+      print(f"No ranking for {ranking_type} metric.")
+  all_run_names = [ list(metric.keys()) for metric in all_metrics_ranking ]
+  run_names_homogeneity = [ run_names == list(all_metrics_ranking[0].keys()) for run_names in all_run_names ]
+  assert all(run_names_homogeneity), \
+  f"Not the same runs found: {', '.join([str(i) for i in all_run_names])}"
+  run_names = list(all_metrics_ranking[0].keys())
+
+  columns_to_merge_on = ['file', 'parameters', 'model_name']
+  score_keys = []
+  all_runs_ranking = pd.DataFrame()
+  for run in run_names:
+    run_ranking = all_metrics_ranking[0][run]
+    run_key_score = [ col for col in run_ranking.columns if col not in columns_to_merge_on ][0]
+    for i in range(1, len(all_metrics_ranking)):
+      run_ranking = run_ranking.merge(all_metrics_ranking[i][run], on=columns_to_merge_on, how='left')
+    if run_key_score == "ranking_score":
+      run_ranking["iptm+ptm"] = 0.8*run_ranking["iptm"] + 0.2*run_ranking["ptm"]
+      run_ranking = run_ranking.rename(columns={"ranking_score": "af3_ranking_score"})
+    all_runs_ranking = pd.concat([all_runs_ranking, run_ranking], axis=0)
+    score_keys.append(run_key_score)
+
+  if len(set(score_keys)) == 1:
+    common_key_score = list(set(score_keys))[0]
+    ordering_score = common_key_score
+  elif "ranking_score" in score_keys and "iptm+ptm" in score_keys:
+    common_key_score = "iptm+ptm"
+    ordering_score = [common_key_score, 'af3_ranking_score']
+  else:
+    raise ValueError(f"ranking_debug.json in some runs uses different metrics: {score_keys}")
+
+  all_runs_ranking = all_runs_ranking.sort_values(ordering_score, ascending=False, ignore_index=True)
+  all_runs_ranking["global_rank"] = all_runs_ranking[common_key_score].rank(ascending=False, method='min').astype(int)
+  columns_order = ['global_rank', common_key_score, 'parameters', 'file', "model_name"]
+  columns_order.extend([col for col in all_runs_ranking.columns if col not in columns_order])
+  whole_prediction_ranking = all_runs_ranking[columns_order]
+  return whole_prediction_ranking
 
 def main():
   args = parser.parse_args()
@@ -256,20 +281,9 @@ def main():
     rm(output_path)
 
   runs = check_all_runs(runs_path, ignored_dir)
-  # create ranking json files
   delete_symlinks(runs_path, runs)
   create_symlink_without_ranked(runs_path, runs)
-
-  for i, ranking_type in enumerate(ranking_types):
-    try:
-      ranked_predictions = rank_all(runs_path, runs, output_path, ranking_type) 
-    except FileNotFoundError as e:
-      print(f"No ranking for {ranking_type} metric.")
-    if i == 0:
-      whole_prediction_ranking = ranked_predictions
-    else:
-      new_metric = [ column_new for column_new in ranked_predictions.columns if column_new not in whole_prediction_ranking.columns ]
-      whole_prediction_ranking[new_metric] = ranked_predictions[new_metric]
+  whole_prediction_ranking = create_global_ranking(runs, runs_path, output_path, ranking_types)
 
   assert not whole_prediction_ranking.empty
   print(whole_prediction_ranking)
@@ -277,7 +291,8 @@ def main():
   whole_prediction_ranking.to_csv(os.path.join(output_path, 'ranking.csv'), index=None)
 
   if not args.only_ranking:
-    pred_run_map = create_global_ranking(runs_path, runs, output_path) 
+    # create ranking json files
+    pred_run_map = global_rank_to_json(whole_prediction_ranking, output_path)
     print(f"Gathering {sequence_name}'s runs")
     if args.include_pickles:
       print("Pickle files are also included in the gathering.")
