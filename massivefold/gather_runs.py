@@ -239,6 +239,7 @@ def create_global_ranking(runs, runs_path, output_path, ranking_types):
     for i in range(1, len(all_metrics_ranking)):
       run_ranking = run_ranking.merge(all_metrics_ranking[i][run], on=columns_to_merge_on, how='left')
     if run_key_score == "ranking_score":
+      run_key_score = "af3_ranking_score"
       run_ranking["iptm+ptm"] = 0.8*run_ranking["iptm"] + 0.2*run_ranking["ptm"]
       run_ranking = run_ranking.rename(columns={"ranking_score": "af3_ranking_score"})
     all_runs_ranking = pd.concat([all_runs_ranking, run_ranking], axis=0)
