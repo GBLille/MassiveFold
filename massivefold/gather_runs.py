@@ -248,7 +248,7 @@ def create_global_ranking(runs, runs_path, output_path, ranking_types):
   if len(set(score_keys)) == 1:
     common_key_score = list(set(score_keys))[0]
     ordering_score = common_key_score
-  elif "ranking_score" in score_keys and "iptm+ptm" in score_keys:
+  elif "af3_ranking_score" in score_keys and "iptm+ptm" in score_keys:
     common_key_score = "iptm+ptm"
     ordering_score = [common_key_score, 'af3_ranking_score']
   else:
@@ -282,6 +282,7 @@ def main():
     rm(output_path)
 
   runs = check_all_runs(runs_path, ignored_dir)
+  assert runs, "There should be at least one run to gather"
   delete_symlinks(runs_path, runs)
   create_symlink_without_ranked(runs_path, runs)
   whole_prediction_ranking = create_global_ranking(runs, runs_path, output_path, ranking_types)
