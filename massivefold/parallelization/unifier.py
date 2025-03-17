@@ -284,6 +284,24 @@ def af3_entities_to_records(af3_params, fasta_ids_sequences):
           record.update({"entity": "modifications", "seq": "PO3"})
           ptm["sequence"] = "PO3"
 
+        elif ptm["type"] == "hydroxylation":
+          if not ptm["positions"]:
+            continue
+          record.update({"entity": "modifications", "seq": "OH"})
+          ptm["sequence"] = "OH"
+
+        elif ptm["type"] == "methylation":
+          if not ptm["positions"]:
+            continue
+          record.update({"entity": "modifications", "seq": "CH3"})
+          ptm["sequence"] = "CH3"
+
+        elif ptm["type"] == "acetylation":
+          if not ptm["positions"]:
+            continue
+          record.update({"entity": "modifications", "seq": "CH3CO"})
+          ptm["sequence"] = "CH3CO"
+
         # make one record per modification site (when multiple positions specified)
         for pos in list(sorted(map(int, ptm["positions"]))):
           single_record = copy.deepcopy(record)
@@ -308,13 +326,21 @@ def af3_entities_to_records(af3_params, fasta_ids_sequences):
 
 def af3_add_modifications(all_modifications, all_sequences):
   """ Add the modifications specified in MassiveFold parameters to the AlphaFold3 input sequences."""
-  modification_to_codes = {
-    'S': {
-      "phosphorylation": 'SEP'
-    },
-    'T': {
-      "phosphorylation": 'TPO'
-    },
+  proteins_modification_codes = {
+    'S': {"phosphorylation": 'SEP'},
+    'T': {"phosphorylation": 'TPO'},
+    'P': {"hydroxylation": "HYP"},
+    'R': {"methylation": "MMO"},
+    'K': {"acetylation": "ALY", "methylation": "MLZ"},
+  }
+
+  dna_modification_codes = {
+    "C": {"methylation": "17E"}
+  }
+
+  entity_to_modif = {
+    "protein": proteins_modification_codes,
+    "dna": dna_modification_codes
   }
   # flatten the sequences to have one chain id per entity
   flattened = []
@@ -343,12 +369,12 @@ def af3_add_modifications(all_modifications, all_sequences):
       modif_type, modif_position = modif["sequence_type"], modif["at_position"]
 
       residue_to_modify = chain.copy()[entity]["sequence"][modif_position - 1]
-      assert residue_to_modify in modification_to_codes, \
+      assert residue_to_modify in entity_to_modif[entity], \
       f"{residue_to_modify} has no supported modifications ({residue_to_modify}{modif_position})"
-      assert modif_type in modification_to_codes[residue_to_modify], \
+      assert modif_type in entity_to_modif[entity][residue_to_modify], \
       f"{modif_type} is not a supported modifications for {residue_to_modify}"
 
-      modif_record = {"ptmType": modification_to_codes[residue_to_modify][modif_type], "ptmPosition": modif_position}
+      modif_record = {"ptmType": entity_to_modif[entity][residue_to_modify][modif_type], "ptmPosition": modif_position}
       entity_modifications.append(modif_record)
     chain_data["modifications"].extend(entity_modifications)
     modified_sequences.append({entity: chain_data.copy()})
@@ -391,7 +417,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
 
   additional_records = af3_entities_to_records(af3_params, fasta_ids_sequences)
   # add the sequence modifications
-  modifications_types = ["phosphorylation"]
+  modifications_types = ["phosphorylation", "methylation", "acetylation", "hydroxylation"]
   new_modifications_records = [ record for record in additional_records if record["sequence_type"] in modifications_types ]
   batch_input_json["sequences"] = af3_add_modifications(new_modifications_records, batch_input_json["sequences"])
   # add the extra sequences (e.g ligands, glycosylation)
