@@ -397,7 +397,7 @@ def af3_add_modifications(all_modifications, all_sequences):
       merged.append(sequence)
   return merged
 
-def af3_add_input_entity(batch_input_json, af3_params):
+def af3_sequences_to_ids(batch_input_json):
   fasta_ids_sequences = {}
   map_id_entity = {}
   for chain in batch_input_json["sequences"]:
@@ -414,7 +414,10 @@ def af3_add_input_entity(batch_input_json, af3_params):
     elif isinstance(ids, str):
       fasta_ids_sequences[ids] = entity["sequence"]
       map_id_entity[ids] = light_chain
+  return fasta_ids_sequences
 
+def af3_add_input_entity(batch_input_json, af3_params):
+  fasta_ids_sequences = af3_sequences_to_ids(batch_input_json)
   additional_records = af3_entities_to_records(af3_params, fasta_ids_sequences)
   # add the sequence modifications
   modifications_types = ["phosphorylation", "methylation", "acetylation", "hydroxylation"]
@@ -464,16 +467,36 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
   batch_filename = os.path.basename(batches)
   # batch file: <sequence>_<run>_batches.json
   run_name = re.sub(fr"^{sequence}_", "", batch_filename).replace("_batches.json", "")
+
   # distribute input file for each batches of the run
   batches = json.load(open(batches, 'r'))
+  batches_keys = []
+  for i in batches:
+    batches_keys.extend(list(batches[i].keys()))
+  batches_keys = set(batches_keys)
+  print(batches_keys)
+
   for batch in batches:
     starting_seed = random.randint(0, 1_000_000)
     num_seeds = int(batches[batch]['end']) - int(batches[batch]['start']) + 1
     model_seeds = [ starting_seed  + i for i in range(num_seeds)]
-    alphafold3_input = os.path.join(output_dir, sequence, run_name, f"af3_batch_{batch}.json")
-    single_batch = batch_input_json.copy()
+    single_batch = copy.deepcopy(batch_input_json)
     single_batch['name'] = 'batch_' + batch
     single_batch['modelSeeds'] = model_seeds
+
+    screening_item = {}
+    print(batches[batch])
+    if "smiles" in batches[batch] and batches[batch]["smiles"]:
+      screening_item = {"entity": "ligand", "sequence_type": "smiles", "seq": batches[batch]["smiles"]}
+    elif "ccdcode" in batches[batch] and batches[batch]["ccdcode"]:
+      screening_item = {"entity": "ligand", "sequence_type": "ccdCodes", "seq": batches[batch]["ccdcode"]}
+    if screening_item:
+      fasta_ids_sequences = af3_sequences_to_ids(single_batch)
+      additional_sequences, _= af3_records_to_sequences([screening_item], fasta_ids_sequences)
+      single_batch["name"] = batches[batch]["id"]
+      single_batch["sequences"].extend(additional_sequences)
+
+    alphafold3_input = os.path.join(output_dir, sequence, run_name, f"af3_batch_{batch}.json")
     json.dump(single_batch, open(alphafold3_input, 'w'), indent=4)
 
 def prepare_inference(args, tool):
@@ -607,11 +630,24 @@ def convert_output(tool):
     return
   with open(FLAGS.batches_file, 'r') as batches_json:
     all_batches_infos = json.load(batches_json)
-  batches = [ batch for batch in os.listdir(FLAGS.to_convert) if batch.startswith('batch_') ]
-  batches = sorted(batches, key=lambda x: int(x.split('_')[1]))
 
-  for batch in batches:
-    batch_number = batch.split('_')[1]
+  batches_files = [
+    batch_file for batch_file in os.listdir(FLAGS.to_convert)
+    if batch_file.startswith('af3_batch_') and batch_file.endswith('.json')
+  ]
+  batches_files = sorted(
+    batches_files,
+    key=lambda x: int(x.replace('af3_batch_', '').replace('.json', ''))
+  )
+  batches = [
+    json.load(open(os.path.join(FLAGS.to_convert, batch_file), 'r'))['name']
+    for batch_file in batches_files
+  ]
+
+  #batches = [ batch for batch in os.listdir(FLAGS.to_convert) if batch.startswith('batch_') ]
+  #batches = sorted(batches, key=lambda x: int(x.split('_')[1]))
+  for file, batch in zip(batches_files, batches):
+    batch_number = file.replace('af3_batch_', '').replace('.json', '')
     batch_shift = int(all_batches_infos[batch_number]['start'])
     if tool == "ColabFold":
       convert_colabfold_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
