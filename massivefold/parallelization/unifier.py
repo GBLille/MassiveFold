@@ -250,7 +250,9 @@ def af3_entities_to_records(af3_params, fasta_ids_sequences):
   additional_records = []
   ligand = af3_params['ligand']
   PTMs = af3_params["PTMs"]
-  all_ptm_types = ["glycosylation", "phosphorylation"]
+  all_ptm_types = ["glycosylation", "phosphorylation", "hydroxylation", "methylation", "acetylation"]
+  modifs_dummy_seq = {"phosphorylation": "PO3", "hydroxylation": "OH", "methylation": "CH3", "acetylation": "CH3CO"}
+
   used_ids = list(fasta_ids_sequences.keys())
   
   for lig in ligand:
@@ -265,7 +267,6 @@ def af3_entities_to_records(af3_params, fasta_ids_sequences):
       additional_records.append({"entity": "ligand", "sequence_type": "smiles", "seq": lig["smiles"]})
 
   if PTMs:
-    # af3_ptms_as_records(PTMs, 
     # parse each chain's list of PTMs
     for i, single_chain_ptms in enumerate(PTMs):
       for ptm in single_chain_ptms:
@@ -278,29 +279,11 @@ def af3_entities_to_records(af3_params, fasta_ids_sequences):
             continue
           record.update({"entity": "ligand", "seq": ptm["sequence"]})
 
-        elif ptm["type"] == "phosphorylation":
+        elif ptm["type"] in all_ptm_types:
           if not ptm["positions"]:
             continue
-          record.update({"entity": "modifications", "seq": "PO3"})
-          ptm["sequence"] = "PO3"
-
-        elif ptm["type"] == "hydroxylation":
-          if not ptm["positions"]:
-            continue
-          record.update({"entity": "modifications", "seq": "OH"})
-          ptm["sequence"] = "OH"
-
-        elif ptm["type"] == "methylation":
-          if not ptm["positions"]:
-            continue
-          record.update({"entity": "modifications", "seq": "CH3"})
-          ptm["sequence"] = "CH3"
-
-        elif ptm["type"] == "acetylation":
-          if not ptm["positions"]:
-            continue
-          record.update({"entity": "modifications", "seq": "CH3CO"})
-          ptm["sequence"] = "CH3CO"
+          ptm["sequence"] = modifs_dummy_seq[ptm["type"]]
+          record.update({"entity": "modifications", "seq": ptm["sequence"]})
 
         # make one record per modification site (when multiple positions specified)
         for pos in list(sorted(map(int, ptm["positions"]))):
@@ -365,6 +348,13 @@ def af3_add_modifications(all_modifications, all_sequences):
   for i, (chain, chain_modifs) in enumerate(zip(flattened, modif_per_chain)):
     entity, entity_modifications = list(chain.keys())[0], []
     chain_data = copy.deepcopy(chain)[entity]
+    if entity == "protein":
+      key_modif_type, key_modif_position = "ptmType", "ptmPosition"
+    elif entity == "rna" or entity == "dna":
+      key_modif_type, key_modif_position = "modificationType", "basePosition"
+    elif entity == "ligand":
+      continue
+
     for modif in chain_modifs: # add all chain's modifications
       modif_type, modif_position = modif["sequence_type"], modif["at_position"]
 
@@ -374,7 +364,8 @@ def af3_add_modifications(all_modifications, all_sequences):
       assert modif_type in entity_to_modif[entity][residue_to_modify], \
       f"{modif_type} is not a supported modifications for {residue_to_modify}"
 
-      modif_record = {"ptmType": entity_to_modif[entity][residue_to_modify][modif_type], "ptmPosition": modif_position}
+      modif_record = {key_modif_type: entity_to_modif[entity][residue_to_modify][modif_type], key_modif_position: modif_position}
+
       entity_modifications.append(modif_record)
     chain_data["modifications"].extend(entity_modifications)
     modified_sequences.append({entity: chain_data.copy()})
