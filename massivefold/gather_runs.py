@@ -212,8 +212,8 @@ def check_all_runs(all_runs_path, ignored_directories, ranking_type='debug'):
         except:
           print(f'Something went wrong with ranking_debug.json for run {run}')
 
-  formated_runs = '\n'.join(considered_runs)
-  print(f"These are the following runs gathered in the output:\n{formated_runs}\n")
+  formated_runs = ' - '.join(considered_runs)
+  print(f"These are the {len(considered_runs)} following runs gathered in the output:\n{formated_runs}\n")
   return considered_runs
 
 def create_global_ranking(runs, runs_path, output_path, ranking_types):
@@ -288,6 +288,14 @@ def main():
   whole_prediction_ranking = create_global_ranking(runs, runs_path, output_path, ranking_types)
 
   assert not whole_prediction_ranking.empty
+  other_csv = [ csv for csv in os.listdir(runs_path) if csv.endswith('.csv') and csv != "ranking.csv"]
+  for csv in other_csv:
+    df = pd.read_csv(os.path.join(runs_path, csv))
+    if "i-plddt" in df.columns:
+      whole_prediction_ranking["Models"] = whole_prediction_ranking["parameters"] + '_' + whole_prediction_ranking["model_name"] + ".cif"
+      whole_prediction_ranking = pd.merge(whole_prediction_ranking, df, on="Models")
+      break
+
   print(whole_prediction_ranking)
   whole_prediction_ranking.to_csv(os.path.join(runs_path, 'ranking.csv'), index=None)
   whole_prediction_ranking.to_csv(os.path.join(output_path, 'ranking.csv'), index=None)

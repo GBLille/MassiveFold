@@ -465,7 +465,6 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
   for i in batches:
     batches_keys.extend(list(batches[i].keys()))
   batches_keys = set(batches_keys)
-  print(batches_keys)
 
   for batch in batches:
     starting_seed = random.randint(0, 1_000_000)
@@ -476,7 +475,6 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
     single_batch['modelSeeds'] = model_seeds
 
     screening_item = {}
-    print(batches[batch])
     if "smiles" in batches[batch] and batches[batch]["smiles"]:
       screening_item = {"entity": "ligand", "sequence_type": "smiles", "seq": batches[batch]["smiles"]}
     elif "ccdcode" in batches[batch] and batches[batch]["ccdcode"]:
@@ -735,7 +733,7 @@ def af3_move_and_rename(df, output_dir):
   all_scores = { score_map[stype]: { stype: {}, "order": [] } for stype in score_types if stype in df.columns  }
 
   for pred in pred_list:
-    
+
     model_cif_name = os.path.join(pred["original_dir"], 'model.cif')
     new_cif_name = os.path.join(os.path.dirname(pred["original_dir"]), pred["ranked_name"])
     cp(model_cif_name, new_cif_name)

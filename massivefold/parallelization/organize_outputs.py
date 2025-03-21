@@ -105,15 +105,40 @@ def main(argv):
   batches_path = os.path.normpath(FLAGS.batches_path)
   sequence_name = os.path.basename(os.path.dirname(batches_path))
   run_name = os.path.basename(batches_path)
-  batch_0 = os.path.join(batches_path, "batch_0")
 
-  if os.path.exists(os.path.join(batch_0, "ranking_debug.json")):
+  if os.path.exists(os.path.join(batches_path, "af3_batch_0.json")):
     print("AlphaFold3 output detected")
+    batch_0_name = json.load(open(os.path.join(batches_path, "af3_batch_0.json"), 'r'))["name"]
+    batch_0 = os.path.join(batches_path, batch_0_name)
     try:
       mv(os.path.join(batch_0, "TERMS_OF_USE.md"), batches_path)
     except:
       pass
-    all_batches = [ i for i in os.listdir(batches_path) if i.startswith('batch_') and os.path.isdir(os.path.join(batches_path, i)) ]
+    batches_files = [
+      batch_file for batch_file in os.listdir(batches_path)
+      if batch_file.startswith('af3_batch_') and batch_file.endswith('.json')
+    ]
+    all_batches = [
+      json.load(open(os.path.join(batches_path, batch_file), 'r'))['name']
+      for batch_file in batches_files
+    ]
+    is_screening = False
+    for batch in all_batches:
+      if not batch.startswith('batch_'):
+        is_screening = True
+
+    if is_screening:
+      print(f"'{os.path.basename(batches_path)}' is a screening run.")
+      for batch in all_batches:
+        single_batch = os.path.join(batches_path, batch)
+        old_directories = [ old_dir for old_dir in os.listdir(single_batch) if old_dir.startswith('seed-') ]
+        for old_dir in old_directories:
+          rm(os.path.join(single_batch, old_dir))
+      os.makedirs(os.path.join(batches_path, 'screening_inputs'))
+      for batch_file in batches_files:
+        mv(os.path.join(batches_path, batch_file), os.path.join(batches_path, 'screening_inputs', batch_file))
+      sys.exit()
+
     for batch in all_batches:
       batch_dir = os.path.join(batches_path, batch)
       new_location = os.path.join(batch_dir, sequence_name)
@@ -130,6 +155,7 @@ def main(argv):
         new_file = os.path.join(new_location, os.path.basename(file))
         mv(file, new_file)
 
+  batch_0 = os.path.join(batches_path, "batch_0")
   # create ranking json files
   pred_batch_map = create_global_ranking(batches_path, sequence_name)
   if os.path.isfile(f"{batches_path}/batch_0/{sequence_name}/ranking_iptm.json"):
