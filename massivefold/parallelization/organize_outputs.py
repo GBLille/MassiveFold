@@ -131,6 +131,9 @@ def main(argv):
       print(f"'{os.path.basename(batches_path)}' is a screening run.")
       for batch in all_batches:
         single_batch = os.path.join(batches_path, batch)
+        if not os.path.exists(single_batch):
+          print(f"Batch {single_batch} not existing, skip it.")
+          continue
         old_directories = [ old_dir for old_dir in os.listdir(single_batch) if old_dir.startswith('seed-') ]
         for old_dir in old_directories:
           rm(os.path.join(single_batch, old_dir))

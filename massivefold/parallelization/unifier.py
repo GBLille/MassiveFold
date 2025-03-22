@@ -633,8 +633,7 @@ def convert_output(tool):
     for batch_file in batches_files
   ]
 
-  #batches = [ batch for batch in os.listdir(FLAGS.to_convert) if batch.startswith('batch_') ]
-  #batches = sorted(batches, key=lambda x: int(x.split('_')[1]))
+  working, not_working = [], []
   for file, batch in zip(batches_files, batches):
     batch_number = file.replace('af3_batch_', '').replace('.json', '')
     batch_shift = int(all_batches_infos[batch_number]['start'])
@@ -642,7 +641,14 @@ def convert_output(tool):
       convert_colabfold_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
       move_output(FLAGS.to_convert, batch)
     elif tool == "AlphaFold3":
-      convert_alphafold3_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
+      try:
+        convert_alphafold3_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
+        working.append(batch)
+      except FileNotFoundError:
+        not_working.append(batch)
+
+  print(f"Batch not completed: {' - '.join(not_working)}")
+
 
 def convert_colabfold_output(output_path:str, pred_shift:int):
   pkls = [ file for file in os.listdir(output_path) if file.endswith('.pickle') ]
