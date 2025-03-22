@@ -647,7 +647,8 @@ def convert_output(tool):
       except FileNotFoundError:
         not_working.append(batch)
 
-  print(f"Batch not completed: {' - '.join(not_working)}")
+  if not_working:
+    print(f"Batch not completed: {' - '.join(not_working)}")
 
 
 def convert_colabfold_output(output_path:str, pred_shift:int):
