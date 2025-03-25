@@ -249,7 +249,6 @@ def af3_records_to_sequences(records, fasta_ids_sequences):
 def af3_entities_to_records(af3_params, fasta_ids_sequences):
   additional_records = []
   ligand = af3_params['ligand']
-  PTMs = af3_params["PTMs"]
   all_ptm_types = ["glycosylation", "phosphorylation", "hydroxylation", "methylation", "acetylation"]
   modifs_dummy_seq = {"phosphorylation": "PO3", "hydroxylation": "OH", "methylation": "CH3", "acetylation": "CH3CO"}
 
@@ -266,6 +265,7 @@ def af3_entities_to_records(af3_params, fasta_ids_sequences):
     elif lig['smiles']:
       additional_records.append({"entity": "ligand", "sequence_type": "smiles", "seq": lig["smiles"]})
 
+  PTMs = af3_params["modifications"]
   if PTMs:
     # parse each chain's list of PTMs
     for i, single_chain_ptms in enumerate(PTMs):

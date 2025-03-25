@@ -43,10 +43,21 @@ time python3 $$(which $${mf_plots_path}) \
 
 date
 
+if [[ $$pkl_format == "light" ]]; then
+  echo "Light pickles are not supported for AlphaFold3 yet."
+elif [[ $$pkl_format == "none" ]]; then
+  echo "Not keeping pkl files"
+  rm $${output}/*.pkl
+elif [[ $$pkl_format == "full" ]]; then
+  echo "Keeping pkl files as in AlphaFold3 output"
+else
+  echo "$$pkl_format is an invalid value for pkl_format, doing nothing"
+fi
+
 mkdir $${output}/log
 output_logs_path=$$(realpath $${output}/log)
 cp -r ${logs_dir}/$${sequence_name}/$${run_name}/* $${output}/log/
-cd $${output}/log 
+cd $${output}/log
 zip ../logs.zip *
 rm $$output_logs_path/*
 mv ../logs.zip .

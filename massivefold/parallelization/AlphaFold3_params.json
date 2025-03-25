@@ -8,7 +8,7 @@
         "ligand": [
             {"ccdCodes": [""], "smiles": ""}
         ],
-        "PTMs": [
+        "modifications": [
             [{"type": "", "sequence": "", "positions": []}]
         ],
         "model_preset": "multimer",
