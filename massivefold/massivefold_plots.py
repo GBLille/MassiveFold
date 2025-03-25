@@ -614,6 +614,12 @@ def main(argv):
     print('Flag --runs_to_compare is required for --chosen_plots=distribution_comparison')
     FLAGS.chosen_plots = [ plot for plot in FLAGS.chosen_plots if plot != 'distribution_comparison' ]
 
+  try:
+    extract_top_predictions()
+  except FileNotFoundError:
+    print("Your output is not formatted for plots. Exiting...")
+    return
+
   if not shutil.os.path.exists(FLAGS.output_path) and 'distribution_comparison' not in FLAGS.chosen_plots:
     shutil.os.makedirs(FLAGS.output_path)
   for chosen_plot in FLAGS.chosen_plots:
