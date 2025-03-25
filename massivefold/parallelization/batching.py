@@ -48,7 +48,7 @@ def batches_per_ligand(ligands, preds_per_model:int):
     smiles = "" if pd.isna(smiles) else smiles
     ccdcode = "" if pd.isna(ccdcode) else ccdcode
     smiles, ccdcode = smiles.strip(), ccdcode.strip()
-    batches[str(i)] = { 'start': 0, 'end': preds_per_model, "id": id.lower(), "smiles": smiles, "ccdcode": ccdcode }
+    batches[str(i)] = { 'start': 0, 'end': preds_per_model - 1, "id": id.lower(), "smiles": smiles, "ccdcode": ccdcode }
 
     if smiles and ccdcode:
       smiles_and_ccdcode.append(i)
