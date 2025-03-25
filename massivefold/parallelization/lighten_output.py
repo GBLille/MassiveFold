@@ -94,11 +94,6 @@ def lighten_all_pkl(directory):
   if af3_batch_files:
     extract_af3_batch_input_msas(directory, af3_batch_files)
     sys.exit()
-  try:
-    os.mkdir(f'{directory}/light_pkl')
-  except OSError as error:
-    shutil.rmtree(f'{directory}/light_pkl')
-    os.mkdir(f'{directory}/light_pkl')
 
   to_keep = [
     "num_recycles", "predicted_aligned_error",
@@ -106,6 +101,15 @@ def lighten_all_pkl(directory):
     "ranking_confidence", "max_predicted_aligned_error"]
 
   pkl_files = [ file for file in directory_content if (file.startswith('result') and file.endswith('.pkl')) ]
+
+  if not pkl_files:
+    print(f"No pickle files detected in {directory}")
+    return
+  try:
+    os.mkdir(f'{directory}/light_pkl')
+  except OSError as error:
+    shutil.rmtree(f'{directory}/light_pkl')
+    os.mkdir(f'{directory}/light_pkl')
 
   for pkl in pkl_files:
     with open(f"{directory}/{pkl}", 'rb') as pickle_input:
