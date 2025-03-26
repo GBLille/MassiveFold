@@ -58,7 +58,7 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
       pred_new_name = f"unrelaxed_{prediction}.pdb"
     else:
       pred_new_name = f"{prediction}.cif"
-    
+
     # Move confidence files (chain iptm etc)
     confidence_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, 'confidences')
     if os.path.exists(confidence_path):
@@ -145,13 +145,13 @@ def main(argv):
     for batch in all_batches:
       batch_dir = os.path.join(batches_path, batch)
       new_location = os.path.join(batch_dir, sequence_name)
-      os.makedirs(new_location)
+      os.makedirs(new_location, exist_ok=True)
       output_files = [ os.path.join(batch_dir, i) for i in os.listdir(batch_dir) if i.endswith('.json') or i.endswith('.cif') or i.endswith('.pkl') ]
 
       confidence_path = os.path.join(batch_dir, 'confidences')
       new_confidence_path = os.path.join(new_location, 'confidences')
 
-      os.makedirs(new_confidence_path)
+      os.makedirs(new_confidence_path, exist_ok=True)
       for confidence_file in os.listdir(confidence_path):
         cp(os.path.join(confidence_path, confidence_file), new_confidence_path)
       for file in output_files: 

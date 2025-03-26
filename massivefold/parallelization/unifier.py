@@ -707,7 +707,8 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
     + "_sample_" + df["sample"].astype(str) + "_pred_" + df["pred_nb"].astype(str)
   df["pkl_name"] = "result_" + df["prediction_name"] + ".pkl"
   df = af3_extract_plddts_create_pkl(df, output_path)
-  df = df.sort_values(['ranking_score', 'iptm', 'ptm', 'mean_plddt'], ascending=False, ignore_index=True)
+  all_score_types = [ i for i in ['ranking_score', 'iptm', 'ptm', 'mean_plddt'] if i in df.columns ]
+  df = df.sort_values(all_score_types, ascending=False, ignore_index=True)
   df['rank'] = df.index
   df["ranked_name"] = "ranked_" + df["rank"].astype(str) + "_" + df["prediction_name"] + ".cif"
   af3_move_and_rename(df, output_path)
@@ -717,7 +718,7 @@ def prediction_metrics(input_dir: str, nature: str):
   with open(prediction_confs, 'r') as f:
     data = json.load(f)
   metrics_possibilities = [ "plddt", "iptm", "ptm" ]#, "chain_pair_iptm" ]
-  metrics = { metric: data[metric] for metric in metrics_possibilities if metric in data }
+  metrics = { metric: data[metric] for metric in metrics_possibilities if metric in data and data[metric]}
   return metrics
 
 def plddts_from_cif(cif_filename):
@@ -737,6 +738,7 @@ def af3_move_and_rename(df, output_dir):
   pred_list = df.to_dict(orient="records")
   score_map = { "ranking_score": "debug", "iptm": "iptm", "ptm": "ptm", "mean_plddt": "plddt"  }
   score_types = ['iptm', 'ptm', 'ranking_score', 'mean_plddt' ]
+  score_types = [ i for i in score_types if i in df.columns ]
   all_scores = { score_map[stype]: { stype: {}, "order": [] } for stype in score_types if stype in df.columns  }
 
   for pred in pred_list:
