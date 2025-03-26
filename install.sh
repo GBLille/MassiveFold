@@ -212,7 +212,7 @@ cp -r massivefold/parallelization/headers $runs
 
 if [[ $host_is_jeanzay == "true" ]]; then
   mkdir $HOME/af3_datadir/
-  ln -s $ALPHAFOLD3DB/* $HOME/af3_datadir/
+  ln -s $DSDIR/Alphafold3/ $HOME/af3_datadir/
   cp massivefold/parallelization/jeanzay_AFmassive_params.json $runs/AFmassive_params.json
   cp massivefold/parallelization/jeanzay_AlphaFold3_params.json $runs/AlphaFold3_params.json
   cp massivefold/parallelization/jeanzay_ColabFold_params.json $runs/ColabFold_params.json
