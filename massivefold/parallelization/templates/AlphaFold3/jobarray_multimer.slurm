@@ -18,17 +18,50 @@ run_name=$run_name
 num_diffusion_samples=$num_diffusion_samples
 data_dir=$data_dir
 scripts_dir=$scripts_dir
+logs_dir=$logs_dir
 max_template_date=$max_template_date
 
 batch=$$SLURM_ARRAY_TASK_ID
+mf_before_inference=$mf_before_inference
 
 json_batch_input=af3_batch_$${batch}.json
 output_dir=$$(realpath ${output_dir})
 output_path="$${output_dir}/$${sequence_name}/$${run_name}/"
 echo output_path is $$output_path
 mkdir -vp $${output_path}/
-
 path_to_msas=$${output_dir}/$${sequence_name}/$${run_name}/$${json_batch_input}
+
+if $${mf_before_inference}; then
+  echo "Waiting for input batches for inference..."
+  if [[ $$batch == 0 ]]; then
+    echo "Preparing the input batches for inference..."
+    mkdir $${output_path}
+    json_params=$json_params
+    batches_file=$${logs_dir}/$${sequence_name}/$${run_name}/$${sequence_name}_$${run_name}_batches.json
+    echo "$${scripts_dir}/unifier.py
+      --conversion input_inference
+      --to_convert $${output_dir}/$${sequence_name}/msas_alphafold3/msas_alphafold3_data.json
+      --json_params $$json_params
+      --batches_file $$batches_file
+      --tool AlphaFold3"
+
+    $${scripts_dir}/unifier.py \
+      --conversion input_inference \
+      --to_convert $${output_dir}/$${sequence_name}/msas_alphafold3/msas_alphafold3_data.json \
+      --json_params $$json_params \
+      --batches_file $$batches_file \
+      --tool AlphaFold3 \
+      || { echo "Input preparation for inference has failed. Exiting."; exit 1; }
+  else
+    while [[ ! -f $$path_to_msas  ]];
+    do
+      echo "Waiting..."
+      sleep 30
+    done
+  fi
+else
+  echo "Batches had already been prepared."
+fi
 
 source $$(conda info --base)/etc/profile.d/conda.sh
 conda activate mf-alphafold-3.0.1

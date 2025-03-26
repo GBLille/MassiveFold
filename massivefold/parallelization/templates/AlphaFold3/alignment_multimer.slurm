@@ -1,7 +1,7 @@
 source $$(conda info --base)/etc/profile.d/conda.sh
 conda activate mf-alphafold-3.0.1
 
-mf_following_msas="$${MF_FOLLOWING_MSAS}"
+mf_following_msas=$mf_following_msas
 
 # variables to adapt: used for alignment
 run_massivefold=$run_massivefold
@@ -41,7 +41,7 @@ date
 
 conda deactivate
 
-if [[ -n $${mf_following_msas}  ]] && [[ $${mf_following_msas} == "true"  ]]; then
+if $${mf_following_msas}; then
   echo "Inference will follow after this MSAs step. Preparing batches..."
   mkdir $${output}/$${sequence_name}/$${run_name}
   json_params=$json_params

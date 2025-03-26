@@ -20,6 +20,14 @@ flags.DEFINE_string(
   '',
   'name of the run, it can be anything and it will'
   'be the name of the output directory under the sequence name.')
+flags.DEFINE_string(
+  "mf_following_msas",
+  'true',
+  'to activate if not using only_msas params.')
+flags.DEFINE_string(
+  "mf_before_inference",
+  'false',
+  'to activate if using jobid (-j) params.')
 flags.DEFINE_bool("create_files", True, '')
 flags.DEFINE_string(
   "path_to_parameters",
@@ -27,12 +35,21 @@ flags.DEFINE_string(
   "Path to a json file were the jobfile parameters can be specified.")
 flags.DEFINE_enum(
   "tool",
-  "AFmassive",
+  None,
   ["AFmassive", "ColabFold", "AlphaFold3"],
-  "Specify the tool used by MassiveFold for structure prediction.")
+  "Specify the tool used by MassiveFold for structure prediction.",
+  required=True)
 
 def create_single_jobfile(jobfile_type, templates:dict, params, json_params: str):
   params["json_params"] = json_params
+
+  params["mf_following_msas"] = "false"
+  params["mf_before_inference"] = "false"
+  if jobfile_type == "alignment" and FLAGS.mf_following_msas:
+    params["mf_following_msas"] = "true"
+  elif jobfile_type == "jobarray" and FLAGS.mf_before_inference:
+    params["mf_before_inference"] = "true"
+
   jobfile = Template(templates[jobfile_type]).substitute(params)
   if FLAGS.create_files:
     with open(f"{FLAGS.sequence_name}_{FLAGS.run_name}_{jobfile_type}.slurm", 'w') as slurm_job:
@@ -48,15 +65,17 @@ def group_templates(all_params, job_types:list):
   sequence = all_params['massivefold']['sequence_name']
   run = all_params['massivefold']['run_name']
   grouped_templates = {}
-  
+
   if FLAGS.tool == "AFmassive":
     tool_code = "AFM"
+    model_preset = all_params[f'{tool_code}_run'][f'model_preset']
   elif FLAGS.tool == "AlphaFold3":
     tool_code = "AF3"
+    model_preset = "multimer"
   elif FLAGS.tool == "ColabFold":
     tool_code = "CF"
-  
-  model_preset = all_params[f'{tool_code}_run'][f'model_preset']
+    model_preset = all_params[f'{tool_code}_run'][f'model_preset']
+
   for job_type in job_types:
     template_file = f"{job_type}_{model_preset}"
     header_path = f"{templates_paths['jobfile_headers_dir']}/{job_type}.slurm"
@@ -107,7 +126,7 @@ def main(argv):
   run_params.update(all_params[f'{tool_code}_run'])
   run_params.update(all_params['plots'])
 
-  if FLAGS.job_type == "jobarray":  
+  if FLAGS.job_type == "jobarray":
     print("Parameters of the run:")
     for i in all_params['custom_params']:
       print(f"{i}: {all_params['custom_params'][i]}")
