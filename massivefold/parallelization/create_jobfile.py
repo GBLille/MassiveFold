@@ -20,13 +20,15 @@ flags.DEFINE_string(
   '',
   'name of the run, it can be anything and it will'
   'be the name of the output directory under the sequence name.')
-flags.DEFINE_string(
+flags.DEFINE_enum(
   "mf_following_msas",
   'true',
+  ["true", "false"],
   'to activate if not using only_msas params.')
-flags.DEFINE_string(
+flags.DEFINE_enum(
   "mf_before_inference",
   'false',
+  ["true", "false"],
   'to activate if using jobid (-j) params.')
 flags.DEFINE_bool("create_files", True, '')
 flags.DEFINE_string(
@@ -43,12 +45,15 @@ flags.DEFINE_enum(
 def create_single_jobfile(jobfile_type, templates:dict, params, json_params: str):
   params["json_params"] = json_params
 
-  params["mf_following_msas"] = "false"
-  params["mf_before_inference"] = "false"
-  if jobfile_type == "alignment" and FLAGS.mf_following_msas:
+  mf_following_msas = True if FLAGS.mf_following_msas == "true" else False
+  mf_before_inference = True if FLAGS.mf_before_inference == "true" else False
+
+  if jobfile_type == "alignment" and mf_following_msas:
     params["mf_following_msas"] = "true"
-  elif jobfile_type == "jobarray" and FLAGS.mf_before_inference:
+  elif jobfile_type == "jobarray" and mf_before_inference:
     params["mf_before_inference"] = "true"
+  elif jobfile_type == "jobarray" and not mf_before_inference:
+    params["mf_before_inference"] = "false"
 
   jobfile = Template(templates[jobfile_type]).substitute(params)
   if FLAGS.create_files:

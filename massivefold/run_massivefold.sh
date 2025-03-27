@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 USAGE="\
 ./run_massivefold.sh -s str -r str -p int -f str -t str [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]\n\
 ./run_massivefold.sh -h for more details "
@@ -11,14 +12,15 @@ Usage: $USAGE\n\
   Required arguments:\n\
     -s| --sequence: path of the sequence(s) to infer, should be a 'fasta' file \n\
     -r| --run: name chosen for the run to organize in outputs.\n\
-    -p| --predictions_per_model: number of predictions computed for each neural network model.\n\
-        If used with -t AlphaFold3, -p is the number of seeds used. Each seed will have 5 samples predicted.\n\
-        In total, with -p n, you will have 5n predictions computed.\n\
+    -p| --predictions_per_model: (default: 5) number of predictions computed for each neural network model.\n\
+        If used with -t AlphaFold3, -p is the number of seeds used. Each seed will have m samples predicted.\n\
+        The number of sample set m is set in the AlphaFold3_params.json file.\n\
+        In total, with -p n, you will have m*n predictions computed.\n\
     -f| --parameters: json file's path containing the parameters used for this run.\n\
     -t| --tool: (default: 'AFmassive') Use either AFmassive, AlphaFold3 or ColabFold in structure prediction for MassiveFold\n\
 \n\
   Facultative arguments:\n\
-    -b| --batch_size: (default: 25) number of predictions per batch. If -b > -p, batch size will be set to -p value.\n\
+    -b| --batch_size: (default: 25) number of predictions per batch, should not be higher than -p.\n\
     -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).\n\
     -w| --wall_time: (default: 20) total time available for calibration computations, unit is hours.\n\
     -m| --msas_precomputed: path to directory that contains computed msas.\n\
@@ -36,7 +38,7 @@ fi
 
 # default params
 calibration=false
-predictions_per_model=67
+predictions_per_model=5
 batch_size=25
 wall_time=20
 force_msas_computation=false
@@ -108,22 +110,22 @@ while true; do
   esac
 done
 
-
 # check mandatory args
-if 
+if
   [ -z "$sequence_file" ] ||
+  [ -z "$tool" ] ||
   [ -z "$run_name" ] ||
   [ -z "$parameters_file" ]; then
   echo -e "Usage: $USAGE"
-  echo "Argument(s) missing"
-  exit 1
-elif [ -z "$tool" ] || ([[ $tool != "AFmassive" && $tool != "ColabFold" && $tool != "AlphaFold3" ]]); then
-  echo -e "Usage: $USAGE"
-  echo "Tool (-t) value should be set to 'AFmassive', 'AlphaFold3' or 'ColabFold'"
   exit 1
 fi
 
 echo "Tool used is $tool"
+
+if [[ $tool != "AFmassive" && $tool != "ColabFold" && $tool != "AlphaFold3" ]]; then
+  echo "Tool value is either 'AFmassive', 'AlphaFold3' or 'ColabFold'"
+  exit 1
+fi
 
 output_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['massivefold']['output_dir'])")
 logs_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['massivefold']['logs_dir'])")
@@ -241,7 +243,7 @@ fi
 
 echo "Run $run_name on sequence $sequence_name with $predictions_per_model predictions per model"
 
-# Massivefold 
+# Massivefold
 
 # split the predictions in batches and store in json
 ${scripts_dir}/batching.py \
@@ -272,27 +274,29 @@ elif [[ $tool == "ColabFold" ]] && [ -d ${output_dir}/${sequence_name}/msas_cola
 fi
 
 waiting_for_alignment=false
-
 if [[ $tool == "AFmassive" ]]; then
   conditions_to_align="[[ \$force_msas_computation = true ]] || \
                        ( [[ ! -d \${output_dir}/\${sequence_name}/msas/ ]] && \
-                         [[ -z \$msas_precomputed ]] )"
+                         [[ -z \$msas_precomputed ]] && [[ \$waiting_for_alignment = false ]] )"
 elif [[ $tool == "AlphaFold3" ]]; then
   conditions_to_align="[[ \$force_msas_computation = true ]] || \
                        ( [[ ! -d \${output_dir}/\${sequence_name}/msas_alphafold3/ ]] && \
-                         [[ -z \$msas_precomputed ]] )"
+                         [[ -z \$msas_precomputed ]] && [[ \$waiting_for_alignment = false ]] )"
 elif [[ $tool == "ColabFold" ]]; then
   conditions_to_align="[[ \$force_msas_computation = true ]] || \
                        ( [[ ! -d \${output_dir}/\${sequence_name}/msas_colabfold/ ]] && \
-                         [[ -z \$msas_precomputed ]] )"
+                         [[ -z \$msas_precomputed ]] && [[ \$waiting_for_alignment = false ]] )"
 fi
 
+using_jobid=false
 if [ ! -z $wait_for_jobid ]; then
   echo "Waiting for alignment job $wait_for_jobid"
   ALIGNMENT_ID=$wait_for_jobid
+  using_jobid=true
   waiting_for_alignment=true
-elif eval $conditions_to_align; then
-  ${scripts_dir}/unifier.py \
+fi
+if eval $conditions_to_align; then
+  ./${scripts_dir}/unifier.py \
     --conversion input \
     --json_params $parameters_file \
     --to_convert $sequence_file \
@@ -304,12 +308,14 @@ elif eval $conditions_to_align; then
   else
     export MF_FOLLOWING_MSAS=true
   fi
+
   ${scripts_dir}/create_jobfile.py \
   --job_type=alignment \
   --sequence_name=${sequence_name} \
   --run_name=${run_name} \
   --path_to_parameters=${parameters_file} \
-  --tool $tool
+  --tool=${tool} \
+  || { echo "Creating alignement jobfile failed. Exiting."; exit 1; }
 
   ALIGNMENT_ID=$(sbatch --parsable ${sequence_name}_${run_name}_alignment.slurm)
   waiting_for_alignment=true
@@ -319,15 +325,14 @@ elif eval $conditions_to_align; then
     echo "Only run sequence alignment."
     exit 1
   fi
+elif
+  !( [[ $waiting_for_alignment = true ]]) &&
+  !( [[ $tool == "AFmassive" ]] && [[ -d $msas_precomputed/msas ]] ) &&
+  !( [[ $tool == "ColabFold" ]] && [[ -d $msas_precomputed/msas_colabfold ]] ) &&
+  !( [[ $tool == "AlphaFold3" ]] && [[ -f $msas_precomputed/msas_alphafold3_data.json ]]); then
+  echo "Directory $msas_precomputed does not exits or does not contain msas."
+  exit 1
 else
-  if 
-    !( [[ $tool == "AFmassive" ]] && [[ -d $msas_precomputed/msas ]] ) &&
-    !( [[ $tool == "ColabFold" ]] && [[ -d $msas_precomputed/msas_colabfold ]] ) &&
-    !( [[ $tool == "AlphaFold3" ]] && [[ -f $msas_precomputed/msas_alphafold3_data.json ]]); then
-    echo "Directory $msas_precomputed does not exits or does not contain msas."
-    exit 1
-  fi
-
   echo "$msas_precomputed are valid."
   echo "Using $tool"
   if [[ $tool == "AFmassive" ]]; then
@@ -335,26 +340,31 @@ else
     ln -s $(realpath $msas_precomputed/msas) ${output_dir}/${sequence_name}/
   elif [[ $tool == "AlphaFold3" ]]; then
     mkdir -p ${output_dir}/${sequence_name}/${run_name}
-    ${scripts_dir}/unifier.py \
-      --conversion input_inference \
-      --to_convert $msas_precomputed/msas_alphafold3_data.json \
-      --json_params $parameters_file \
-      --batches_file ${sequence_name}_${run_name}_batches.json \
-      --tool $tool \
-      || { echo "Input preparation for inference has failed. Exiting."; exit 1; }
+    if ! $waiting_for_alignment; then
+      ./${scripts_dir}/unifier.py \
+        --conversion input_inference \
+        --to_convert $msas_precomputed/msas_alphafold3_data.json \
+        --json_params $parameters_file \
+        --batches_file ${sequence_name}_${run_name}_batches.json \
+        --tool $tool \
+        || { echo "Input preparation for inference has failed. Exiting."; exit 1; }
+    fi
   fi
 fi
-    
-# Create and launch inference jobarray 
+
+# Create and launch inference jobarray
 ${scripts_dir}/create_jobfile.py \
   --job_type=jobarray \
   --sequence_name=${sequence_name} \
   --run_name=${run_name} \
   --path_to_parameters=${parameters_file} \
-  --tool $tool
+  --mf_before_inference $using_jobid \
+  --tool $tool \
+  || { echo "Creating jobarray jobfile failed. Exiting."; exit 1; }
+
 
 # Only wait for alignment if not precomputed
-if [[ $waiting_for_alignment = true  ]]; then
+if $waiting_for_alignment; then
   ARRAY_ID=$(sbatch --parsable --dependency=afterok:$ALIGNMENT_ID ${sequence_name}_${run_name}_jobarray.slurm)
 else
   ARRAY_ID=$(sbatch --parsable ${sequence_name}_${run_name}_jobarray.slurm)
@@ -367,7 +377,8 @@ ${scripts_dir}/create_jobfile.py \
   --sequence_name=${sequence_name} \
   --run_name=${run_name} \
   --path_to_parameters=${parameters_file} \
-  --tool $tool
+  --tool $tool \
+  || { echo "Creating post treatment jobfile failed. Exiting."; exit 1; }
 
 sbatch --dependency=afterok:$ARRAY_ID ${sequence_name}_${run_name}_post_treatment.slurm
 
