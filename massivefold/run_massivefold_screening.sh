@@ -140,11 +140,14 @@ waiting_for_alignment=false
 
 conditions_to_align="( [[ ! -d \${output_dir}/\${sequence_name}/msas_alphafold3/ ]] && [[ -z \$msas_precomputed ]] )"
 
+using_jobid=false
 if [ ! -z $wait_for_jobid ]; then
   echo "Waiting for alignment job $wait_for_jobid"
   ALIGNMENT_ID=$wait_for_jobid
+  using_jobid=true
   waiting_for_alignment=true
-elif eval $conditions_to_align; then
+fi
+if eval $conditions_to_align; then
   ${scripts_dir}/unifier.py \
     --conversion input \
     --json_params $parameters_file \
@@ -153,17 +156,18 @@ elif eval $conditions_to_align; then
     || { echo "Input conversion failed. Exiting."; exit 1; }
   echo "Running alignment for $sequence_name"
   if $only_msas; then
-    export MF_FOLLOWING_MSAS=false
+    following_msas=false
   else
-    export MF_FOLLOWING_MSAS=true
+    following_msas=true
   fi
   ${scripts_dir}/create_jobfile.py \
   --job_type=alignment \
   --sequence_name=${sequence_name} \
   --run_name=${run_name} \
   --path_to_parameters=${parameters_file} \
-  --tool AlphaFold3 \
-  || { echo "Jobfiles creation has failed. Exiting."; exit 1; }
+  --mf_following_msas=${following_msas} \
+  --tool=${tool} \
+  || { echo "Creating alignement jobfile failed. Exiting."; exit 1; }
 
   ALIGNMENT_ID=$(sbatch --parsable ${sequence_name}_${run_name}_alignment.slurm)
   waiting_for_alignment=true
@@ -173,30 +177,30 @@ elif eval $conditions_to_align; then
     echo "Only run sequence alignment."
     exit 1
   fi
-else
-  if [[ ! -f $msas_precomputed/msas_alphafold3_data.json ]]; then
+elif [[ ! -f $msas_precomputed/msas_alphafold3_data.json ]]; then
     echo "Directory $msas_precomputed does not exits or does not contain msas."
     exit 1
-  fi
-
+else
   echo "$msas_precomputed are valid."
   echo "Using AlphaFold3"
   mkdir -p ${output_dir}/${sequence_name}/${run_name}
-  ${scripts_dir}/unifier.py \
-    --conversion input_inference \
-    --to_convert $msas_precomputed/msas_alphafold3_data.json \
-    --json_params $parameters_file \
-    --batches_file ${sequence_name}_${run_name}_batches.json \
-    --tool AlphaFold3 \
-    || { echo "Input preparation for inference has failed. Exiting."; exit 1; }
+  if ! $waiting_for_alignment; then
+    ${scripts_dir}/unifier.py \
+      --conversion input_inference \
+      --to_convert $msas_precomputed/msas_alphafold3_data.json \
+      --json_params $parameters_file \
+      --batches_file ${sequence_name}_${run_name}_batches.json \
+      --tool AlphaFold3 \
+      || { echo "Input preparation for inference has failed. Exiting."; exit 1; }
 fi
 
-# Create and launch inference jobarray 
+# Create and launch inference jobarray
 ${scripts_dir}/create_jobfile.py \
   --job_type=jobarray \
   --sequence_name=${sequence_name} \
   --run_name=${run_name} \
   --path_to_parameters=${parameters_file} \
+  --mf_before_inference $using_jobid \
   --tool AlphaFold3 \
 || { echo "Jobfiles creation has failed. Exiting."; exit 1; }
 

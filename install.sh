@@ -208,6 +208,7 @@ cp examples/H1140.fasta $runs/input
 
 # scripts and files for each pipeline (currently only AFmassive)
 cp massivefold/run_massivefold.sh $runs
+cp massivefold/run_massivefold_screening.sh $runs
 cp -r massivefold/parallelization/headers $runs
 
 if [[ $host_is_jeanzay == "true" ]]; then

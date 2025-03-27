@@ -12,15 +12,14 @@ Usage: $USAGE\n\
   Required arguments:\n\
     -s| --sequence: path of the sequence(s) to infer, should be a 'fasta' file \n\
     -r| --run: name chosen for the run to organize in outputs.\n\
-    -p| --predictions_per_model: (default: 5) number of predictions computed for each neural network model.\n\
-        If used with -t AlphaFold3, -p is the number of seeds used. Each seed will have m samples predicted.\n\
-        The number of sample set m is set in the AlphaFold3_params.json file.\n\
-        In total, with -p n, you will have m*n predictions computed.\n\
     -f| --parameters: json file's path containing the parameters used for this run.\n\
     -t| --tool: (default: 'AFmassive') Use either AFmassive, AlphaFold3 or ColabFold in structure prediction for MassiveFold\n\
 \n\
   Facultative arguments:\n\
-    -b| --batch_size: (default: 25) number of predictions per batch, should not be higher than -p.\n\
+    -p| --predictions_per_model: (default: 5) number of predictions computed for each neural network model.\n\
+        If used with -t AlphaFold3, -p is the number of seeds used. Each seed will have m samples predicted.\n\
+        The number of sample set m is set in the AlphaFold3_params.json file.\n\
+        In total, with -p n, you will have m*n predictions computed.\n\    -b| --batch_size: (default: 25) number of predictions per batch, should not be higher than -p.\n\
     -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).\n\
     -w| --wall_time: (default: 20) total time available for calibration computations, unit is hours.\n\
     -m| --msas_precomputed: path to directory that contains computed msas.\n\
@@ -296,7 +295,7 @@ if [ ! -z $wait_for_jobid ]; then
   waiting_for_alignment=true
 fi
 if eval $conditions_to_align; then
-  ./${scripts_dir}/unifier.py \
+  ${scripts_dir}/unifier.py \
     --conversion input \
     --json_params $parameters_file \
     --to_convert $sequence_file \
@@ -304,16 +303,16 @@ if eval $conditions_to_align; then
     || { echo "Input conversion failed. Exiting."; exit 1; }
   echo "Running alignment for $sequence_name"
   if $only_msas; then
-    export MF_FOLLOWING_MSAS=false
+    following_msas=false
   else
-    export MF_FOLLOWING_MSAS=true
+    following_msas=true
   fi
-
   ${scripts_dir}/create_jobfile.py \
   --job_type=alignment \
   --sequence_name=${sequence_name} \
   --run_name=${run_name} \
   --path_to_parameters=${parameters_file} \
+  --mf_following_msas=${following_msas} \
   --tool=${tool} \
   || { echo "Creating alignement jobfile failed. Exiting."; exit 1; }
 
@@ -334,14 +333,13 @@ elif
   exit 1
 else
   echo "$msas_precomputed are valid."
-  echo "Using $tool"
   if [[ $tool == "AFmassive" ]]; then
     mkdir -p ${output_dir}/${sequence_name}
     ln -s $(realpath $msas_precomputed/msas) ${output_dir}/${sequence_name}/
   elif [[ $tool == "AlphaFold3" ]]; then
     mkdir -p ${output_dir}/${sequence_name}/${run_name}
     if ! $waiting_for_alignment; then
-      ./${scripts_dir}/unifier.py \
+      ${scripts_dir}/unifier.py \
         --conversion input_inference \
         --to_convert $msas_precomputed/msas_alphafold3_data.json \
         --json_params $parameters_file \
@@ -361,7 +359,6 @@ ${scripts_dir}/create_jobfile.py \
   --mf_before_inference $using_jobid \
   --tool $tool \
   || { echo "Creating jobarray jobfile failed. Exiting."; exit 1; }
-
 
 # Only wait for alignment if not precomputed
 if $waiting_for_alignment; then
