@@ -110,7 +110,7 @@ fi
 
 echo "Run $run_name on sequence $sequence_name with $predictions_per_model predictions per model"
 
-# Massivefold 
+# Massivefold
 
 # split the predictions in batches and store in json
 ${scripts_dir}/batching.py \
@@ -122,7 +122,7 @@ ${scripts_dir}/batching.py \
   --path_to_parameters=${parameters_file} \
   --to_screen $ligand_file \
   --tool AlphaFold3 \
-|| { echo "Dividing predictions into batches failed. Exiting."; exit 1; }
+  || { echo "Dividing predictions into batches failed. Exiting."; exit 1; }
 
 # in case jobarrays start before the end of the script
 mkdir -p ${logs_dir}/${sequence_name}/${run_name}/
@@ -182,7 +182,6 @@ elif [[ ! -f $msas_precomputed/msas_alphafold3_data.json ]]; then
     exit 1
 else
   echo "$msas_precomputed are valid."
-  echo "Using AlphaFold3"
   mkdir -p ${output_dir}/${sequence_name}/${run_name}
   if ! $waiting_for_alignment; then
     ${scripts_dir}/unifier.py \
@@ -192,6 +191,7 @@ else
       --batches_file ${sequence_name}_${run_name}_batches.json \
       --tool AlphaFold3 \
       || { echo "Input preparation for inference has failed. Exiting."; exit 1; }
+  fi
 fi
 
 # Create and launch inference jobarray
@@ -202,7 +202,7 @@ ${scripts_dir}/create_jobfile.py \
   --path_to_parameters=${parameters_file} \
   --mf_before_inference $using_jobid \
   --tool AlphaFold3 \
-|| { echo "Jobfiles creation has failed. Exiting."; exit 1; }
+  || { echo "Jobfiles creation has failed. Exiting."; exit 1; }
 
 # Only wait for alignment if not precomputed
 if [[ $waiting_for_alignment = true  ]]; then

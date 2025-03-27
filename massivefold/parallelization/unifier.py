@@ -396,14 +396,27 @@ def af3_sequences_to_ids(batch_input_json):
       continue
     entity_name = next(iter(chain.keys()))
     entity = chain[entity_name]
-    light_chain = {entity_name: {i: entity[i] for i in entity if i in ["id", "sequence", "modifications"]}}
+
+    if entity_name in ["protein", "dna", "rna"]:
+      seq_key = "sequence"
+    elif entity_name == "ligand":
+      if "ccdCodes" in entity and entity["ccdCodes"]:
+        seq_key = "ccdCodes"
+      elif "smiles" in entity and entity["smiles"]:
+        seq_key = "smiles"
+
+    light_chain = {entity_name: {i: entity[i] for i in entity if i in ["id", seq_key, "modifications"]}}
     ids = entity["id"]
     if isinstance(ids, list):
       for id in ids:
-        fasta_ids_sequences[id] = entity["sequence"]
+        fasta_ids_sequences[id] = entity[seq_key]
         map_id_entity[id] = light_chain
     elif isinstance(ids, str):
-      fasta_ids_sequences[ids] = entity["sequence"]
+      try:
+        fasta_ids_sequences[ids] = entity[seq_key]
+      except KeyError:
+        print(entity)
+        raise KeyError
       map_id_entity[ids] = light_chain
   return fasta_ids_sequences
 
