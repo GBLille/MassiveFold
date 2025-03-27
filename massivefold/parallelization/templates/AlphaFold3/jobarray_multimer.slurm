@@ -52,10 +52,19 @@ if $${mf_before_inference}; then
       --tool AlphaFold3 \
       || { echo "Input preparation for inference has failed. Exiting."; exit 1; }
   else
+    # wait until all af3_batch_n.json are finished or crash if it takes too long (10 minutes)
+    timeout=600
+    elapsed=0
     while [[ ! -f $$path_to_msas  ]];
     do
-      echo "Waiting..."
+      if (( elapsed >= timeout )); then
+        echo "Something may have happened during input preparation in batch 0 (see jobarray_0.log)"
+        echo "Exiting."
+        exit 1
+      fi
+      echo "Waiting...($${elapsed}s)"
       sleep 30
+      (( elapsed += 30 ))
     done
   fi
 else
