@@ -610,23 +610,34 @@ available for AlphaFold3. The `recycles` plot is not available for AFmassive mon
 }
 ```
 
-### Using ligands and post-translational modifications with AlphaFold3
+### Using ligands and modifications with AlphaFold3
 
-In MassiveFold, ligands and post translational modifications are configured in the `AlphaFold3_params.json` file.  
+In MassiveFold, ligands and post modifications are configured in the `AlphaFold3_params.json` file.  
 
 For ligands, the `"ligand"` section has to be filled in with a CCD code **or** a SMILES code. In case of several, use several 
 entries in the JSON as in the following example.  
 
-For post-translational modifications, the `"PTMs"` section has to be filled in. Currently, `glycosylation` is the 
-only PTM available. More PTMs will be available in following version of MassiveFold. The IUPAC code has to be used for PTMs.
-The PTMs section contains as many entries as the number of chains in the fasta file. One entry is a list of modifications 
-on the corresponding sequence. Each modification is described with these 3 elements:  
-- `"type"` is the type of modification (e.g.: `glycosylation`) 
-- `"sequence"` is the sequence of the modification following the IUPAC code 
+For post-translational modifications, the `"modifications"` section has to be filled in. <!-- Currently, `glycosylation` is the only PTM available. More PTMs will be available in following version of MassiveFold. The IUPAC code has to be used for PTMs. -->
+These are the available modifications as of yet:
+
+| Name            | Chain type    | Target residue | Target base |
+|-----------------|---------------|----------------|-------------|
+| glycosylation   | protein       | N, S, T, K     | null        |
+| phosphorylation | protein       | S, T           | null        |
+| methylation     | protein & dna | R              | C           |
+| hydroxylation   | protein       | P              |             |
+
+
+The 'modifications' section contains as many entries (list) as the number of chains in the fasta file. The order of these chains is the same as in the fasta file and in the 'fasta_chains' section.
+
+For each modification, these two keys are required:
+- `"type"` is the name of the modification (e.g.: `glycosylation`) 
 - `"positions"` is a list of the positions on the (fasta) sequence where the modifications have to be linked
 
-The following example shows 3 ligands, 1 glygosylation on the first sequence in position 36 and 2 glycosylations in the 
-second sequence, the first one being on positions 74 and 84, the second one being on positions 21 and 25.
+If the modification is a glycosylation another key is needed:
+- `"sequence"` is the sequence of the glycan in IUPAC code 
+
+The following example shows 2 protein chains with 3 ligands, a total of 5 glycosylation and a phosphorylation. The first protein chain is glycosylated once (residue 36), the second is glycosylated twice (same glycan on res. 21 and 25) and phosphorylated once (res. 19).
 
 ```json
 "AF3_run":
@@ -649,13 +660,12 @@ second sequence, the first one being on positions 74 and 84, the second one bein
             [
                 {
                   "type": "glycosylation",
-                  "sequence": "Gal(1-4)GlcNAc(1-2)Man(1-3)[Gal(1-4)GlcNAc(1-2)[Gal(1-4)GlcNAc(1-6)]Man(1-6)]Man(1-4)GlcNAc(1-4)[Fuc(1-6)]GlcNAc",
-                  "positions": [74,84]
-                },
-                {
-                  "type": "glycosylation",
                   "sequence": "GlcNAc",
                   "positions": [21,25]
+                },
+                {
+                  "type": "phosphorylation", 
+                  "positions": [19]
                 }
             ]
         ],
