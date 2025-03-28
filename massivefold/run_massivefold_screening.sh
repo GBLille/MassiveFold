@@ -137,10 +137,9 @@ elif [ -d ${output_dir}/${sequence_name}/msas_alphafold3/ ]; then
 fi
 
 waiting_for_alignment=false
-
-conditions_to_align="( [[ ! -d \${output_dir}/\${sequence_name}/msas_alphafold3/ ]] && [[ -z \$msas_precomputed ]] )"
-
 using_jobid=false
+conditions_to_align="( [[ ! -d \${output_dir}/\${sequence_name}/msas_alphafold3/ ]] && \
+                       [[ -z \$msas_precomputed ]] && [[ \$waiting_for_alignment = false ]] )"
 if [ ! -z $wait_for_jobid ]; then
   echo "Waiting for alignment job $wait_for_jobid"
   ALIGNMENT_ID=$wait_for_jobid
@@ -166,7 +165,7 @@ if eval $conditions_to_align; then
   --run_name=${run_name} \
   --path_to_parameters=${parameters_file} \
   --mf_following_msas=${following_msas} \
-  --tool=${tool} \
+  --tool=AlphaFold3 \
   || { echo "Creating alignement jobfile failed. Exiting."; exit 1; }
 
   ALIGNMENT_ID=$(sbatch --parsable ${sequence_name}_${run_name}_alignment.slurm)
@@ -177,7 +176,7 @@ if eval $conditions_to_align; then
     echo "Only run sequence alignment."
     exit 1
   fi
-elif [[ ! -f $msas_precomputed/msas_alphafold3_data.json ]]; then
+elif !( [[ $waiting_for_alignment = true ]]) && !( [[ -f $msas_precomputed/msas_alphafold3_data.json ]]); then
     echo "Directory $msas_precomputed does not exits or does not contain msas."
     exit 1
 else
