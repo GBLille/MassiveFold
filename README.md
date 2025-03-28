@@ -699,6 +699,20 @@ gathers all the results and ranks them all.
 We also provide an `extract_scores.py` script that allows to extract the scores from pickle files and create rankings
 (notably useful for interrupted runs).
 
+## Ligand screening with MassiveFold
+
+To launch a screening round, run:
+
+```bash
+./run_massivefold_screening.sh -s <receptor_fasta_file> -l <ligand_list_csv> -f <AlphaFold3_params.json>
+```
+
+### Format of the csv containing the ligands
+
+This csv has 3 columns: "id", "smiles", and "ccdCode".  
+Each row is a ligand to use for the screening round. "id" designates the name of the ligand, it can simply be the number of the ligand  in the list.   
+For the ligand sequence, use either "smiles" or "ccdCode" but not both, respectively in the SMILES format or the Chemical Compound Dictionnary code format (ccdCode) found at https://www.ebi.ac.uk/pdbe-srv/pdbechem/.
+
 ## massivefold_plots: output representation
 
 MassiveFold plotting module can also be used on a MassiveFold output to evaluate visually its predictions.  
