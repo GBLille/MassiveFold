@@ -137,6 +137,9 @@ def main(argv):
         old_directories = [ old_dir for old_dir in os.listdir(single_batch) if old_dir.startswith('seed-') ]
         for old_dir in old_directories:
           rm(os.path.join(single_batch, old_dir))
+        unranked_predictions = [ pred for pred in os.listdir(single_batch) if pred.startswith('af3_seed') and pred.endswith('.cif')]
+        for unranked_pred in unranked_predictions:
+          os.remove(os.path.join(single_batch, unranked_pred))
       os.makedirs(os.path.join(batches_path, 'screening_inputs'))
       for batch_file in batches_files:
         mv(os.path.join(batches_path, batch_file), os.path.join(batches_path, 'screening_inputs', batch_file))

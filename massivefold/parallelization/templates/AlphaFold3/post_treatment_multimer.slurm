@@ -47,6 +47,7 @@ if [[ $$pkl_format == "light" ]]; then
   echo "Light pickles are not supported for AlphaFold3 yet."
 elif [[ $$pkl_format == "none" ]]; then
   echo "Not keeping pkl files"
+  $${scripts_dir}/lighten_output.py $${output} --delete_pickles
   rm $${output}/*.pkl
 elif [[ $$pkl_format == "full" ]]; then
   echo "Keeping pkl files as in AlphaFold3 output"

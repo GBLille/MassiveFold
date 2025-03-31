@@ -5,6 +5,11 @@ import json
 import os
 import shutil
 import sys
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('path_to_output')
+parser.add_argument('--delete_pickles', action="store_true")
 
 def lighten_pkl(content, to_keep, file, directory):
   print(file.replace('result_', '').replace('.pkl', ''))
@@ -44,11 +49,6 @@ def extract_af3_batch_input_msas(directory: str, json_files: list):
           # skip chains with no alignments (ligands)
           if not msas in data["sequences"][i][entity] or not data["sequences"][i][entity][msas]:
             continue
-          """
-          alignments = data["sequences"][i][entity][msas]
-          if not alignments:
-            continue
-          """
           fileout = os.path.join(directory, f"{entity}_{entity_count[entity]}_{msas}.a3m")
           msas_templates_paths[f"{entity}_{entity_count[entity]}"][msas] = fileout
           with open(fileout, 'w') as msas_file:
@@ -90,6 +90,25 @@ def extract_af3_batch_input_msas(directory: str, json_files: list):
 
 def lighten_all_pkl(directory):
   directory_content = os.listdir(directory)
+  if os.path.exists(os.path.join(directory, 'screening_inputs')):
+    print('AF3 screening detected')
+    if not args.delete_pickles:
+      sys.exit()
+
+    inputs = os.path.join(directory, 'screening_inputs')
+    print(f"Remove pickles from directory that inputs in {inputs} have output.")
+    ligands_path = os.path.dirname(inputs)
+
+    all_ligands = [ json.load(open(os.path.join(inputs, i), 'r'))['name'] for i in os.listdir(inputs) ]
+    for ligand in all_ligands:
+      pickles = [ i for i in os.listdir(os.path.join(ligands_path, ligand)) if i.endswith('.pkl') ]
+      for pkl in pickles:
+        pkl_path = os.path.join(ligands_path, ligand, pkl)
+        os.remove(pkl_path)
+
+    #print('Pickle f
+    sys.exit()
+
   af3_batch_files = [ i for i in directory_content if i.startswith('af3') and i.endswith('.json') ]
   if af3_batch_files:
     extract_af3_batch_input_msas(directory, af3_batch_files)
@@ -118,14 +137,17 @@ def lighten_all_pkl(directory):
     lighten_pkl(content, to_keep, pkl, directory)
 
 if __name__ == '__main__':
+  args = parser.parse_args()
+  """
   if len(sys.argv) != 2:
-    print('Usage ./lighten_pkl.py <PATH_TO_OUTPUT>')
+    print('Usage ./lighten_output.py <PATH_TO_OUTPUT>')
     sys.exit()
   directory = sys.argv[1]
 
   if sys.argv[1] == '-h':
-    print('Usage ./lighten_pkl.py <PATH_TO_OUTPUT>')
+    print('Usage ./lighten_output.py <PATH_TO_OUTPUT>')
     sys.exit()
-
+  """
+  directory = args.path_to_output
   print(f'Extracting pkl from {os.path.abspath(directory)}')
   lighten_all_pkl(directory)
