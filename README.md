@@ -625,7 +625,8 @@ These are the available modifications as of yet:
 | glycosylation   | protein       | N, S, T, K     | null        |
 | phosphorylation | protein       | S, T           | null        |
 | methylation     | protein & dna | R              | C           |
-| hydroxylation   | protein       | P              |             |
+| hydroxylation   | protein       | P              | null        |
+| acetylation     | protein       | K              | null        |
 
 
 The 'modifications' section contains as many entries (list) as the number of chains in the fasta file. The order of these chains is the same as in the fasta file and in the 'fasta_chains' section.
