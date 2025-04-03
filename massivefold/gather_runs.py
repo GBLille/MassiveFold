@@ -167,9 +167,12 @@ def move_and_rename(all_runs_path, run_names, output_path, ranking, do_include_p
       if os.path.exists(os.path.join(pickles_path, 'light_pkl')):
         pickles_path = os.path.join(pickles_path, 'light_pkl')
 
-      old_pdb_path = os.path.join(pickles_path, f"result_{prediction['model_name']}.pkl") 
-      new_pdb_path = os.path.join(output_path, f"{prediction_name}.pkl")
-      cp(old_pdb_path, new_pdb_path)
+      old_pkl_path = os.path.join(pickles_path, f"result_{prediction['model_name']}.pkl")
+      new_pkl_path = os.path.join(output_path, f"{prediction_name}.pkl")
+      try:
+        cp(old_pkl_path, new_pkl_path)
+      except:
+        pass
 
   if do_include_rank:
     mapping = {"model": models, "run": runs, "prediction": predictions, score_key: scores, "mapped_name": mapped_names}
@@ -290,10 +293,15 @@ def main():
   assert not whole_prediction_ranking.empty
   other_csv = [ csv for csv in os.listdir(runs_path) if csv.endswith('.csv') and csv != "ranking.csv"]
   for csv in other_csv:
-    df = pd.read_csv(os.path.join(runs_path, csv))
+    csv_file = os.path.join(runs_path, csv)
+    df = pd.read_csv(csv_file)
     if "i-plddt" in df.columns:
-      whole_prediction_ranking["Models"] = whole_prediction_ranking["parameters"] + '_' + whole_prediction_ranking["model_name"] + ".cif"
-      whole_prediction_ranking = pd.merge(whole_prediction_ranking, df, on="Models")
+      print(f"DataFrame containing i-plddt values: {csv_file}")
+      print(df)
+      whole_prediction_ranking["extension"] = whole_prediction_ranking["file"].str.split('.').str[1]
+      whole_prediction_ranking["Models"] = whole_prediction_ranking["parameters"] + '_' + whole_prediction_ranking["model_name"] + '.' + whole_prediction_ranking["extension"]
+      whole_prediction_ranking = pd.merge(whole_prediction_ranking, df, on="Models", how='left')
+      whole_prediction_ranking = whole_prediction_ranking.drop(columns={"Models", "extension"})
       break
 
   print(whole_prediction_ranking)
