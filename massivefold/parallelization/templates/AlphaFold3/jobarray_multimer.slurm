@@ -68,7 +68,7 @@ if $${mf_before_inference}; then
     done
   fi
 else
-  echo "Batches had already been prepared."
+  echo "Batches have already been prepared."
 fi
 
 source $$(conda info --base)/etc/profile.d/conda.sh

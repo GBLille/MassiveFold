@@ -633,27 +633,34 @@ def convert_output(tool):
   with open(FLAGS.batches_file, 'r') as batches_json:
     all_batches_infos = json.load(batches_json)
 
-  batches_files = [
-    batch_file for batch_file in os.listdir(FLAGS.to_convert)
-    if batch_file.startswith('af3_batch_') and batch_file.endswith('.json')
-  ]
-  batches_files = sorted(
-    batches_files,
-    key=lambda x: int(x.replace('af3_batch_', '').replace('.json', ''))
-  )
-  batches = [
-    json.load(open(os.path.join(FLAGS.to_convert, batch_file), 'r'))['name']
-    for batch_file in batches_files
-  ]
+  if tool == "AlphaFold3":
+    batches_files = [
+      batch_file for batch_file in os.listdir(FLAGS.to_convert)
+      if batch_file.startswith('af3_batch_') and batch_file.endswith('.json')
+    ]
+    batches_files = sorted(
+      batches_files,
+      key=lambda x: int(x.replace('af3_batch_', '').replace('.json', ''))
+    )
+    batches = [
+      json.load(open(os.path.join(FLAGS.to_convert, batch_file), 'r'))['name']
+      for batch_file in batches_files
+    ]
+  elif tool in ["AFmassive", "ColabFold"]:
+    batches = [ batch for batch in os.listdir(FLAGS.to_convert) if batch.startswith('batch_') ]
+    batches = sorted(batches, key=lambda x: int(x.split('_')[1]))
+    batches_files = batches
 
   working, not_working = [], []
   for file, batch in zip(batches_files, batches):
-    batch_number = file.replace('af3_batch_', '').replace('.json', '')
-    batch_shift = int(all_batches_infos[batch_number]['start'])
     if tool == "ColabFold":
+      batch_number = batch.split('_')[1]
+      batch_shift = int(all_batches_infos[batch_number]['start'])
       convert_colabfold_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
       move_output(FLAGS.to_convert, batch)
     elif tool == "AlphaFold3":
+      batch_number = file.replace('af3_batch_', '').replace('.json', '')
+      batch_shift = int(all_batches_infos[batch_number]['start'])
       try:
         convert_alphafold3_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
         working.append(batch)
@@ -828,6 +835,7 @@ def main(argv):
       print(f"No output standardization for {FLAGS.tool}.")
       return 
     assert FLAGS.batches_file, 'Json batches file (--batches_file) is mandatory for output conversion (--conversion output)'
+    print(f"Convert for tool {FLAGS.tool}")
     convert_output(FLAGS.tool)
 
   elif FLAGS.conversion == "output_singular":

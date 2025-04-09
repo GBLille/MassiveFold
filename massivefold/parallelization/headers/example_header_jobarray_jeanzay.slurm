@@ -18,3 +18,8 @@
 #tmp dir on Jean Zay
 export TMP=$$JOBSCRATCH
 export TMPDIR=$$JOBSCRATCH
+
+# to run on H100:
+#module purge
+#module load arch/h100
+#module load anaconda-py3/2024.06
