@@ -23,6 +23,7 @@
   * [Multiple runs gathering](#multiple-runs-gathering)
 * [Ligand screening with MassiveFold](#ligand-screening-with-massivefold)
   * [Format of the csv containing the ligands](#format-of-the-csv-containing-the-ligands)
+  * [Gathering the outputs](#gathering-the-outputs)
 * [massivefold_plots: output representation](#massivefold_plots-output-representation)
   * [Required arguments](#required-arguments)
   * [Facultative arguments](#facultative-arguments)
