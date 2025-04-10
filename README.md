@@ -18,9 +18,11 @@
   * [Parameters](#parameters)
     * [Parameters in run_massivefold.sh](#parameters-in-run_massivefoldsh)
     * [Parameters in the json file](#parameters-in-the-json-file)
-  * [Using ligands and post-translational modifications with AlphaFold3](#using-ligands-and-post-translational-modifications-with-alphafold3)
+  * [Using ligands and modifications with AlphaFold3](#using-ligands-and-modifications-with-alphafold3)
   * [Relaxation](#relaxation)
   * [Multiple runs gathering](#multiple-runs-gathering)
+* [Ligand screening with MassiveFold](#ligand-screening-with-massivefold)
+  * [Format of the csv containing the ligands](#format-of-the-csv-containing-the-ligands)
 * [massivefold_plots: output representation](#massivefold_plots-output-representation)
   * [Required arguments](#required-arguments)
   * [Facultative arguments](#facultative-arguments)
@@ -324,7 +326,7 @@ The same [file architecture](#tree) is built, follow the [usage](#usage) section
 And specify the project you want to use in the `AFmassive_params.json` or `ColabFold_params.json` or `AlphaFold3_params.json`, 
 replacing the `<project>` value by the 3-letters project name.  
 
-***N.B.***: on Jean-Zay, AlphaFold3 only runs on A100 and H100  
+***N.B.***: on Jean-Zay, AlphaFold3 only runs on A100 and H100. 
 
 ### Hardware recommendations
 
@@ -410,8 +412,14 @@ Activate the conda environment, then launch MassiveFold.
 conda activate massivefold
 ./run_massivefold.sh -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> -t <TOOL> 
 ```
-**N.B.**: on the Jean Zay cluster, load the massivefold module instead of activating the conda environment; first load 
-the module arch/a100 to be able to load massivefold/1.*.* and run AlphaFold3 on A100.
+**N.B.**: on the Jean Zay cluster, to be able to run on H100, uncomment the three last lines of the `jobarray.slurm` header 
+(to use on A100, replace "h100" by "a100" in `module load arch/h100`).
+```
+module purge
+module load arch/h100
+module load miniforge/24.9.0
+```
+
 
 Example for AFmassive:
 ```bash
@@ -617,7 +625,7 @@ In MassiveFold, ligands and post modifications are configured in the `AlphaFold3
 For ligands, the `"ligand"` section has to be filled in with a CCD code **or** a SMILES code. In case of several, use several 
 entries in the JSON as in the following example.  
 
-For post-translational modifications, the `"modifications"` section has to be filled in. <!-- Currently, `glycosylation` is the only PTM available. More PTMs will be available in following version of MassiveFold. The IUPAC code has to be used for PTMs. -->
+For post-translational modifications, the `"modifications"` section has to be filled in. 
 These are the available modifications as of yet:
 
 | Name            | Chain type    | Target residue | Target base |
@@ -629,16 +637,17 @@ These are the available modifications as of yet:
 | acetylation     | protein       | K              | null        |
 
 
-The 'modifications' section contains as many entries (list) as the number of chains in the fasta file. The order of these chains is the same as in the fasta file and in the 'fasta_chains' section.
+The `"modifications"` section contains as many entries (list) as the number of chains in the fasta file. The order of 
+these chains is the same as in the fasta file and in the `"fasta_chains"` section.
 
 For each modification, these two keys are required:
 - `"type"` is the name of the modification (e.g.: `glycosylation`) 
 - `"positions"` is a list of the positions on the (fasta) sequence where the modifications have to be linked
 
-If the modification is a glycosylation another key is needed:
+If the modification is a glycosylation, another key is needed:
 - `"sequence"` is the sequence of the glycan in IUPAC code 
 
-The following example shows 2 protein chains with 3 ligands, a total of 5 glycosylation and a phosphorylation. The first protein chain is glycosylated once (residue 36), the second is glycosylated twice (same glycan on res. 21 and 25) and phosphorylated once (res. 19).
+The following example shows 2 protein chains with 3 ligands, a total of three glycosylations and one phosphorylation. The first protein chain is glycosylated once (residue 36), the second is glycosylated twice (same glycan on res. 21 and 25) and phosphorylated once (res. 19).
 
 ```json
 "AF3_run":
@@ -695,10 +704,10 @@ colabfold_relax -h
 ### Multiple runs gathering
 
 We provide a `gather_runs.py` script in the `massivefold` folder that allows to collate the results of several runs. It 
-gathers all the results and ranks them all.
+gathers all the results and ranks them all. Run `python3 gather_runs.py -h` for help.
 
 We also provide an `extract_scores.py` script that allows to extract the scores from pickle files and create rankings
-(notably useful for interrupted runs).
+(notably useful for interrupted runs). Run `python3 extract_scores.py -h` for help.
 
 ## Ligand screening with MassiveFold
 
@@ -708,11 +717,22 @@ To launch a screening round, run:
 ./run_massivefold_screening.sh -s <receptor_fasta_file> -l <ligand_list_csv> -f <AlphaFold3_params.json>
 ```
 
+Run -h for help, as usual:
+```````bash
+./run_massivefold_screening.sh -h
+```````
+
 ### Format of the csv containing the ligands
 
 This csv has 3 columns: "id", "smiles", and "ccdCode".  
 Each row is a ligand to use for the screening round. "id" designates the name of the ligand, it can simply be the number of the ligand  in the list.   
 For the ligand sequence, use either "smiles" or "ccdCode" but not both, respectively in the SMILES format or the Chemical Compound Dictionnary code format (ccdCode) found at https://www.ebi.ac.uk/pdbe-srv/pdbechem/.
+
+### Gathering the outputs
+
+The predictions for each ligand will be located in a dedicated folder, itself located in an output folder 
+named with the name of the csv file. All the results, notably the scores, can be gathered with the `gather_runs.py` 
+script that can be found in the `massivefold` folder. See this [section](#multiple-runs-gathering).
 
 ## massivefold_plots: output representation
 

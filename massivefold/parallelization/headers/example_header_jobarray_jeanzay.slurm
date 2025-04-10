@@ -22,4 +22,4 @@ export TMPDIR=$$JOBSCRATCH
 # to run on H100:
 #module purge
 #module load arch/h100
-#module load anaconda-py3/2024.06
+#module load miniforge/24.9.0
