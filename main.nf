@@ -294,6 +294,7 @@ process Create_batchs {
 process Run_inference_colabfold {
     tag " $sequence_name | batch#$id_batch"
     label 'colabfold'
+    maxForks 2
 
     input:
     tuple val(id_batch), val(batch_start), val(batch_end), val(batch_model), val(sequence_name) , path(msaFolder)

@@ -64,7 +64,18 @@ install_env () {
 
   if [[ $env == "nextflow" ]]; then
     echo "Installing Nextflow"
-    CONDA_OVERRIDE_CUDA="11.8" $CONDA_BIN env create -f mf-nextflow.yml
+    if conda env list | grep -q "massivefold-nf"; then
+    echo "Environment 'massivefold-nf' already exists, skipping creation."
+    else
+      CONDA_OVERRIDE_CUDA="11.8" $CONDA_BIN env create -f mf-nextflow.yml
+    fi
+    mkdir -p bin
+    find massivefold -type f -name "*.py" -exec sh -c '
+    src="$(realpath "{}")";
+    dest="bin/$(basename "{}")";
+    echo "Linking: $src → $dest";
+    ln -s "$src" "$dest"
+    ' \;
 
   elif [[ $env == "massivefold" ]]; then
     echo "Installing MassiveFold environment"
@@ -99,6 +110,7 @@ db_cf=false
 db_af3=false
 only_create_env=false
 do_not_create_env=false
+install_nextflow=false 
 
 # argument parser
 while true; do

@@ -1,14 +1,22 @@
 name: massivefold-nf
 channels:
-  - conda-forge
   - bioconda
+  - conda-forge
+  - nvidia
   - defaults
 dependencies:
-  - python=3.12
+  - python
   - nextflow
-  - numpy
-  - pandas
-  - biopython
-  - absl-py
+  - colabfold=1.5.5
+  - jax
+  - jaxlib
+  - openmm=8.0.0
+  - cuda-nvcc
   - pip
-  
+  - pip:
+      - absl-py==1.0.0
+      - biopython==1.79
+      - matplotlib==3.7.2
+      - numpy==1.24.3
+      - pandas==2.0.3
+      - seaborn==0.13.2
