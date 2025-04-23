@@ -143,6 +143,8 @@ workflow {
 }
 
 process Unifier_colabfold {
+    label 'python_treatment'
+
     input:
     path sequence
 
@@ -158,6 +160,8 @@ process Unifier_colabfold {
 }
 
 process Unifier_alphafold3 {
+    label 'python_treatment'
+
     input:
     path sequence
 
@@ -268,6 +272,8 @@ process RUN_alignment{
     """
 }
 process Create_batchs {
+        label 'python_treatment'
+
     input:
     path sequence
     val run
@@ -359,6 +365,7 @@ process Run_inference_colabfold {
 
 process Standardize_output_colabfold {
     publishDir "result/prediction/${seqFile.baseName}/"
+    label 'python_treatment'
 
     input: 
     path seqFile 
