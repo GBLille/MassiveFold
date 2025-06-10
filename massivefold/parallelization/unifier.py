@@ -81,7 +81,7 @@ def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
 
   # possible entities: "protein", "dna", "rna"
   assert len(parsed_records) == len(entities), \
-  f"The number of entities in {json_params} should be the same as in {fasta_path}."
+  f"The number of 'fasta_chains' entities in {json_params} should be the same as in {fasta_path}."
   all_chain_ids = string.ascii_uppercase
   assert len(parsed_records) < len(all_chain_ids), \
   f"Using more than {len(all_chain_ids)} is currently unsupported"
