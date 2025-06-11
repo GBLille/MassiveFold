@@ -651,33 +651,31 @@ If the modification is a glycosylation, another key is needed:
 The following example shows 2 protein chains with 3 ligands, a total of three glycosylations and one phosphorylation. The first protein chain is glycosylated once (residue 36), the second is glycosylated twice (same glycan on res. 21 and 25) and phosphorylated once (res. 19).
 
 ```json
-"AF3_run":
-{
-     "fasta_chains": ["protein","protein"],
+"AF3_run":  {
+        "fasta_chains": ["protein","protein"],
         "ligand": [
             {"ccdCodes": ["NAG"], "smiles": ""},
             {"ccdCodes": ["KGM"], "smiles": ""},
             {"ccdCodes": [""], "smiles": "CC(=O)OC1=CC=CC=C1C(=O)O"}
         ],
-        "PTMs": [
+        "modifications": [
             [
-                {
-                  "type": "glycosylation",
-                  "sequence": "Gal(1-4)GlcNAc(1-2)Man(1-3)[Gal(1-4)GlcNAc(1-2)[Gal(1-4)GlcNAc(1-6)]Man(1-6)]Man(1-4)GlcNAc(1-4)[Fuc(1-6)]GlcNAc",
-                  "positions": [36]
-                }
-
+                    {
+                        "type": "glycosylation",
+                        "sequence": "Gal(1-4)GlcNAc(1-2)Man(1-3)[Gal(1-4)GlcNAc(1-2)[Gal(1-4)GlcNAc(1-6)]Man(1-6)]Man(1-4)GlcNAc(1-4)[Fuc(1-6)]GlcNAc",
+                        "positions": [36]
+                    },
+                    {
+                        "type": "phosphorylation",
+                        "positions": [20]
+                    }
             ],
             [
-                {
-                  "type": "glycosylation",
-                  "sequence": "GlcNAc",
-                  "positions": [21,25]
-                },
-                {
-                  "type": "phosphorylation", 
-                  "positions": [19]
-                }
+                    {
+                        "type": "glycosylation",
+                        "sequence": "Gal(1-4)GlcNAc(1-2)Man(1-3)[Gal(1-4)GlcNAc(1-2)[Gal(1-4)GlcNAc(1-6)]Man(1-6)]Man(1-4)GlcNAc(1-4)[Fuc(1-6)]GlcNAc",
+                        "positions": [74,84]
+                    }
             ]
         ],
         "model_preset": "multimer",
@@ -686,7 +684,7 @@ The following example shows 2 protein chains with 3 ligands, a total of three gl
         "unpairedMsa": "true",
         "pairedMsa": "true",
         "templates": "true"
-}
+    }
 ```
 
 ### Relaxation
