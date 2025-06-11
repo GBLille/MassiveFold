@@ -648,7 +648,9 @@ For each modification, these two keys are required:
 If the modification is a glycosylation, another key is needed:
 - `"sequence"` is the sequence of the glycan in IUPAC code 
 
-The following example shows 2 protein chains with 3 ligands, a total of three glycosylations and one phosphorylation. The first protein chain is glycosylated once (residue 36), the second is glycosylated twice (same glycan on res. 21 and 25) and phosphorylated once (res. 19).
+The following example shows 2 protein chains (the example H1140) with 3 ligands, a total of three glycosylations and 
+one phosphorylation. The first protein chain is glycosylated once (residue 36) and phosphorylated once (residue 20), 
+the second is glycosylated twice (same glycan on residues 74 and 84).
 
 ```json
 "AF3_run":  {
