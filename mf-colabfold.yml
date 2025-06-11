@@ -9,6 +9,8 @@ dependencies:
   - jax=0.4.23
   - jaxlib=*=cuda*
   - cuda-nvcc
+  - dm-haiku=0.0.13
+  - dm-tree=0.1.8
   - pip
   - pip:
       - absl-py==1.0.0
@@ -17,4 +19,6 @@ dependencies:
       - numpy==1.24.3
       - pandas==2.0.3
       - seaborn==0.13.2
+      - dm-haiku=0.0.13
+      - dm-tree=0.1.8
 

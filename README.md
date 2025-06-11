@@ -327,7 +327,7 @@ The same [file architecture](#tree) is built, follow the [usage](#usage) section
 And specify the project you want to use in the `AFmassive_params.json` or `ColabFold_params.json` or `AlphaFold3_params.json`, 
 replacing the `<project>` value by the 3-letters project name.  
 
-***N.B.***: on Jean-Zay, AlphaFold3 only runs on A100 and H100. 
+***N.B.***: on Jean-Zay, AlphaFold3 runs only on A100 and H100. 
 
 ### Hardware recommendations
 
