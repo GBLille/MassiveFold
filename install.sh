@@ -53,7 +53,7 @@ install_env () {
   if [[ $env == "massivefold" ]]; then
     echo "Installing MassiveFold environment"
     conda env create -f environment.yml
-    conda activate massivefold-1.5.1
+    conda activate massivefold
     conda config --env --set channel_priority flexible
 
     cp -r massivefold/plots $CONDA_PREFIX/bin/
@@ -62,23 +62,23 @@ install_env () {
 
   elif [[ $env == "colabfold" ]]; then
     echo "Installing ColabFold environment"
-    conda activate massivefold-1.5.1 || { echo "massivefold environment is needed and is missing"; exit 1; }
+    conda activate massivefold || { echo "massivefold environment is needed and is missing"; exit 1; }
     CONDA_OVERRIDE_CUDA="11.8" conda env create -f mf-colabfold.yml
 
   elif [[ $env == "afmassive" ]]; then
     echo "Installing afmassive environment"
-    conda activate massivefold-1.5.1 || { echo "massivefold environment is needed and is missing"; exit 1; }
+    conda activate massivefold || { echo "massivefold environment is needed and is missing"; exit 1; }
     CONDA_OVERRIDE_CUDA="11.8" conda env create -f mf-afmassive.yml
     conda activate mf-afmassive-1.1.5
     wget -O ${CONDA_PREFIX}/lib/python3.10/site-packages/alphafold/common/stereo_chemical_props.txt https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
     # add run_AFmassive.py and massivefold_plots.py in path (python executables)
-    wget -O $CONDA_PREFIX/bin/run_AFmassive.py https://raw.githubusercontent.com/GBLille/AFmassive/v1.1.5/run_AFmassive.py
+    wget -O $CONDA_PREFIX/bin/run_AFmassive.py https://raw.githubusercontent.com/GBLille/AFmassive/main/run_AFmassive.py
     chmod +x $CONDA_PREFIX/bin/run_AFmassive.py
     conda deactivate
 
   elif [[ $env == "alphafold3" ]]; then
     echo "Installing alphafold3 environment"
-    conda activate massivefold-1.5.1 || { echo "massivefold environment is needed and is missing"; exit 1; }
+    conda activate massivefold || { echo "massivefold environment is needed and is missing"; exit 1; }
     conda env create -f mf-alphafold3.yml
     conda activate mf-alphafold-3.0.1
     build_data
