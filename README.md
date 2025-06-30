@@ -636,6 +636,7 @@ These are the available modifications as of yet:
 | methylation     | protein & dna | R              | C           |
 | hydroxylation   | protein       | P              | null        |
 | acetylation     | protein       | K              | null        |
+| cyclization     | protein       | E              | null        |
 
 
 The `"modifications"` section contains as many entries (list) as the number of chains in the fasta file. The order of 
