@@ -19,7 +19,8 @@ Usage: $USAGE\n\
     -p| --predictions_per_model: (default: 5) number of predictions computed for each neural network model.\n\
         If used with -t AlphaFold3, -p is the number of seeds used. Each seed will have m samples predicted.\n\
         The number of sample set m is set in the AlphaFold3_params.json file.\n\
-        In total, with -p n, you will have m*n predictions computed.\n\    -b| --batch_size: (default: 25) number of predictions per batch, should not be higher than -p.\n\
+        In total, with -p n, you will have m*n predictions computed.\n\
+    -b| --batch_size: (default: 25) number of predictions per batch, should not be higher than -p.\n\
     -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).\n\
     -w| --wall_time: (default: 20) total time available for calibration computations, unit is hours.\n\
     -m| --msas_precomputed: path to directory that contains computed msas.\n\

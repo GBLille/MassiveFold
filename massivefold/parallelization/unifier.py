@@ -249,8 +249,8 @@ def af3_records_to_sequences(records, fasta_ids_sequences):
 def af3_entities_to_records(af3_params, fasta_ids_sequences):
   additional_records = []
   ligand = af3_params['ligand']
-  all_ptm_types = ["glycosylation", "phosphorylation", "hydroxylation", "methylation", "acetylation"]
-  modifs_dummy_seq = {"phosphorylation": "PO3", "hydroxylation": "OH", "methylation": "CH3", "acetylation": "CH3CO"}
+  all_ptm_types = ["glycosylation", "phosphorylation", "hydroxylation", "methylation", "acetylation","cyclization"]
+  modifs_dummy_seq = {"phosphorylation": "PO3", "hydroxylation": "OH", "methylation": "CH3", "acetylation": "CH3CO", "cyclization":"PCA"}
 
   used_ids = list(fasta_ids_sequences.keys())
   
@@ -315,6 +315,7 @@ def af3_add_modifications(all_modifications, all_sequences):
     'P': {"hydroxylation": "HYP"},
     'R': {"methylation": "MMO"},
     'K': {"acetylation": "ALY", "methylation": "MLZ"},
+    'E': {"cyclization": "PCA"},
   }
 
   dna_modification_codes = {
@@ -424,7 +425,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
   fasta_ids_sequences = af3_sequences_to_ids(batch_input_json)
   additional_records = af3_entities_to_records(af3_params, fasta_ids_sequences)
   # add the sequence modifications
-  modifications_types = ["phosphorylation", "methylation", "acetylation", "hydroxylation"]
+  modifications_types = ["phosphorylation", "methylation", "acetylation", "hydroxylation", "cyclization"]
   new_modifications_records = [ record for record in additional_records if record["sequence_type"] in modifications_types ]
   batch_input_json["sequences"] = af3_add_modifications(new_modifications_records, batch_input_json["sequences"])
   # add the extra sequences (e.g ligands, glycosylation)
