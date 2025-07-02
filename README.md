@@ -670,6 +670,7 @@ the second is glycosylated twice (same glycan on residues 74 and 84).
                     },
                     {
                         "type": "phosphorylation",
+                        "sequence": "",
                         "positions": [20]
                     }
             ],
