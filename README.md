@@ -413,12 +413,11 @@ Activate the conda environment, then launch MassiveFold.
 conda activate massivefold
 ./run_massivefold.sh -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> -t <TOOL> 
 ```
-**N.B.**: on the Jean Zay cluster, to be able to run on H100, uncomment the three last lines of the `jobarray.slurm` header 
-(to use on A100, replace "h100" by "a100" in `module load arch/h100`).
+**N.B.**: on the Jean Zay cluster, simply load the `massivefold` module. To be able to run on H100 or A100, uncomment the 
+corresponding last lines of the `jobarray.slurm` header. Example for H100:
 ```
 module purge
 module load arch/h100
-module load miniforge/24.9.0
 ```
 
 

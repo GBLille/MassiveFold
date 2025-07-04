@@ -22,4 +22,7 @@ export TMPDIR=$$JOBSCRATCH
 # to run on H100:
 #module purge
 #module load arch/h100
-#module load miniforge/24.9.0
+
+# to run on A100:
+#module purge
+#module load arch/a100
