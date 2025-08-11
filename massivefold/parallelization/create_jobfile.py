@@ -45,15 +45,13 @@ flags.DEFINE_enum(
 def create_single_jobfile(jobfile_type, templates:dict, params, json_params: str):
   params["json_params"] = json_params
 
-  mf_following_msas = True if FLAGS.mf_following_msas == "true" else False
-  mf_before_inference = True if FLAGS.mf_before_inference == "true" else False
+  mf_following_msas = FLAGS.mf_following_msas
+  mf_before_inference = FLAGS.mf_before_inference
 
-  if jobfile_type == "alignment" and mf_following_msas:
-    params["mf_following_msas"] = "true"
-  elif jobfile_type == "jobarray" and mf_before_inference:
-    params["mf_before_inference"] = "true"
-  elif jobfile_type == "jobarray" and not mf_before_inference:
-    params["mf_before_inference"] = "false"
+  if jobfile_type == "alignment":
+    params["mf_following_msas"] = mf_following_msas
+  elif jobfile_type == "jobarray":
+    params["mf_before_inference"] = mf_before_inference
 
   jobfile = Template(templates[jobfile_type]).substitute(params)
   if FLAGS.create_files:
