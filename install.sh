@@ -73,8 +73,8 @@ install_env () {
     find massivefold -type f -name "*.py" -exec sh -c '
     src="$(realpath "{}")";
     dest="bin/$(basename "{}")";
-    echo "Linking: $src → $dest";
-    ln -s "$src" "$dest"
+    echo "copy $src → $dest";
+    cp "$src" "$dest"
     ' \;
 
   elif [[ $env == "massivefold" ]]; then
