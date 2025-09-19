@@ -157,7 +157,7 @@ def glycan_traversal(sugar, parent_index, linkage, state):
   state['ccdCodes'].append(state['map_code'][sugar.serialize(name="iupac_lite")])
   # bond caracterization
   if parent_index is not None and linkage is not None:
-    parent_atom, child_atom = "C" + str(linkage.parent_position), "C" + str(linkage.child_position)
+    parent_atom, child_atom = "O" + str(linkage.parent_position), "C" + str(linkage.child_position)
     state['bondedAtomPairs'].append([[state['entity'], parent_index, parent_atom], [state['entity'], current_index, child_atom]])
   # continue traversal focusing on childs of current sugar
   for pos, link in sugar.links.items():
