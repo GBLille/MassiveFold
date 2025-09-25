@@ -114,7 +114,7 @@ def convert_input(args, tool):
 def set_alphafold3_parameters(af3_input: dict, parameters: list):
   for i, sequence in enumerate(af3_input["sequences"]):
     entity = list(sequence.keys())[0]
-    if sequence != "protein":
+    if entity != "protein":
       continue
     for param in parameters:
       if param == "unpairedMsa" or param == "pairedMsa":
