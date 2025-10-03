@@ -77,6 +77,8 @@ install_env () {
     cp "$src" "$dest"
     ' \;
 
+    setup_params
+
   elif [[ $env == "massivefold" ]]; then
     echo "Installing MassiveFold environment"
     CONDA_OVERRIDE_CUDA="11.8" conda env create -f environment.yml
@@ -188,6 +190,9 @@ fi
 
 if [[ $install_nextflow == "true" ]]; then
     install_env "nextflow"
+    setup_params "AFmassive"
+    setup_params "AlphaFold3"
+    setup_params "ColabFold"
   fi
 
 if [ "$host" == 'jean-zay' ]; then
