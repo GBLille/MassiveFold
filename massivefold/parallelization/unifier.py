@@ -82,9 +82,6 @@ def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
   # possible entities: "protein", "dna", "rna"
   assert len(parsed_records) == len(entities), \
   f"The number of 'fasta_chains' entities in {json_params} should be the same as in {fasta_path}."
-  all_chain_ids = string.ascii_uppercase
-  assert len(parsed_records) < len(all_chain_ids), \
-  f"Using more than {len(all_chain_ids)} is currently unsupported"
 
   records = []
   for entity, record in zip(entities, parsed_records):
@@ -190,6 +187,10 @@ def af3_resolve_glycan(glycan_str, chain_id):
   return state['ccdCodes'], state['bondedAtomPairs']
 
 def af3_records_to_sequences(records, fasta_ids_sequences): 
+  """ 
+  Add all the user selected additional entities (ligands, PTMs, etc...) to the
+  AlphaFold3 final input file.
+  """
   glycosylation_attachment = {
     'N': {"atom": 'ND2', "sugar": ["NAG"]},
     'S': {"atom": 'OG', "sugar": ["NGA", "NAG", "MAN"]},
@@ -200,14 +201,22 @@ def af3_records_to_sequences(records, fasta_ids_sequences):
   used_ids = list({}.keys())
   used_ids = list(fasta_ids_sequences.keys())
   sequence_dicts = []
-  all_chain_ids = string.ascii_uppercase
-  all_chain_ids = [ i for i in all_chain_ids if i not in used_ids ]
+
+  # set up for all possible chain ids
+  # format A, B, ..., Z, AA, BA,... ZA, AB, BB, ..., ZB, ......., AZ, BZ, ..., ZZ
+  letters = string.ascii_uppercase
+  all_ids_combinations = list(letters) + [a + b for b in letters for a in letters]
+
+  ## legacy chain naming that only supported 26 chains
+  #all_chain_ids = string.ascii_uppercase
+  #all_chain_ids = [ i for i in all_chain_ids if i not in used_ids ]
+
   remaining_records = records.copy()
   all_bonds = []
   # Record format: {"entity": entity, "sequence_type": "sequence|ccdCodes|smiles" "seq": record}
   all_sequences = []
   all_entities = []
-  for record, chain_id in zip(records, all_chain_ids):
+  for record, chain_id in zip(records, all_ids_combinations):
     record_type = record["sequence_type"][:]
     if record["sequence_type"] == "glycosylation":
       chain, position  = used_ids[record["on_chain_index"]], record["at_position"]
@@ -422,12 +431,16 @@ def af3_sequences_to_ids(batch_input_json):
   return fasta_ids_sequences
 
 def af3_add_input_entity(batch_input_json, af3_params):
+  # map af3 ids to their fasta sequence
   fasta_ids_sequences = af3_sequences_to_ids(batch_input_json)
+  # extract and format the additional entities
   additional_records = af3_entities_to_records(af3_params, fasta_ids_sequences)
+
   # add the sequence modifications
   modifications_types = ["phosphorylation", "methylation", "acetylation", "hydroxylation", "cyclization"]
   new_modifications_records = [ record for record in additional_records if record["sequence_type"] in modifications_types ]
   batch_input_json["sequences"] = af3_add_modifications(new_modifications_records, batch_input_json["sequences"])
+
   # add the extra sequences (e.g ligands, glycosylation)
   bonds = []
   sequence_types = "ligand"
