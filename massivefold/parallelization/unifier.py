@@ -206,6 +206,7 @@ def af3_records_to_sequences(records, fasta_ids_sequences):
   # format A, B, ..., Z, AA, BA,... ZA, AB, BB, ..., ZB, ......., AZ, BZ, ..., ZZ
   letters = string.ascii_uppercase
   all_ids_combinations = list(letters) + [a + b for b in letters for a in letters]
+  all_ids_combinations = [ i for i in all_ids_combinations if i not in used_ids ]
 
   ## legacy chain naming that only supported 26 chains
   #all_chain_ids = string.ascii_uppercase
