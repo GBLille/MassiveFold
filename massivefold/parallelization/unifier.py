@@ -163,14 +163,19 @@ def glycan_traversal(sugar, parent_index, linkage, state):
 
 def af3_resolve_glycan(glycan_str, chain_id):
   from glypy.io import iupac
-  parsed_glycan = iupac.loads(glycan_str, dialect="simple")
+  try:
+    parsed_glycan = iupac.loads(glycan_str, dialect="simple")
+  except ValueError as e:
+    print(f"Error while parsing {glycan_str}:")
+    raise ValueError(e)
   iupac_to_ccd = {
     "Gal": "GAL", "a-Gal": "GAL", "b-Gal": "GLB",
     "Glc": "GLC", "a-Glc": "GLC", "b-Glc": "BGC",
     "Man": "MAN", "a-Man": "BMA", "b-Man": "BMA",
     "Fuc": "FUC", "a-Fuc": "FCA", "b-Fuc": "FCB",
     "GlcNAc": "NAG", "Glc2NAc": "NAG",
-    "GalNAc": "NGA", "Gal2NAc": "NGA"
+    "GalNAc": "NGA", "Gal2NAc": "NGA",
+    "Neu5Ac": "SIA"
   }
   state = {
     'ccdCodes': [],
@@ -511,6 +516,8 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
       fasta_ids_sequences = af3_sequences_to_ids(single_batch)
       additional_sequences, _= af3_records_to_sequences([screening_item], fasta_ids_sequences)
       single_batch["name"] = batches[batch]["id"]
+      # change spaces to underscore as AF3 does it for output
+      single_batch["name"] = single_batch["name"].replace(' ', '_')
       single_batch["sequences"].extend(additional_sequences)
 
     alphafold3_input = os.path.join(output_dir, sequence, run_name, f"af3_batch_{batch}.json")
@@ -666,7 +673,7 @@ def convert_output(tool):
     batches = sorted(batches, key=lambda x: int(x.split('_')[1]))
     batches_files = batches
 
-  working, not_working = [], []
+  working, not_working, error = [], [], []
   for file, batch in zip(batches_files, batches):
     if tool == "ColabFold":
       batch_number = batch.split('_')[1]
@@ -679,11 +686,13 @@ def convert_output(tool):
       try:
         convert_alphafold3_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
         working.append(batch)
-      except FileNotFoundError:
+      except FileNotFoundError as e:
         not_working.append(batch)
+        error.append(str(e))
 
   if not_working:
     print(f"Batch not completed: {' - '.join(not_working)}")
+    print(f"{' - '.join(error)}")
 
 
 def convert_colabfold_output(output_path:str, pred_shift:int):
