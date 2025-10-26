@@ -41,20 +41,24 @@ def batches_per_model(preds_per_model:int):
 
 def batches_per_ligand(ligands, preds_per_model:int):
   df = pd.read_csv(ligands)
-  smiles_and_ccdcode = []
+  multiple_types = []
 
   batches = {}
-  for i, (id, smiles, ccdcode) in enumerate(zip(df['id'], df["smiles"], df["ccdCode"])):
+  for i, (id, smiles, ccdcode, iupac) in enumerate(zip(df['id'], df["smiles"], df["ccdCode"], df["IUPAC"])):
     smiles = "" if pd.isna(smiles) else smiles
     ccdcode = "" if pd.isna(ccdcode) else ccdcode
-    smiles, ccdcode = smiles.strip(), ccdcode.strip()
-    batches[str(i)] = { 'start': 0, 'end': preds_per_model - 1, "id": id.lower(), "smiles": smiles, "ccdcode": [ ccdcode ]}
+    iupac = "" if pd.isna(iupac) else iupac
+    smiles, ccdcode, iupac = smiles.strip(), ccdcode.strip(), iupac.strip()
+    batches[str(i)] = {
+      'start': 0, 'end': preds_per_model - 1, "id": id.lower(),
+      "smiles": smiles, "ccdcode": [ ccdcode ], "iupac": iupac
+    }
 
-    if smiles and ccdcode:
-      smiles_and_ccdcode.append(i)
+    if sum([bool(smiles), bool(ccdcode), bool(iupac)]) > 1:
+      multiple_types.append(i)
 
-  if smiles_and_ccdcode:
-    print("For each ligand, put either a smiles or a ccdCodes but not both, you gave both for the following lines:")
+  if multiple_types:
+    print("For each ligand, put either a smiles, ccdCodes or IUPAC but not more than one, you gave multiple for the following lines:")
     print(", ".join([ str(i) for i in smiles_and_ccdcode ]))
     sys.exit()
 

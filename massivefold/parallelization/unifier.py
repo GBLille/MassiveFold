@@ -532,15 +532,21 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
     screening_item = {}
     if "smiles" in batches[batch] and batches[batch]["smiles"]:
       screening_item = {"entity": "ligand", "sequence_type": "smiles", "seq": batches[batch]["smiles"]}
-    elif "ccdcode" in batches[batch] and batches[batch]["ccdcode"]:
+    elif "ccdcode" in batches[batch] and batches[batch]["ccdcode"] and batches[batch]["ccdcode"][0]:
       screening_item = {"entity": "ligand", "sequence_type": "ccdCodes", "seq": batches[batch]["ccdcode"]}
+    elif "iupac" in batches[batch] and batches[batch]["iupac"]:
+      screening_item = {"entity": "ligand", "sequence_type": "iupac", "seq": batches[batch]["iupac"]}
+
+    # transform screening record into AF3 sequence
     if screening_item:
       fasta_ids_sequences = af3_sequences_to_ids(single_batch)
-      additional_sequences, _= af3_records_to_sequences([screening_item], fasta_ids_sequences)
+      additional_sequences, bonds = af3_records_to_sequences([screening_item], fasta_ids_sequences)
       single_batch["name"] = batches[batch]["id"]
       # change spaces to underscore as AF3 does it for output
       single_batch["name"] = single_batch["name"].replace(' ', '_')
       single_batch["sequences"].extend(additional_sequences)
+      if bonds:
+        single_batch["bondedAtomPairs"] = bonds
 
     alphafold3_input = os.path.join(output_dir, sequence, run_name, f"af3_batch_{batch}.json")
     json.dump(single_batch, open(alphafold3_input, 'w'), indent=4)
