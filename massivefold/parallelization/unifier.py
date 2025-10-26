@@ -213,10 +213,6 @@ def af3_records_to_sequences(records, fasta_ids_sequences):
   all_ids_combinations = list(letters) + [a + b for b in letters for a in letters]
   all_ids_combinations = [ i for i in all_ids_combinations if i not in used_ids ]
 
-  ## legacy chain naming that only supported 26 chains
-  #all_chain_ids = string.ascii_uppercase
-  #all_chain_ids = [ i for i in all_chain_ids if i not in used_ids ]
-
   remaining_records = records.copy()
   all_bonds = []
   # Record format: {"entity": entity, "sequence_type": "sequence|ccdCodes|smiles" "seq": record}
@@ -224,6 +220,7 @@ def af3_records_to_sequences(records, fasta_ids_sequences):
   all_entities = []
   for record, chain_id in zip(records, all_ids_combinations):
     record_type = record["sequence_type"][:]
+    # transform glycosylation record to standard record for easy translation to AF3 input format
     if record["sequence_type"] == "glycosylation":
       chain, position  = used_ids[record["on_chain_index"]], record["at_position"]
       glycosylated_residue = fasta_ids_sequences[chain][position-1]
@@ -235,6 +232,8 @@ def af3_records_to_sequences(records, fasta_ids_sequences):
       f"Wrong type of glycosylation on {glycosylated_residue}"
 
       residue_atom = glycosylation_attachment[glycosylated_residue]["atom"]
+
+      # fidn glycan root either for complex or mono sugar glycan
       if glycan_bondedAtomPairs:
         glycan_root = glycan_bondedAtomPairs[0][0].copy()
         glycan_root[2] = "C1"
@@ -243,17 +242,29 @@ def af3_records_to_sequences(records, fasta_ids_sequences):
       else:
         raise ValueError(f"No bondedAtomPairs found while more than 1 ccdCodes foud: ccdCodes: {ccdCodes}")
 
+      # add bond between glycan root and protein residue
       bondedAtomPairs = [[[chain, record["at_position"], residue_atom], glycan_root]]
       bondedAtomPairs.extend(glycan_bondedAtomPairs)
-      all_bonds.extend(bondedAtomPairs)
+
+      # register glycan in standard record format
       record_type  = "ccdCodes"
       record["seq"] = ccdCodes
+      all_bonds.extend(bondedAtomPairs)
 
-    # either create new entity or add id to existing one
+    # IUPAC to ccdCode for standard ligand record creation
+    elif record["sequence_type"] == "iupac":
+      ccdCodes, bondedAtomsPairs = af3_resolve_glycan(record["seq"], chain_id)
+      record_type  = "ccdCodes"
+      record["seq"] = ccdCodes
+      all_bonds.extend(bondedAtomsPairs)
+
+    # translation of standard records to AF3 input format
+    # create new entity if none already recorded exist
     if record["seq"] not in all_sequences:
       sequence_dicts.append({record["entity"]:  {"id": chain_id, record_type: record["seq"]}})
       all_sequences.append(record["seq"])
       all_entities.append(record["entity"])
+    # duplicated entity: add new chain id to same entity
     else:
       index = all_sequences.index(record["seq"])
       if isinstance(sequence_dicts[index][all_entities[index]]["id"], str):
@@ -268,18 +279,29 @@ def af3_entities_to_records(af3_params, fasta_ids_sequences):
   modifs_dummy_seq = {"phosphorylation": "PO3", "hydroxylation": "OH", "methylation": "CH3", "acetylation": "CH3CO", "cyclization":"PCA"}
 
   used_ids = list(fasta_ids_sequences.keys())
-  
-  for lig in ligand:
-    is_ccdcodes = True if lig['ccdCodes'] and lig['ccdCodes'][0] else False
-    if is_ccdcodes and lig['smiles']:
-      raise ValueError(f"Chose either 'ccdCodes' or 'smiles' for ligand: {lig}")
-    elif not is_ccdcodes and not lig["smiles"]:
-      continue
-    elif is_ccdcodes:
-      additional_records.append({"entity": "ligand", "sequence_type": "ccdCodes", "seq": lig["ccdCodes"]})
-    elif lig['smiles']:
-      additional_records.append({"entity": "ligand", "sequence_type": "smiles", "seq": lig["smiles"]})
 
+  # translate user inputed ligand to proper records
+  for lig in ligand:
+    presence = { 'ccdCodes': False, 'smiles': False, 'IUPAC': False }
+    presence["ccdCodes"] = True if ( 'ccdCodes' in lig and lig['ccdCodes'] and lig['ccdCodes'][0] ) else False
+    presence["smiles"] = True if ( 'smiles' in lig and lig["smiles"] ) else False
+    presence["IUPAC"] = True if ( 'IUPAC' in lig and lig["IUPAC"] ) else False
+
+    all_presence = [ presence[lig_type] for lig_type in presence ]
+    if sum(all_presence) > 1:
+      raise ValueError(f"Chose between {'|'.join(list(presence))}, not multiple, for ligand: {lig}")
+
+    if presence["ccdCodes"]:
+      additional_records.append({"entity": "ligand", "sequence_type": "ccdCodes", "seq": lig["ccdCodes"]})
+    elif presence["smiles"]:
+      additional_records.append({"entity": "ligand", "sequence_type": "smiles", "seq": lig["smiles"]})
+    elif presence["IUPAC"]:
+      print(f"Detected IUPAC entity: {lig}")
+      additional_records.append({"entity": "ligand", "sequence_type": "iupac", "seq": lig["IUPAC"]})
+    else:
+      raise ValueError(f"{lig} not in {'|'.join(list(presence))}")
+
+  # parse user inputed post translational modifications and register them as records
   PTMs = af3_params["modifications"]
   if PTMs:
     # parse each chain's list of PTMs
@@ -449,8 +471,8 @@ def af3_add_input_entity(batch_input_json, af3_params):
 
   # add the extra sequences (e.g ligands, glycosylation)
   bonds = []
-  sequence_types = "ligand"
-  new_sequences_records = [ record for record in additional_records if record["entity"] == sequence_types ]
+  entity_type = "ligand"
+  new_sequences_records = [ record for record in additional_records if record["entity"] == entity_type ]
   additional_sequences, bonds = af3_records_to_sequences(new_sequences_records, fasta_ids_sequences)
   if bonds:
     batch_input_json["bondedAtomPairs"] = bonds
