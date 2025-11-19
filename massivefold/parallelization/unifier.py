@@ -290,6 +290,10 @@ def af3_entities_to_records(af3_params, fasta_ids_sequences):
     all_presence = [ presence[lig_type] for lig_type in presence ]
     if sum(all_presence) > 1:
       raise ValueError(f"Chose between {'|'.join(list(presence))}, not multiple, for ligand: {lig}")
+    # no ligand
+    elif sum(all_presence) == 0:
+      print(f"Ligand {lig} is empty or non-supported (not in ccdCode|smiles|IUPAC format)")
+      continue
 
     if presence["ccdCodes"]:
       additional_records.append({"entity": "ligand", "sequence_type": "ccdCodes", "seq": lig["ccdCodes"]})
