@@ -632,10 +632,10 @@ training, the scores are used to rank all the predictions for convenience, whate
 
 In MassiveFold, ligands and post modifications are configured in the `AlphaFold3_params.json` file.  
 
-For ligands, the `"ligand"` section has to be filled in with a CCD code **or** a SMILES code. In case of several, use several 
+For **ligands**, the `"ligand"` section has to be filled in with a CCD code **or** a SMILES code **or** a IUPAC code. In case of several, use several 
 entries in the JSON as in the following example.  
 
-For post-translational modifications, the `"modifications"` section has to be filled in. 
+For **modifications**, the `"modifications"` section has to be filled in. 
 These are the available modifications as of yet:
 
 | Name            | Chain type    | Target residue | Target base |
@@ -647,7 +647,6 @@ These are the available modifications as of yet:
 | acetylation     | protein       | K              | null        |
 | cyclization     | protein       | E              | null        |
 
-
 The `"modifications"` section contains as many entries (list) as the number of chains in the fasta file. The order of 
 these chains is the same as in the fasta file and in the `"fasta_chains"` section.
 
@@ -658,7 +657,7 @@ For each modification, these two keys are required:
 If the modification is a glycosylation, another key is needed:
 - `"sequence"` is the sequence of the glycan in IUPAC code 
 
-The following example shows 2 protein chains (the example H1140) with 3 ligands, a total of three glycosylations and 
+The following example shows 2 protein chains (the example H1140) with 4 ligands, a total of three glycosylations and 
 one phosphorylation. The first protein chain is glycosylated once (residue 36) and phosphorylated once (residue 20), 
 the second is glycosylated twice (same glycan on residues 74 and 84).
 
@@ -666,9 +665,10 @@ the second is glycosylated twice (same glycan on residues 74 and 84).
 "AF3_run":  {
         "fasta_chains": ["protein","protein"],
         "ligand": [
-            {"ccdCodes": ["NAG"], "smiles": ""},
-            {"ccdCodes": ["KGM"], "smiles": ""},
-            {"ccdCodes": [""], "smiles": "CC(=O)OC1=CC=CC=C1C(=O)O"}
+            {"ccdCodes": ["NAG"]},
+            {"ccdCodes": ["KGM"]},
+            {"smiles": "CC(=O)OC1=CC=CC=C1C(=O)O"},
+            {"IUPAC": "Gal(1-4)GlcNAc(1-2)Man(1-3)[Gal(1-4)GlcNAc(1-2)[Gal(1-4)GlcNAc(1-6)]Man(1-6)]Man(1-4)GlcNAc(1-4)[Fuc(1-6)]GlcNAc"}
         ],
         "modifications": [
             [
