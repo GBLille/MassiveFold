@@ -18,6 +18,7 @@
   * [Parameters](#parameters)
     * [Parameters in run_massivefold.sh](#parameters-in-run_massivefoldsh)
     * [Parameters in the json file](#parameters-in-the-json-file)
+  * [Ranking](#ranking)
   * [Using ligands and modifications with AlphaFold3](#using-ligands-and-modifications-with-alphafold3)
   * [Relaxation](#relaxation)
   * [Multiple runs gathering](#multiple-runs-gathering)
@@ -617,6 +618,15 @@ available for AlphaFold3. The `recycles` plot is not available for AFmassive mon
     "MF_plots_chosen_plots": "coverage,DM_plddt_PAE,CF_PAEs,score_distribution,recycles"
 }
 ```
+
+### Ranking
+
+Three ranking files are generated for each run : `ranking_debug.json`, which contains the AlphaFold confidence score for each prediction, 
+`ranking_ptm.json`, which contains the pTM score for each prediction, and, for complexes, `ranking_iptm.json`, which contains the ipTM score 
+for each prediction. For AlphaFold3, a `confidences` subfolder contains detailed scores for each prediction, one json file per prediction.  
+
+***N.B.***: For AFmassive and ColabFold, even if not directly comparable between AF2 versions because using weights coming from a different 
+training, the scores are used to rank all the predictions for convenience, whatever the neural network version.
 
 ### Using ligands and modifications with AlphaFold3
 
