@@ -1,33 +1,33 @@
 nextflow.enable.dsl = 2
+
 import groovy.json.JsonSlurper
 import java.nio.file.Path
 import java.nio.file.Paths
 
 // Define the help message
 def helpMessage = '''
-Usage:
-    nextflow main.nf --sequence <path> --run <name> --database_dir <path> [-options]
-    
+Usage: nextflow main.nf --sequence <path> --run <name> --data_dir <path> [-options]
+
 Required arguments:
-    --sequence: path(s) of the sequence(s) to infer, should be a 'fasta' file or a list of files separated by commas.
-    --run: name chosen for the run to organize outputs.
-    --database_dir : path to the local directory where the tool database is located.
+  --sequence: path(s) of the sequence(s) to infer, should be a 'fasta' file or a list of files separated by commas.
+  --run: name chosen for the run to organize outputs.
+  --data_dir : path to the local directory where the tool database is located.
 
 Optional arguments:
-    --tool <str>: (default: 'ColabFold') Use either AFmassive, ColabFold or AlphaFold3 in structure prediction for MassiveFold.
-    --config_json <path>: (default: './config.json') path to JSON configuration file.
-    --msas_precomputed <path>: path to directory that contains computed MSAs.
-    --predictions_per_model <int>: (default: 1) number of predictions computed for each neural network model.
-    --batch_size <int>: (default: 5) number of predictions per batch, should not be higher than --predictions_per_model.
-    --pair_strategy <str>: (default: 'greedy') pairing strategy for MSA generation ('greedy' or 'complete').
-    --num_recycle <int>: (default: 3) number of recycling iterations.
-    --recycle_early_stop_tolerance <float>: (default: 0.5) early stop tolerance for recycling.
-    --use_dropout <bool>: (default: false) use dropout during inference.
-    --stop_at_score <float>: (default: 100) stop at this confidence score.
-    --disable_cluster_profile <bool>: (default: false) disable cluster profile.
-    
+  --tool <str>: (default: 'ColabFold') Use either AFmassive, ColabFold or AlphaFold3 in structure prediction for MassiveFold.
+  --config_json <path>: (default: './config.json') path to JSON configuration file.
+  --msas_precomputed <path>: path to directory that contains computed MSAs.
+  --predictions_per_model <int>: (default: 1) number of predictions computed for each neural network model.
+  --batch_size <int>: (default: 5) number of predictions per batch, should not be higher than --predictions_per_model.
+  --pair_strategy <str>: (default: 'greedy') pairing strategy for MSA generation ('greedy' or 'complete').
+  --num_recycle <int>: (default: 3) number of recycling iterations.
+  --recycle_early_stop_tolerance <float>: (default: 0.5) early stop tolerance for recycling.
+  --use_dropout <bool>: (default: false) use dropout during inference.
+  --stop_at_score <float>: (default: 100) stop at this confidence score.
+  --disable_cluster_profile <bool>: (default: false) disable cluster profile.
+
 Example in the environment of a virtual machine in the IFB-Biosphere cloud:
-    nextflow main.nf --sequence examples/H1140.fasta --run test --database_dir ~/data/public/colabfold/ -profile docker -resume
+  nextflow main.nf --sequence examples/H1140.fasta --run test --data_dir ~/data/public/colabfold/ -profile docker -resume
 '''
 
 // -------------------------
@@ -37,7 +37,6 @@ params.help = false
 params.h = false
 params.sequence = null
 params.run = null
-params.database_dir = null
 params.tool = 'ColabFold'
 params.config_json = './massivefold_runs/ColabFold_params.json'
 params.msas_precomputed = null
@@ -53,129 +52,122 @@ params.disable_cluster_profile = false
 // -------------------------
 // Fonctions de configuration
 // -------------------------
-
 // Fonction pour charger toute la configuration
-def loadFullConfig(jsonFile) {
-    if (!file(jsonFile).exists()) {
-        log.warn("Configuration file not found: ${jsonFile}. Using default/command-line parameters.")
-        return [:]
+def loadFullConfig(jsonPath) {
+    if (!jsonPath) return null
+    def file = new File(jsonPath)
+    if (!file.exists()) {
+        println "⚠️ JSON config file not found: ${jsonPath}"
+        return null
     }
     def jsonSlurper = new groovy.json.JsonSlurper()
-    return jsonSlurper.parse(file(jsonFile))
+    return jsonSlurper.parse(file)
 }
 
 // Paramètres en commun
 def extractCommonParams(config) {
+    println config
     return [
-        run_massivefold_plots      : config.massivefold?.run_massivefold_plots ?: '',
-        data_dir                   : config.massivefold?.data_dir ?: '',
-        jobfile_headers_dir        : config.massivefold?.jobfile_headers_dir ?: '',
-        jobfile_templates_dir      : config.massivefold?.jobfile_templates_dir ?: '',
-        scripts_dir                : config.massivefold?.scripts_dir ?: '',
-        output_dir                 : config.massivefold?.output_dir ?: './output',
-        logs_dir                   : config.massivefold?.logs_dir ?: './log',
-        input_dir                  : config.massivefold?.input_dir ?: './input',
-        models_to_use              : config.massivefold?.models_to_use ?: '',
-        pkl_format                 : config.massivefold?.pkl_format ?: 'full',
+        run_massivefold_plots : config.massivefold?.run_massivefold_plots ?: '',
+        data_dir : config.massivefold?.data_dir ?: '',
+        jobfile_headers_dir : config.massivefold?.jobfile_headers_dir ?: '',
+        jobfile_templates_dir : config.massivefold?.jobfile_templates_dir ?: '',
+        scripts_dir : config.massivefold?.scripts_dir ?: '',
+        output_dir : config.massivefold?.output_dir ?: './output',
+        logs_dir : config.massivefold?.logs_dir ?: './log',
+        input_dir : config.massivefold?.input_dir ?: './input',
+        models_to_use : config.massivefold?.models_to_use ?: '',
+        pkl_format : config.massivefold?.pkl_format ?: 'full',
         // Plots
         MF_plots_top_n_predictions : config.plots?.MF_plots_top_n_predictions ?: '10',
-        MF_plots_chosen_plots      : config.plots?.MF_plots_chosen_plots ?: ''
+        MF_plots_chosen_plots : config.plots?.MF_plots_chosen_plots ?: ''
     ]
 }
 
 // Spécifiques à chaque outil
 def applyToolConfig(config, tool) {
-    def toolParams = extractCommonParams(config)  // base commune
-
+    def toolParams = extractCommonParams(config) // base commune
+    
     switch(tool.toLowerCase()) {
         case 'colabfold':
             toolParams << [
                 // CF_run params
-                model_preset              : config.CF_run?.model_preset ?: 'multimer',
-                pair_strategy             : config.CF_run?.pair_strategy ?: 'greedy',
-                use_dropout               : config.CF_run?.use_dropout ?: 'false',
-                num_recycle               : config.CF_run?.num_recycle ?: '20',
+                model_preset : config.CF_run?.model_preset ?: 'multimer',
+                pair_strategy : config.CF_run?.pair_strategy ?: 'greedy',
+                use_dropout : config.CF_run?.use_dropout ?: 'false',
+                num_recycle : config.CF_run?.num_recycle ?: '20',
                 recycle_early_stop_tolerance: config.CF_run?.recycle_early_stop_tolerance ?: '0.5',
-                stop_at_score             : config.CF_run?.stop_at_score ?: '100',
-                disable_cluster_profile   : config.CF_run?.disable_cluster_profile ?: 'false'
+                stop_at_score : config.CF_run?.stop_at_score ?: '100',
+                disable_cluster_profile : config.CF_run?.disable_cluster_profile ?: 'false'
             ]
             break
-
-        case 'afmassive':
+        case 'AFmassive':
             toolParams << [
-                run_massivefold           : config.massivefold?.run_massivefold ?: '',
-                uniref_database           : config.massivefold?.uniref_database ?: '',
+                run_massivefold : config.massivefold?.run_massivefold ?: '',
+                uniref_database : config.massivefold?.uniref_database ?: '',
                 // AFM_run params
-                model_preset              : config.AFM_run?.model_preset ?: 'multimer',
-                max_recycles              : config.AFM_run?.max_recycles ?: '20',
-                templates                 : config.AFM_run?.templates ?: 'true',
-                dropout                   : config.AFM_run?.dropout ?: 'false',
-                dropout_structure_module  : config.AFM_run?.dropout_structure_module ?: 'false',
-                dropout_rates_filename    : config.AFM_run?.dropout_rates_filename ?: '',
-                stop_recycling_below      : config.AFM_run?.stop_recycling_below ?: '0',
-                max_template_date         : config.AFM_run?.max_template_date ?: '2024-08-31',
-                min_score                 : config.AFM_run?.min_score ?: '0',
-                max_score                 : config.AFM_run?.max_score ?: '1',
-                db_preset                 : config.AFM_run?.db_preset ?: 'full_dbs',
-                early_stop_tolerance      : config.AFM_run?.early_stop_tolerance ?: '0.5',
-                bfd_max_hits              : config.AFM_run?.bfd_max_hits ?: '100000',
-                mgnify_max_hits           : config.AFM_run?.mgnify_max_hits ?: '501',
-                uniprot_max_hits          : config.AFM_run?.uniprot_max_hits ?: '50000',
-                uniref_max_hits           : config.AFM_run?.uniref_max_hits ?: '10000'
+                model_preset : config.AFM_run?.model_preset ?: 'multimer',
+                max_recycles : config.AFM_run?.max_recycles ?: '20',
+                templates : config.AFM_run?.templates ?: 'true',
+                dropout : config.AFM_run?.dropout ?: 'false',
+                dropout_structure_module : config.AFM_run?.dropout_structure_module ?: 'false',
+                dropout_rates_filename : config.AFM_run?.dropout_rates_filename ?: '',
+                stop_recycling_below : config.AFM_run?.stop_recycling_below ?: '0',
+                max_template_date : config.AFM_run?.max_template_date ?: '2024-08-31',
+                min_score : config.AFM_run?.min_score ?: '0',
+                max_score : config.AFM_run?.max_score ?: '1',
+                db_preset : config.AFM_run?.db_preset ?: 'full_dbs',
+                early_stop_tolerance : config.AFM_run?.early_stop_tolerance ?: '0.5',
+                bfd_max_hits : config.AFM_run?.bfd_max_hits ?: '100000',
+                mgnify_max_hits : config.AFM_run?.mgnify_max_hits ?: '501',
+                uniprot_max_hits : config.AFM_run?.uniprot_max_hits ?: '50000',
+                uniref_max_hits : config.AFM_run?.uniref_max_hits ?: '10000'
             ]
             break
-
         case 'alphafold3':
             toolParams << [
                 // Ajouter les paramètres spécifiques à AlphaFold3
-                model_preset              : config.AF3_run?.model_preset ?: 'multimer',
+                model_preset : config.AF3_run?.model_preset ?: 'multimer',
                 // Autres paramètres AF3...
             ]
             break
-
         default:
             log.warn "Unknown tool: ${tool}, using default parameters"
     }
-
     return toolParams
 }
 
-// -------------------------
-// Chargement et fusion de la configuration
-// -------------------------
 
-// Charger la configuration JSON si elle existe
-def fullConfig = loadFullConfig(params.config_json)
-
-// Appliquer la configuration spécifique à l'outil
-if (fullConfig) {
-    def toolConfig = applyToolConfig(fullConfig, params.tool)
-    
-    // Fusionner avec les paramètres de ligne de commande (ligne de commande prioritaire)
-    toolConfig.each { k, v -> 
-        if (!params.containsKey(k) || params[k] == null) {
-            params[k] = v
-        }
-    }
-}
-
-// Créer le fichier de configuration temporaire pour les processus
-// Note: Ce fichier sera créé dans le workflow et passé aux processus
-
-// -------------------------
-// Workflow principal
-// -------------------------
-
+// Workflow principal 
 workflow {
-    // Display the help message if requested
+        // Display help if requested
     if (params.help || params.h) {
         log.info(helpMessage)
         exit 0
     }
 
-    // Validate required parameters
-    if (!params.sequence || !params.run || !params.database_dir) {
-        log.error('Missing required parameters.')
+    def cfg = loadFullConfig(params.config_json)
+    
+    // Paramètres obligatoires qui doivent être résolus
+    def data_dir = cfg.massivefold.data_dir ?: params.data_dir
+    def predictions_per_model = cfg.massivefold.predictions_per_model ?: params.predictions_per_model ?: 1
+    def batch_size = cfg.massivefold.batch_size ?: params.batch_size ?: 5
+    def pair_strategy = cfg.massivefold.pair_strategy ?: params.pair_strategy ?: 'greedy'
+    def num_recycle = cfg.massivefold.num_recycle ?: params.num_recycle ?: 3
+    def recycle_early_stop_tolerance = cfg.massivefold.recycle_early_stop_tolerance ?: params.recycle_early_stop_tolerance ?: 0.5
+    def use_dropout = cfg.massivefold.use_dropout ?: params.use_dropout ?: false
+    def stop_at_score = cfg.massivefold.stop_at_score ?: params.stop_at_score ?: 100
+    def disable_cluster_profile = cfg.massivefold.disable_cluster_profile ?: params.disable_cluster_profile ?: false
+    def output_dir = cfg.massivefold.output_dir ?: "./output"
+       // Validate required parameters
+    if (!params.sequence || !params.run) {
+        log.error('Missing required parameters: --sequence and --run are mandatory.')
+        log.info(helpMessage)
+        exit 1
+    }
+    
+    if (!data_dir) {
+        log.error('Missing --data_dir parameter. Please provide it via CLI or config_json.')
         log.info(helpMessage)
         exit 1
     }
@@ -188,18 +180,21 @@ workflow {
     ==============================================
     MassiveFold Pipeline - ${params.tool.toUpperCase()}
     ==============================================
-    Tool:                    ${params.tool}
-    Sequence:                ${params.sequence}
-    Run name:                ${params.run}
-    Database directory:      ${params.database_dir}
-    Pair strategy:           ${params.pair_strategy}
-    Predictions per model:   ${params.predictions_per_model}
-    Batch size:              ${params.batch_size}
-    Num recycle:             ${params.num_recycle}
-    Use dropout:             ${params.use_dropout}
-    Stop at score:           ${params.stop_at_score}
+    Tool                  : ${params.tool}
+    Config JSON           : ${params.config_json}
+    Sequence              : ${params.sequence}
+    Run name              : ${params.run}
+    Database directory    : ${data_dir}
+    Pair strategy         : ${pair_strategy}
+    Predictions per model : ${predictions_per_model}
+    Batch size            : ${batch_size}
+    Num recycle           : ${num_recycle}
+    Use dropout           : ${use_dropout}
+    Stop at score         : ${stop_at_score}
+    MSAs precomputed      : ${params.msas_precomputed ?: 'No'}
     ==============================================
     """.stripIndent()
+
 
     // Treatment of the Multi-Sequence Alignment (MSA)
     def msa_results
@@ -207,12 +202,11 @@ workflow {
 
     // Check the Tool used and apply the appropriate workflow
     if (toolNormalized == 'colabfold') {
-        
         // Créer le fichier de configuration pour les processus
         def configToolContent = fullConfig ? groovy.json.JsonOutput.toJson(fullConfig) : '{}'
         configToolFile = Channel.of(configToolContent)
             .collectFile(name: 'config_tool.json', newLine: false)
-        
+
         fastafile_unified = Unifier_colabfold(seqFiles)
         
         if (params.msas_precomputed) {
@@ -225,19 +219,19 @@ workflow {
             // Run alignment process
             log.info("Running MSA alignment process")
             msa_results = Alignement_with_colabfold(
-                fastafile_unified, 
-                params.database_dir, 
+                fastafile_unified,
+                data_dir,
                 params.pair_strategy
             )
         }
 
         // Create batches
         batch_json = Create_batchs(
-            fastafile_unified, 
-            params.run, 
-            params.predictions_per_model, 
-            params.batch_size, 
-            configToolFile, 
+            fastafile_unified,
+            params.run,
+            params.predictions_per_model,
+            params.batch_size,
+            configToolFile,
             params.tool
         )
 
@@ -247,7 +241,7 @@ workflow {
         // Create batch channel
         batchs = parsed_json
             .splitCsv(sep: '\t')
-            .map { row -> 
+            .map { row ->
                 def (id_batch, start, end, model) = row
                 tuple(id_batch, start.toInteger(), end.toInteger(), model)
             }
@@ -265,20 +259,72 @@ workflow {
             params.stop_at_score,
             params.disable_cluster_profile
         )
-        
+
         // Standardize output
         out = Standardize_output_colabfold(
-            fastafile_unified, 
-            batch_json, 
+            fastafile_unified,
+            batch_json,
             res_prediction.collect()
         )
+    } else if (toolNormalized == 'afmassive') {
+        // Étape 1 : unifier les séquences
+    fastafile_unified = Unifier_AFMassive(seqFiles)
 
-    } 
-    else if (toolNormalized == 'afmassive') {
-        log.error("AFMassive tool is not yet implemented")
-        exit 1
+    // Étape 2 : utiliser des MSAs pré-calculés si dispo, sinon lancer AFMassive pour alignement
+    if (params.msas_precomputed) {
+        log.info("Using precomputed MSAs: ${params.msas_precomputed}")
+        msa_results = Channel
+            .fromPath("${params.msas_precomputed}/*")
+            .map { precomputed_msa -> tuple(precomputed_msa.baseName, precomputed_msa) }
+    } else {
+        log.info("Running AFMassive alignment process")
+        msa_results = Alignement_with_AFMassive(
+            fastafile_unified,
+            data_dir,
+            output_dir
+        )
     }
-    else if (toolNormalized == 'alphafold3') {
+
+    // Étape 3 : création des batchs
+    batch_json = Create_batchs(
+        fastafile_unified,
+        params.run,
+        params.predictions_per_model,
+        params.batch_size,
+        params.config_json,
+        params.tool
+    )
+
+    parsed_json = Parse_batch_json(batch_json)
+
+    // Étape 4 : transformer le JSON en tuples utilisables
+    batchs = parsed_json
+        .splitCsv(sep: '\t')
+        .map { row ->
+            def (id_batch, start, end, model) = row
+            tuple(id_batch, start.toInteger(), end.toInteger(), model)
+        }
+
+    // Étape 5 : combiner les batchs et MSAs
+    batches_msa = batchs.combine(msa_results).map { id_batch, start, end, model, msa_tuple ->
+        def (sequence_name, msaFolder) = msa_tuple
+        tuple(id_batch, start, end, model, sequence_name, msaFolder)
+    }
+
+    // Étape 6 : lancer les inférences
+    res_prediction = Run_inference_AFMassive(
+        batches_msa,
+        params.run,
+        params.config_json
+    )
+
+    // Étape 7 : organiser les résultats finaux
+    out = Organize_output_AFMassive(
+        fastafile_unified,
+        batch_json,
+        res_prediction
+    )
+    } else if (toolNormalized == 'alphafold3') {
         fastafile_unified = Unifier_AlphaFold3(seqFiles)
         
         if (params.msas_precomputed) {
@@ -288,16 +334,15 @@ workflow {
                 .map { precomputed_msa -> tuple(precomputed_msa.baseName, precomputed_msa) }
         } else {
             msa_results = Alignement_with_colabfold(
-                fastafile_unified, 
-                params.database_dir, 
+                fastafile_unified,
+                data_dir,
                 params.pair_strategy
             )
         }
-        
+
         log.error("AlphaFold3 tool is not yet fully implemented")
         exit 1
-    } 
-    else {
+    } else {
         log.error("Unsupported tool: ${params.tool}")
         log.error("Supported tools: ColabFold, AFMassive, AlphaFold3")
         exit 1
@@ -307,7 +352,6 @@ workflow {
 // -------------------------
 // Processus
 // -------------------------
-
 process Parse_batch_json {
     label 'python_treatment'
 
@@ -409,7 +453,7 @@ process Alignement_with_colabfold {
         echo "ERROR: Database directory does not exist: ${data_dir}"
         exit 1
     fi
-    
+
     # Set pairing strategy
     if [[ "${pair_strategy}" == "greedy" ]]; then
         pairing_strategy=0
@@ -421,10 +465,10 @@ process Alignement_with_colabfold {
     fi
 
     echo "Using pairing strategy: \${pairing_strategy}"
-    
+
     # Run ColabFold search
     colabfold_search ${seqFile} ${data_dir} ${seqFile.baseName}_msa --pairing_strategy \${pairing_strategy}
-    
+
     echo "=== ColabFold alignment completed ==="
     """
 
@@ -433,17 +477,69 @@ process Alignement_with_colabfold {
     echo "=== Running in stub mode ==="
     msa_dir="${seqFile.baseName}_msa"
     mkdir -p "\${msa_dir}"
-
+    
     grep '^>' ${seqFile} | while read -r line; do
-        header=\$(echo "\${line}" | sed 's/^>//')
+        header=\$(echo "\${line}" | sed 's/^>//') 
         sanitized_header=\$(echo "\${header}" | tr -c '[:alnum:]_' '_')
         output_file="\${msa_dir}/${seqFile.baseName}_\${sanitized_header}.a3m"
         echo "Stub MSA content for \${line}" > "\${output_file}"
         echo "Created stub file: \${output_file}"
     done
+    
     echo "=== Stub mode completed ==="
     """
 }
+process Alignement_with_AFMassive {
+    tag "$seqFile.baseName"
+    publishDir "result/${seqFile.baseName}/alignment"
+    label 'afmassive'
+    containerOptions "-v ${data_dir}:${data_dir}:rw"
+
+    input:
+    path(seqFile)
+    val(data_dir)
+    val(output_dir)
+
+    output:
+    tuple val(seqFile.baseName), path("${output_dir}/${seqFile.baseName}/msas")
+
+    script:
+    """
+    echo "=== Starting AFMassive alignment ==="
+    echo "Sequence file: ${seqFile}"
+    echo "Output directory: ${output_dir}"
+    echo "Database directory: ${data_dir}"
+
+    ls ${data_dir}
+
+    if [ ! -d "${data_dir}" ]; then
+        echo "ERROR: Database directory does not exist: ${data_dir}"
+        exit 1
+    fi
+
+    run_AFmassive.py \
+        --alignments_only=true \
+        --fasta_paths=${seqFile} \
+        --output_dir=${output_dir} \
+        --data_dir=${data_dir} \
+        --use_gpu_relax=false \
+        --max_template_date=2024-08-31 \
+        --db_preset=reduced_dbs \
+        --model_preset=multimer \
+        --small_bfd_database_path=${data_dir}/small_bfd/bfd-first_non_consensus_sequences.fasta \
+        --uniref90_database_path=${data_dir}/uniref90/uniref90.fasta \
+        --mgnify_database_path=${data_dir}/mgnify/mgy_clusters_2022_05.fa \
+        --template_mmcif_dir=${data_dir}/pdb_mmcif/mmcif_files \
+        --pdb_seqres_database_path=${data_dir}/pdb_seqres/pdb_seqres.txt \
+        --uniprot_database_path=${data_dir}/uniprot \
+        --obsolete_pdbs_path=${data_dir}/pdb_mmcif/obsolete.dat
+
+
+
+    echo "=== AFMassive alignment completed ==="
+    """
+}
+
 
 process Create_batchs {
     label 'python_treatment'
@@ -467,14 +563,14 @@ process Create_batchs {
     echo "Predictions per model: ${predictions_per_model}"
     echo "Batch size: ${batch_size}"
     echo "Tool: ${tool}"
-    
+
     batching.py --sequence_name=${sequence.baseName} \
-                --run_name=${run} \
-                --predictions_per_model=${predictions_per_model} \
-                --batch_size=${batch_size} \
-                --path_to_parameters=${config_tool} \
-                --tool ${tool}
-    
+        --run_name=${run} \
+        --predictions_per_model=${predictions_per_model} \
+        --batch_size=${batch_size} \
+        --path_to_parameters=${config_tool} \
+        --tool ${tool}
+
     echo "=== Batch creation completed ==="
     """
 
@@ -491,6 +587,23 @@ process Create_batchs {
 }
 EOF
     echo "=== Stub batch creation completed ==="
+    """
+}
+
+process Unifier_AFMassive {
+    label 'python_treatment'
+
+    input:
+    path sequence
+
+    output:
+    path "input/*.fasta"
+
+    script:
+    def seqName = sequence.getBaseName()
+    """
+    mkdir -p input
+    cp ${sequence} input/${seqName}.fasta
     """
 }
 
@@ -529,11 +642,11 @@ process Run_inference_colabfold {
     echo "Batch range: ${batch_start} to ${batch_end}"
     echo "Model: ${batch_model}"
     echo "MSA folder: ${msaFolder}"
-    
+
     # Generate random seed
     random_seed=\$(shuf -i 0-1000000 -n 1)
     echo "Random seed: \${random_seed}"
-    
+
     # Parse model information
     num_models=\$(echo ${batch_model} | cut -d "_" -f 2)
     echo "Model number: \${num_models}"
@@ -542,20 +655,20 @@ process Run_inference_colabfold {
     version_type="alphafold2_multimer_v\${num_version}"
     model_type=\${version_type}
     echo "Model type: \${model_type}"
-    
+
     # Calculate number of seeds
     num_seeds=\$((${batch_end} - ${batch_start} + 1))
     echo "Number of predictions: \${num_seeds}"
-    
+
     # Check MSA folder
     if [ ! -d "${msaFolder}" ]; then
         echo "ERROR: MSA folder does not exist: ${msaFolder}"
         exit 1
     fi
-    
+
     echo "MSA folder contents:"
     ls -la ${msaFolder}
-    
+
     # Prepare additional flags
     additional_flags=""
     if [ "${use_dropout}" = "true" ]; then
@@ -564,7 +677,7 @@ process Run_inference_colabfold {
     if [ "${disable_cluster_profile}" = "true" ]; then
         additional_flags="\${additional_flags} --disable-cluster-profile"
     fi
-    
+
     # Run ColabFold batch prediction
     colabfold_batch \
         ${msaFolder} \
@@ -579,7 +692,7 @@ process Run_inference_colabfold {
         --recycle-early-stop-tolerance ${recycle_early_stop_tolerance} \
         --stop-at-score ${stop_at_score} \
         \${additional_flags}
-    
+
     echo "=== ColabFold inference completed ==="
     """
 
@@ -588,12 +701,73 @@ process Run_inference_colabfold {
     echo "=== Running inference in stub mode ==="
     output_dir="res_${sequence_name}_${run_name}_${id_batch}"
     mkdir -p "\${output_dir}"
-    
     echo "Stub prediction output" > "\${output_dir}/prediction_stub.txt"
     echo "Model: ${batch_model}" > "\${output_dir}/model_info.txt"
     echo "Batch range: ${batch_start} to ${batch_end}" > "\${output_dir}/batch_info.txt"
-    
     echo "=== Stub inference completed ==="
+    """
+}
+
+process Run_inference_AFMassive {
+    tag "$sequence_name | batch#$id_batch"
+    label 'afmassive'
+    maxForks 2
+
+    input:
+    tuple val(id_batch), val(batch_start), val(batch_end), val(batch_model), val(sequence_name), path(msaFolder)
+    val(run_name)
+    path(config_tool)
+
+    output:
+    path "batch_${id_batch}/*"
+
+    script:
+    """
+    # Detect GPU availability
+    if command -v nvidia-smi &> /dev/null && nvidia-smi -L | grep -q "GPU"; then
+        echo "✅ GPU detected, using CUDA"
+        export CUDA_VISIBLE_DEVICES=0
+    else
+        echo "⚠️ No GPU detected, falling back to CPU"
+        export CUDA_VISIBLE_DEVICES=""
+    fi
+
+    echo "=== Starting AFMassive inference ==="
+    echo "Batch ID: ${id_batch}"
+    echo "Sequence: ${sequence_name}"
+    echo "Batch range: ${batch_start} to ${batch_end}"
+    echo "Model: ${batch_model}"
+    echo "MSA folder: ${msaFolder}"
+
+    # Check MSA folder
+    if [ ! -d "${msaFolder}" ]; then
+        echo "ERROR: MSA folder does not exist: ${msaFolder}"
+        exit 1
+    fi
+
+    # Create output directory
+    mkdir -p batch_${id_batch}
+
+    # Run AFMassive inference
+    run_AFmassive.py \
+        --use_precomputed_msas=true \
+        --output_dir=batch_${id_batch} \
+        --start_prediction=${batch_start} \
+        --end_prediction=${batch_end} \
+        --models_to_use=${batch_model} \
+        --path_to_msa=${msaFolder}
+
+    echo "=== AFMassive inference completed ==="
+    """
+
+    stub:
+    """
+    echo "=== Running inference in stub mode ==="
+    mkdir -p batch_${id_batch}
+    echo "Stub prediction output" > batch_${id_batch}/prediction_stub.txt
+    echo "Model: ${batch_model}" > batch_${id_batch}/model_info.txt
+    echo "Batch range: ${batch_start} to ${batch_end}" > batch_${id_batch}/batch_info.txt
+    echo "=== Stub inference completed ===" 
     """
 }
 
@@ -601,12 +775,12 @@ process Standardize_output_colabfold {
     publishDir "result/prediction/${seqFile.baseName}/"
     label 'python_treatment'
 
-    input: 
-    path seqFile 
+    input:
+    path seqFile
     path batchjson
     path colabfold_batch_files
 
-    output: 
+    output:
     path "organized_outputs/*"
 
     script:
@@ -616,20 +790,20 @@ process Standardize_output_colabfold {
     echo "Batch JSON: ${batchjson}"
     
     mkdir -p organized_outputs
-    
+
     # Run unifier
     unifier.py --conversion output --to_convert . --batches_file ${batchjson} --tool ColabFold
-    
+
     # Organize outputs
     organize_outputs.py --batches_path .
-    
+
     # Move organized outputs
     if [ -d "organized" ]; then
         mv organized/* organized_outputs/
     else
         cp -r res_* organized_outputs/ 2>/dev/null || true
     fi
-    
+
     echo "=== Output standardization completed ==="
     """
 
@@ -639,5 +813,47 @@ process Standardize_output_colabfold {
     mkdir -p organized_outputs
     echo "Stub standardized output" > organized_outputs/standardized_stub.txt
     echo "=== Stub standardization completed ==="
+    """
+}
+
+process Organize_output_AFMassive {
+    publishDir "result/prediction/${seqFile.baseName}/"
+    label 'python_treatment'
+
+    input:
+    path seqFile
+    path batchjson
+    path afmassive_batch_files
+
+    output:
+    path "organized_outputs/*"
+
+    script:
+    """
+    echo "=== Organizing AFMassive outputs ==="
+    echo "Sequence file: ${seqFile}"
+    echo "Batch JSON: ${batchjson}"
+    
+    mkdir -p organized_outputs
+
+    # Organize outputs (AFMassive outputs are already in AF2 standard format)
+    organize_outputs.py --batches_path .
+
+    # Move organized outputs
+    if [ -d "organized" ]; then
+        mv organized/* organized_outputs/
+    else
+        cp -r batch_* organized_outputs/ 2>/dev/null || true
+    fi
+
+    echo "=== Output organization completed ==="
+    """
+
+    stub:
+    """
+    echo "=== Organizing outputs in stub mode ==="
+    mkdir -p organized_outputs
+    echo "Stub organized output" > organized_outputs/organized_stub.txt
+    echo "=== Stub organization completed ===" 
     """
 }
