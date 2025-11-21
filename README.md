@@ -174,6 +174,14 @@ cd MassiveFold
 ./install.sh --no-env --alphafold-db <AF_DB_PATH> --colabfold-db <CF_DB_PATH> --alphafold3-db <AF3_DB_PATH>
 ```
 
+***N.B.***: for <AF3_DB_PATH>, you need to use your own AlphaFold3 weights, while the database files can be shared. Therefore,
+in a personal folder in your `home`, for instance in `~/af3_db` (that is your <AF3_DB_PATH>), you can copy your own weights, then 
+in this folder, create symbolic links to the shared database files:
+
+```bash
+ls -s <SHARED_DB_PATH>/* ~/af3_db/
+```
+
 3. **Create header files**  
 
 Refer to [Jobfile's header](#jobfiles-header) for this installation step.
