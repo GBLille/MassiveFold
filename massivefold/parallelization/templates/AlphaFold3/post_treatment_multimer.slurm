@@ -44,16 +44,20 @@ time python3 $$(which $${mf_plots_path}) \
 date
 
 if [[ $$pkl_format == "light" ]]; then
-  echo "Light pickles are not supported for AlphaFold3 yet."
+  pkl_mode="light"
+  echo "Reducing pkl size"
 elif [[ $$pkl_format == "none" ]]; then
   echo "Not keeping pkl files"
-  $${scripts_dir}/lighten_output.py $${output} --delete_pickles
-  rm $${output}/*.pkl
+  pkl_mode="delete"
 elif [[ $$pkl_format == "full" ]]; then
-  echo "Keeping pkl files as in AlphaFold3 output"
+  echo "Keeping pkl files as in AlphaFold output"
+  pkl_mode="full"
 else
   echo "$$pkl_format is an invalid value for pkl_format, doing nothing"
 fi
+
+echo "$${scripts_dir}/lighten_output.py $${output} --pickle_size $${pkl_mode}"
+time $${scripts_dir}/lighten_output.py $${output} --pickle_size $${pkl_mode}
 
 mkdir $${output}/log
 output_logs_path=$$(realpath $${output}/log)

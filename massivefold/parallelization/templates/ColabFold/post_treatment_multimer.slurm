@@ -38,17 +38,20 @@ time python3 $$(which $${mf_plots_path}) \
   --chosen_plots=$MF_plots_chosen_plots \
 
 if [[ $$pkl_format == "light" ]]; then
+  pkl_mode="light"
   echo "Reducing pkl size"
-  $${scripts_dir}/lighten_output.py $${output}
-  rm $${output}/*.pkl
 elif [[ $$pkl_format == "none" ]]; then
   echo "Not keeping pkl files"
-  rm $${output}/*.pkl
+  pkl_mode="delete"
 elif [[ $$pkl_format == "full" ]]; then
-  echo "Keeping pkl files as in AlphaFold2 output"
+  echo "Keeping pkl files as in AlphaFold output"
+  pkl_mode="full"
 else
   echo "$$pkl_format is an invalid value for pkl_format, doing nothing"
 fi
+
+echo "$${scripts_dir}/lighten_output.py $${output} --pickle_size $${pkl_mode}"
+time $${scripts_dir}/lighten_output.py $${output} --pickle_size $${pkl_mode}
 
 date
 
