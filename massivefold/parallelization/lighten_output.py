@@ -3,26 +3,19 @@
 import pickle
 import json
 import os
-import shutil
 import sys
+import shutil
 import argparse
+import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument('path_to_output')
-parser.add_argument('--delete_pickles', action="store_true")
-
-def lighten_pkl(content, to_keep, file, directory):
-  print(file.replace('result_', '').replace('.pkl', ''))
-  light_dict = {}
-
-  for i in content:
-    if i in to_keep:
-      light_dict[i] = content[i]
-
-  with open(f"{directory}/light_pkl/{file}", 'wb') as pickle_output:
-    pickle.dump(light_dict, pickle_output)
-
-  return light_dict
+parser.add_argument('--pickle_size', 
+                    default="full",
+                    choices=["full", "light", "custom", "delete"],
+                    help='How to treat the stored pickles in the output.',
+                    required=True)
+parser.add_argument('--parameters', help="Json file containing the parameters for custom pickle size (--pickle_size=custom).")
 
 def extract_af3_batch_input_msas(directory: str, json_files: list):
 
@@ -88,36 +81,76 @@ def extract_af3_batch_input_msas(directory: str, json_files: list):
 
     json.dump(data, open(filename, 'w'), indent=4)
 
-def lighten_all_pkl(directory):
+def format_entry(key: str, value, formats):
+  possible_formats = [ "npfloat32", "lst" ]
+  formattable_entries = [ "predicted_aligned_error", "plddt" ]
+  # no format specified for the key
+  if key not in formats:
+    return value
+  if key not in formattable_entries:
+    print(f"Key {key} is not formattable, skiping.")
+    return value
+
+  user_format = formats[key]
+  if user_format not in possible_formats:
+    raise ValueError(f"{formats[key]} not a valid format ({', '.join(possible_formats)})")
+
+  formatted_value = value
+  if user_format == "npfloat32":
+    formatted_value = np.array(value, dtype="float32")
+  elif user_format == "lst":
+    formatted_value = list(value)
+
+  return formatted_value
+
+def lighten_single_pkl(pkl, directory, parameters):
+    with open(f"{directory}/{pkl}", 'rb') as pickle_input:
+      initial_content = pickle.load(pickle_input)
+    # lighten the pkl content
+    content = {}
+    for elem in initial_content:
+      if elem not in parameters["keys"]:
+        continue
+      formatted_value = format_entry(elem, initial_content[elem], parameters["format"])
+      content[elem] = formatted_value
+    # write out the lightened pkl
+    with open(f"{directory}/light_pkl/{pkl}", 'wb') as pickle_output:
+      pickle.dump(content, pickle_output)
+
+def delete_pickles(pkl_files, directory):
+  total = len(pkl_files)
+  print(f"Now deleting {total} pickles in {directory}")
+  for i, pkl in enumerate(pkl_files):
+    os.remove(os.path.join(directory, pkl))
+    # hand-made progress bar
+    bar_length = 100
+    progress = (i + 1) / total
+    filled = int(progress * bar_length)
+    bar = "█" * filled + "-" * (bar_length - filled)
+    percent = int(progress * 100)
+    print(f"\r|{bar}| {percent:3d}% ({i+1}/{total})", end="", flush=True)
+  print()
+
+def lighten_all_pkl(directory, parameters):
   directory_content = os.listdir(directory)
+
+  # delete screening pkls, need a refactor (should be called on each ligand directory instead)
   if os.path.exists(os.path.join(directory, 'screening_inputs')):
     print('AF3 screening detected')
-    if not args.delete_pickles:
+    if args.pickle_size != "delete":
       sys.exit()
-
     inputs = os.path.join(directory, 'screening_inputs')
     print(f"Remove pickles from directory that inputs in {inputs} have output.")
     ligands_path = os.path.dirname(inputs)
 
+    # remove all ligands pickles
     all_ligands = [ json.load(open(os.path.join(inputs, i), 'r'))['name'] for i in os.listdir(inputs) ]
     for ligand in all_ligands:
       pickles = [ i for i in os.listdir(os.path.join(ligands_path, ligand)) if i.endswith('.pkl') ]
       for pkl in pickles:
         pkl_path = os.path.join(ligands_path, ligand, pkl)
         os.remove(pkl_path)
-
-    #print('Pickle f
     sys.exit()
-
-  af3_batch_files = [ i for i in directory_content if i.startswith('af3') and i.endswith('.json') ]
-  if af3_batch_files:
-    extract_af3_batch_input_msas(directory, af3_batch_files)
-    sys.exit()
-
-  to_keep = [
-    "num_recycles", "predicted_aligned_error",
-    "predicted_lddt", "plddt", "ptm", "iptm",
-    "ranking_confidence", "max_predicted_aligned_error"]
 
   pkl_files = [ file for file in directory_content if (file.startswith('result') and file.endswith('.pkl')) ]
 
@@ -130,24 +163,52 @@ def lighten_all_pkl(directory):
     shutil.rmtree(f'{directory}/light_pkl')
     os.mkdir(f'{directory}/light_pkl')
 
-  for pkl in pkl_files:
-    with open(f"{directory}/{pkl}", 'rb') as pickle_input:
-      content = pickle.load(pickle_input)
-
-    lighten_pkl(content, to_keep, pkl, directory)
+  total = len(pkl_files)
+  for i, pkl in enumerate(pkl_files):
+    lighten_single_pkl(pkl, directory, parameters)
+    # hand-made progress bar
+    bar_length = 100
+    progress = (i + 1) / total
+    filled = int(progress * bar_length)
+    bar = "█" * filled + "-" * (bar_length - filled)
+    percent = int(progress * 100)
+    print(f"\r|{bar}| {percent:3d}% ({i+1}/{total})", end="", flush=True)
+  print()
+  return pkl_files
 
 if __name__ == '__main__':
   args = parser.parse_args()
-  """
-  if len(sys.argv) != 2:
-    print('Usage ./lighten_output.py <PATH_TO_OUTPUT>')
-    sys.exit()
-  directory = sys.argv[1]
-
-  if sys.argv[1] == '-h':
-    print('Usage ./lighten_output.py <PATH_TO_OUTPUT>')
-    sys.exit()
-  """
   directory = args.path_to_output
-  print(f'Extracting pkl from {os.path.abspath(directory)}')
-  lighten_all_pkl(directory)
+
+  parameters = {
+    "keys": [
+        "num_recycles", "predicted_aligned_error", "predicted_lddt",
+        "plddt", "ptm", "iptm", "ranking_confidence", "max_predicted_aligned_error"
+      ],
+    "format": {
+      "predicted_aligned_error": "npfloat32", # npfloat32 | lst
+      "plddt": "npfloat32"
+    }
+  }
+
+  af3_batch_files = [ i for i in os.listdir(directory) if i.startswith('af3') and i.endswith('.json') ]
+  if af3_batch_files:
+    print("Detected AlphaFold3 output.")
+    print("Reference large input elements out of the af3 batches files")
+    extract_af3_batch_input_msas(directory, af3_batch_files)
+
+  if args.pickle_size == "full":
+    print("No modification of the pickle files")
+
+  elif args.pickle_size in [ "light", "custom" ]:
+    print(f'Extracting pkl from {os.path.abspath(directory)}')
+    # read user's custom parameters for the lighter pickles
+    if args.pickle_size == "custom":
+      parameters = json.load(open(args.parameters, "r"))
+      print(f"Using custom parameters:\n{parameters}")
+    pickles = lighten_all_pkl(directory, parameters)
+    delete_pickles(pickles, directory)
+
+  elif args.pickle_size == "delete":
+    pickles = [ pkl for pkl in os.listdir(directory) if pkl.endswith('.pkl') ]
+    delete_pickles(pickles, directory)
