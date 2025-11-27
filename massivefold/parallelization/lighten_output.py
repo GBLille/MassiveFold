@@ -22,17 +22,19 @@ def extract_af3_batch_input_msas(directory: str, json_files: list):
 
   entity_count = {}
   msas_templates_paths = {}
-  for i, file in enumerate(json_files):
-    print(f"Processing {os.path.join(directory, file)}")
+  total = len(json_files)
+  print(f"Now processing {total} af3 batch files in {directory}")
+  for file_ind, file in enumerate(json_files):
+
     filename = os.path.join(directory, file)
     data = json.load(open(filename, 'r'))
     with open(filename, 'r') as batch_file:
       data = json.load(batch_file)
 
     # extract msas/templates from first json batch and write it to .a3m/mmcif files
-    if i == 0:
-      entity_count.update({ list(data["sequences"][i].keys())[0]: 0 for i in range(len(data["sequences"])) })
-      for i, seq in enumerate(data["sequences"]):
+    if file_ind == 0:
+      entity_count.update({ list(data["sequences"][nseq].keys())[0]: 0 for nseq in range(len(data["sequences"])) })
+      for seq_ind, seq in enumerate(data["sequences"]):
         entity = list(seq.keys())[0]
         entity_count[entity] += 1
         msas_templates_paths[f"{entity}_{entity_count[entity]}"] = { }
@@ -41,46 +43,54 @@ def extract_af3_batch_input_msas(directory: str, json_files: list):
         # first the msas
         for msas in ["unpairedMsa", "pairedMsa"]:
           # skip chains with no alignments (ligands)
-          if not msas in data["sequences"][i][entity] or not data["sequences"][i][entity][msas]:
+          if not msas in data["sequences"][seq_ind][entity] or not data["sequences"][seq_ind][entity][msas]:
             continue
           fileout = os.path.join(directory, f"{entity}_{entity_count[entity]}_{msas}.a3m")
           msas_templates_paths[f"{entity}_{entity_count[entity]}"][msas] = fileout
           with open(fileout, 'w') as msas_file:
-            msas_file.write(data["sequences"][i][entity][msas])
+            msas_file.write(data["sequences"][seq_ind][entity][msas])
         # then the templates
-        if not "templates" in data["sequences"][i][entity] or not data["sequences"][i][entity]["templates"]:
+        if not "templates" in data["sequences"][seq_ind][entity] or not data["sequences"][seq_ind][entity]["templates"]:
           continue
-        templates = data["sequences"][i][entity]["templates"]
+        templates = data["sequences"][seq_ind][entity]["templates"]
         msas_templates_paths[f"{entity}_{entity_count[entity]}"]["templates"] = {}
         for n, template in enumerate(templates):
           fileout = os.path.join(directory, f"{entity}_{entity_count[entity]}_template_{n}.mmcif")
           msas_templates_paths[f"{entity}_{entity_count[entity]}"]["templates"][n] = fileout
           with open(fileout, 'w') as template_file:
-            template_file.write(data["sequences"][i][entity]["templates"][n]["mmcif"])
+            template_file.write(data["sequences"][seq_ind][entity]["templates"][n]["mmcif"])
 
     # reference the .a3m/mmcif paths in the right entities fields
-    entity_count = { list(data["sequences"][i].keys())[0]: 0 for i in range(len(data["sequences"])) }
-    for i, seq in enumerate(data["sequences"]):
+    entity_count = { list(data["sequences"][nseq].keys())[0]: 0 for nseq in range(len(data["sequences"])) }
+    for seq_ind, seq in enumerate(data["sequences"]):
       entity = list(seq.keys())[0]
       entity_count[entity] += 1
       # first the msas
       for msas in ["unpairedMsa", "pairedMsa"]:
-        if not msas in data["sequences"][i][entity] or not data["sequences"][i][entity][msas]:
+        if not msas in data["sequences"][seq_ind][entity] or not data["sequences"][seq_ind][entity][msas]:
           continue
-        data["sequences"][i][entity][msas] = ""
+        data["sequences"][seq_ind][entity][msas] = ""
         path_of_msas = msas_templates_paths[f"{entity}_{entity_count[entity]}"][msas]
-        data["sequences"][i][entity][f"{msas}Path"] = path_of_msas
+        data["sequences"][seq_ind][entity][f"{msas}Path"] = path_of_msas
 
         # then the templates
-        if not "templates" in data["sequences"][i][entity] or not data["sequences"][i][entity]["templates"]:
+        if not "templates" in data["sequences"][seq_ind][entity] or not data["sequences"][seq_ind][entity]["templates"]:
           continue
-        templates = data["sequences"][i][entity]["templates"]
+        templates = data["sequences"][seq_ind][entity]["templates"]
         for n, template in enumerate(templates):
-          data["sequences"][i][entity]["templates"][n]["mmcif"] = ""
+          data["sequences"][seq_ind][entity]["templates"][n]["mmcif"] = ""
           path_of_mmcif = msas_templates_paths[f"{entity}_{entity_count[entity]}"]["templates"][n]
-          data["sequences"][i][entity]["templates"][n]["mmcifPath"] = path_of_mmcif
+          data["sequences"][seq_ind][entity]["templates"][n]["mmcifPath"] = path_of_mmcif
 
     json.dump(data, open(filename, 'w'), indent=4)
+
+    bar_length = 50
+    progress = (file_ind + 1) / total
+    filled = int(progress * bar_length)
+    bar = "█" * filled + "-" * (bar_length - filled)
+    percent = int(progress * 100)
+    print(f"\r|{bar}| {percent:3d}% ({file_ind+1}/{total})", end="", flush=True)
+  print()
 
 def format_entry(key: str, value, formats):
   possible_formats = [ "npfloat32", "lst" ]
