@@ -15,6 +15,7 @@ parser.add_argument('--pickle_size',
                     choices=["full", "light", "custom", "delete"],
                     help='How to treat the stored pickles in the output.',
                     required=True)
+parser.add_argument('--keep_full_pickles',  action="store_true")
 parser.add_argument('--parameters', help="Json file containing the parameters for custom pickle size (--pickle_size=custom).")
 
 def extract_af3_batch_input_msas(directory: str, json_files: list):
@@ -123,7 +124,7 @@ def delete_pickles(pkl_files, directory):
   for i, pkl in enumerate(pkl_files):
     os.remove(os.path.join(directory, pkl))
     # hand-made progress bar
-    bar_length = 100
+    bar_length = 50
     progress = (i + 1) / total
     filled = int(progress * bar_length)
     bar = "█" * filled + "-" * (bar_length - filled)
@@ -167,7 +168,7 @@ def lighten_all_pkl(directory, parameters):
   for i, pkl in enumerate(pkl_files):
     lighten_single_pkl(pkl, directory, parameters)
     # hand-made progress bar
-    bar_length = 100
+    bar_length = 50
     progress = (i + 1) / total
     filled = int(progress * bar_length)
     bar = "█" * filled + "-" * (bar_length - filled)
@@ -201,13 +202,15 @@ if __name__ == '__main__':
     print("No modification of the pickle files")
 
   elif args.pickle_size in [ "light", "custom" ]:
+    delete_after_lightening = not args.keep_full_pickles
     print(f'Extracting pkl from {os.path.abspath(directory)}')
     # read user's custom parameters for the lighter pickles
     if args.pickle_size == "custom":
       parameters = json.load(open(args.parameters, "r"))
       print(f"Using custom parameters:\n{parameters}")
     pickles = lighten_all_pkl(directory, parameters)
-    delete_pickles(pickles, directory)
+    if delete_after_lightening:
+      delete_pickles(pickles, directory)
 
   elif args.pickle_size == "delete":
     pickles = [ pkl for pkl in os.listdir(directory) if pkl.endswith('.pkl') ]
