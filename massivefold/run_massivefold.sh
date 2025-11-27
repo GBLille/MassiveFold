@@ -13,9 +13,9 @@ Usage: $USAGE\n\
     -s| --sequence: path of the sequence(s) to infer, should be a 'fasta' file \n\
     -r| --run: name chosen for the run to organize in outputs.\n\
     -f| --parameters: json file's path containing the parameters used for this run.\n\
-    -t| --tool: (default: 'AFmassive') Use either AFmassive, AlphaFold3 or ColabFold in structure prediction for MassiveFold\n\
 \n\
   Facultative arguments:\n\
+    -t| --tool: (default: detected in the -f json file) Use either AFmassive, AlphaFold3 or ColabFold in structure prediction for MassiveFold\n\
     -p| --predictions_per_model: (default: 5) number of predictions computed for each neural network model.\n\
         If used with -t AlphaFold3, -p is the number of seeds used. Each seed will have m samples predicted.\n\
         The number of sample set m is set in the AlphaFold3_params.json file.\n\
@@ -113,12 +113,37 @@ done
 # check mandatory args
 if
   [ -z "$sequence_file" ] ||
-  [ -z "$tool" ] ||
   [ -z "$run_name" ] ||
   [ -z "$parameters_file" ]; then
   echo -e "Usage: $USAGE"
   exit 1
 fi
+
+short_tool=$(cat $parameters_file | python3 -c "
+import sys;
+import json;
+keys=list(json.load(sys.stdin).keys());
+tools=[i for i in keys if i.endswith('_run')];
+tool=tools[0] if len(tools)==1 else None;
+if tool: print(tool.replace('_run', ''))
+")
+
+case $short_tool in
+  "AF3")
+    tool="AlphaFold3"
+    ;;
+  "AFm")
+    tool="AFmassive"
+    ;;
+  "CF")
+    tool="ColabFold"
+    ;;
+  *)
+    echo "Tool parameters should be one of AlphaFold3|AFmassive|ColabFold in \`$parameters_file\`"
+    echo "Exiting."
+    exit 1
+    ;;
+esac
 
 echo "Tool used is $tool"
 
