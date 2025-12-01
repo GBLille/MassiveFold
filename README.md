@@ -433,15 +433,15 @@ module load arch/h100
 
 Example for AFmassive:
 ```bash
-./run_massivefold.sh -s input/H1140.fasta -r afm_default_run -p 5 -f AFmassive_params.json -t AFmassive
+./run_massivefold.sh -s input/H1140.fasta -r afm_default -p 5 -f AFmassive_params.json -t AFmassive
 ```
 Example for ColabFold:
 ```bash
-./run_massivefold.sh -s input/H1140.fasta -r cf_default_run -p 5 -f ColabFold_params.json -t ColabFold
+./run_massivefold.sh -s input/H1140.fasta -r cf_default -p 5 -f ColabFold_params.json -t ColabFold
 ```
 Example for AlphaFold3:
 ```bash
-./run_massivefold.sh -s input/H1140.fasta -r af3_default_run -p 5 -f AlphaFold3_params.json -t AlphaFold3
+./run_massivefold.sh -s input/H1140.fasta -r af3_default -p 5 -f AlphaFold3_params.json -t AlphaFold3
 ```
 
 For more help and list of required and facultative parameters, run:
