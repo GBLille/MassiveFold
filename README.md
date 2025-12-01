@@ -31,6 +31,7 @@
 * [Troubleshooting](#troubleshooting)
   * [Uniref](#uniref)
   * [Usage without SLURM](#usage-without-slurm)
+  * [Alignment crashes with ColabFold](#alignment-crashes-with-colabfold)
   * [Using templates with ColabFold](#using-templates-with-colabfold)
 * [Citation](#citation)
 * [Authors](#authors)
@@ -788,7 +789,7 @@ Here is the list of available plots:
     - a boxplot for each neural network model  
     ![header](imgs/plot_illustrations/models_scores.png)
   * distribution_comparison: ranking confidence distribution comparison between various MassiveFold outputs, typically 
-  useful for runs with different sets of parameters on the same input sequence(s).
+  useful for runs with different sets of parameters on the same input sequence(s). The `massivefold_plots.py` script has to be used directly with the `--runs_to_compare` parameter.  
   ![header](imgs/plot_illustrations/distribution_comparison.png)
   * recycles: ranking confidence during the recycle process (only for multimers and ColabFold monomers)
   ![header](imgs/plot_illustrations/recycles.png)
@@ -844,7 +845,21 @@ MassiveFold can't run without SLURM. However, the `mf-afmassive-1.1.5`, `mf-cola
 conda environments created at the installation allow to use respectively AFmassive, ColabFold and AlphaFold3 without parallelization. 
 Their usage is detailed on their respective GitHub webpages.
 
+### Alignment crashes with ColabFold
+
+For a few sequences, the alignment step crashes for ColabFold. In this case, the web server can be called directly to get the alignments. 
+For that, activate the ColabFold environment and run directly `colabfold_batch` with the `--msa-only` parameter. 
+The alignment has to be located in a `msas_colabfold` folder of the output directory that corresponds to the fasta sequence to be able to run 
+the structure inference with MassiveFold.  
+In the `massivefold_runs` folder, run:
+
+```commandline
+conda activate mf-colabfold-1.5.5
+colabfold_batch ./input/<sequence>.fasta ./output/<sequence>/msas_colabfold --msa-only
+```
+
 ### Using templates with ColabFold
+
 MassiveFold is currently using the ColabFold 1.5.5 conda environment. It runs `colabfold_search` for the alignments and 
 `colabfold_batch` for structure inference. Unfortunately, in this version, `colabfold_batch` doesn't allow to take a 
 templates file as input, which means it would run the templates search for every inference job, which is not optimal.  
