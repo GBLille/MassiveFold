@@ -17,7 +17,6 @@ parser.add_argument('--pickle_size',
                     required=True)
 parser.add_argument('--parameters', help="Json file containing the parameters for custom pickle size (--pickle_size=custom).")
 parser.add_argument('--keep_full_pickles',  action="store_true")
-parser.add_argument('--to_json',  action="store_true")
 
 def extract_af3_batch_input_msas(directory: str, json_files: list):
 
@@ -216,7 +215,7 @@ def lighten_all_pkl(directory, parameters, to_json: bool):
 if __name__ == '__main__':
   args = parser.parse_args()
   directory = args.path_to_output
-  to_json = args.to_json
+  to_json = False # development in progress
 
   parameters = {
     "keys": [
@@ -248,7 +247,17 @@ if __name__ == '__main__':
       total = len(pkl_files)
       for i, pkl in enumerate(pkl_files):
         pkl_content = pickle.load(open(f"{directory}/{pkl}", 'rb'))
-        json.dump(pkl_content, open(f"{json_dir}/{pkl.replace('.pkl', '.json')}", 'w'), indent=4)
+        jsonified = {}
+        for key in pkl_content:
+          if isinstance(pkl_content[key], np.ndarray):
+            jsonified[key] = pkl_content[key].tolist()
+          elif isinstance(pkl_content[key], np.float64):
+            jsonified[key] = float(pkl_content[key])
+          else:
+            jsonified[key] = pkl_content[key]
+            print(jsonified[key])
+
+        json.dump(jsonified, open(f"{json_dir}/{pkl.replace('.pkl', '.json')}", 'w'), indent=4)
         bar_length = 50
         progress = (i + 1) / total
         filled = int(progress * bar_length)
