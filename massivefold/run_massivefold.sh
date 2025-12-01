@@ -132,7 +132,7 @@ case $short_tool in
   "AF3")
     tool="AlphaFold3"
     ;;
-  "AFm")
+  "AFM")
     tool="AFmassive"
     ;;
   "CF")
