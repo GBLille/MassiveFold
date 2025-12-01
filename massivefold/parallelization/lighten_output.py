@@ -15,8 +15,9 @@ parser.add_argument('--pickle_size',
                     choices=["full", "light", "custom", "delete"],
                     help='How to treat the stored pickles in the output.',
                     required=True)
-parser.add_argument('--keep_full_pickles',  action="store_true")
 parser.add_argument('--parameters', help="Json file containing the parameters for custom pickle size (--pickle_size=custom).")
+parser.add_argument('--keep_full_pickles',  action="store_true")
+parser.add_argument('--to_json',  action="store_true")
 
 def extract_af3_batch_input_msas(directory: str, json_files: list):
 
@@ -115,18 +116,19 @@ def format_entry(key: str, value, formats):
   return formatted_value
 
 def lighten_single_pkl(pkl, directory, parameters):
-    with open(f"{directory}/{pkl}", 'rb') as pickle_input:
-      initial_content = pickle.load(pickle_input)
-    # lighten the pkl content
-    content = {}
-    for elem in initial_content:
-      if elem not in parameters["keys"]:
-        continue
-      formatted_value = format_entry(elem, initial_content[elem], parameters["format"])
-      content[elem] = formatted_value
-    # write out the lightened pkl
-    with open(f"{directory}/light_pkl/{pkl}", 'wb') as pickle_output:
-      pickle.dump(content, pickle_output)
+  with open(f"{directory}/{pkl}", 'rb') as pickle_input:
+    initial_content = pickle.load(pickle_input)
+  # lighten the pkl content
+  content = {}
+  for elem in initial_content:
+    if elem not in parameters["keys"]:
+      continue
+    formatted_value = format_entry(elem, initial_content[elem], parameters["format"])
+    content[elem] = formatted_value
+  # write out the lightened pkl
+  with open(f"{directory}/light_pkl/{pkl}", 'wb') as pickle_output:
+    pickle.dump(content, pickle_output)
+  return content
 
 def delete_pickles(pkl_files, directory):
   total = len(pkl_files)
@@ -142,7 +144,7 @@ def delete_pickles(pkl_files, directory):
     print(f"\r|{bar}| {percent:3d}% ({i+1}/{total})", end="", flush=True)
   print()
 
-def lighten_all_pkl(directory, parameters):
+def lighten_all_pkl(directory, parameters, to_json: bool):
   directory_content = os.listdir(directory)
 
   # delete screening pkls, need a refactor (should be called on each ligand directory instead)
@@ -167,16 +169,39 @@ def lighten_all_pkl(directory, parameters):
 
   if not pkl_files:
     print(f"No pickle files detected in {directory}")
+
     return
+
+  if os.path.isdir(f'{directory}/light_pkl'):
+    shutil.rmtree(f'{directory}/light_pkl')
+  os.mkdir(f'{directory}/light_pkl')
+
+  if to_json:
+    json_dir = f'{directory}/json_output'
+    if os.path.isdir(json_dir):
+      shutil.rmtree(json_dir)
+    os.mkdir(json_dir)
+  """
   try:
     os.mkdir(f'{directory}/light_pkl')
   except OSError as error:
     shutil.rmtree(f'{directory}/light_pkl')
     os.mkdir(f'{directory}/light_pkl')
-
+  """
   total = len(pkl_files)
   for i, pkl in enumerate(pkl_files):
-    lighten_single_pkl(pkl, directory, parameters)
+    pkl_content = lighten_single_pkl(pkl, directory, parameters)
+    jsonified = {}
+    for key in pkl_content:
+      if isinstance(pkl_content[key], np.ndarray):
+        jsonified[key] = pkl_content[key].tolist()
+      else:
+        jsonified[key] = pkl_content[key]
+
+    if to_json:
+      json.dump(jsonified, open(f"{json_dir}/{pkl.replace('.pkl', '.json')}", 'w'), indent=4)
+
+
     # hand-made progress bar
     bar_length = 50
     progress = (i + 1) / total
@@ -185,11 +210,13 @@ def lighten_all_pkl(directory, parameters):
     percent = int(progress * 100)
     print(f"\r|{bar}| {percent:3d}% ({i+1}/{total})", end="", flush=True)
   print()
+
   return pkl_files
 
 if __name__ == '__main__':
   args = parser.parse_args()
   directory = args.path_to_output
+  to_json = args.to_json
 
   parameters = {
     "keys": [
@@ -208,8 +235,27 @@ if __name__ == '__main__':
     print("Reference large input elements out of the af3 batches files")
     extract_af3_batch_input_msas(directory, af3_batch_files)
 
+  # step to lighten (or not) the pickles
   if args.pickle_size == "full":
     print("No modification of the pickle files")
+    if to_json:
+      json_dir = f'{directory}/json_output'
+      if os.path.isdir(json_dir):
+        shutil.rmtree(json_dir)
+      os.mkdir(json_dir)
+      print(f"Converting the full pickle files to json at {json_dir}")
+      pkl_files = [ file for file in os.listdir(directory) if (file.startswith('result') and file.endswith('.pkl')) ]
+      total = len(pkl_files)
+      for i, pkl in enumerate(pkl_files):
+        pkl_content = pickle.load(open(f"{directory}/{pkl}", 'rb'))
+        json.dump(pkl_content, open(f"{json_dir}/{pkl.replace('.pkl', '.json')}", 'w'), indent=4)
+        bar_length = 50
+        progress = (i + 1) / total
+        filled = int(progress * bar_length)
+        bar = "█" * filled + "-" * (bar_length - filled)
+        percent = int(progress * 100)
+        print(f"\r|{bar}| {percent:3d}% ({i+1}/{total})", end="", flush=True)
+      print()
 
   elif args.pickle_size in [ "light", "custom" ]:
     delete_after_lightening = not args.keep_full_pickles
@@ -218,8 +264,8 @@ if __name__ == '__main__':
     if args.pickle_size == "custom":
       parameters = json.load(open(args.parameters, "r"))
       print(f"Using custom parameters:\n{parameters}")
-    pickles = lighten_all_pkl(directory, parameters)
-    if delete_after_lightening:
+    pickles = lighten_all_pkl(directory, parameters, to_json=args.to_json)
+    if delete_after_lightening and pickles != None:
       delete_pickles(pickles, directory)
 
   elif args.pickle_size == "delete":
