@@ -2,7 +2,7 @@
 
 
 USAGE="\
-./run_massivefold.sh -s str -r str -p int -f str -t str [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]\n\
+./run_massivefold.sh -s str -r str -p int -f str [-t str] [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]\n\
 ./run_massivefold.sh -h for more details "
 
 # help message
@@ -20,7 +20,8 @@ Usage: $USAGE\n\
         If used with -t AlphaFold3, -p is the number of seeds used. Each seed will have m samples predicted.\n\
         The number of sample set m is set in the AlphaFold3_params.json file.\n\
         In total, with -p n, you will have m*n predictions computed.\n\
-    -b| --batch_size: (default: 25) number of predictions per batch, should not be higher than -p.\n\
+    -b| --batch_size: (default: 25) number of predictions per batch (number of seeds for AlphaFold3),\n\
+        should not be higher than -p.\n\
     -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).\n\
     -w| --wall_time: (default: 20) total time available for calibration computations, unit is hours.\n\
     -m| --msas_precomputed: path to directory that contains computed msas.\n\

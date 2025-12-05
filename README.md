@@ -450,7 +450,7 @@ For more help and list of required and facultative parameters, run:
 ```
 Here is the help message given by this command:
 ```txt
-Usage: ./run_massivefold.sh -s str -r str -p int -f str -t str [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]
+Usage: ./run_massivefold.sh -s str -r str -p int -f str [-t str] [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]
 ./run_massivefold.sh -h for more details 
   Required arguments:
     -s| --sequence: path of the sequence(s) to infer, should be a 'fasta' file 
@@ -462,7 +462,8 @@ Usage: ./run_massivefold.sh -s str -r str -p int -f str -t str [ -b int | [[-C s
     -t| --tool: (default: 'AFmassive') Use either AFmassive, AlphaFold3 or ColabFold in structure prediction for MassiveFold
 
   Facultative arguments:
-    -b| --batch_size: (default: 25) number of predictions per batch. If -b > -p, batch size will be set to -p value.
+    -b| --batch_size: (default: 25) number of predictions per batch (number of seeds for AlphaFold3),
+        should not be higher than -p.
     -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).
     -w| --wall_time: (default: 20) total time available for calibration computations, unit is hours.
     -m| --msas_precomputed: path to directory that contains computed msas.
@@ -479,7 +480,7 @@ Usage: ./run_massivefold.sh -s str -r str -p int -f str -t str [ -b int | [[-C s
 
 ### Inference workflow
 
-It launches MassiveFold with the same parameters introduced above but instead of running AFmassive or ColabFold or 
+It launches MassiveFold with the same parameters introduced above but instead of running AFmassive, ColabFold or 
 AlphaFold3 a single time, it divides it into multiple batches.
 
 For the following examples, we assume that **--model_preset=multimer** as it is the majority of cases to run MassiveFold
@@ -495,14 +496,15 @@ You can decide how the run will be divided by assigning `run_massivefold.sh` par
 ```
 
 The predictions are computed individually for each neural network (NN) model,  **-p** or **--predictions_per_model** 
-allows to specify the number of predictions desired for each chosen model.  
+allows to specify the number of predictions desired for each chosen model (number of seeds for AlphaFold3).  
 These **--predictions_per_model** are then divided into batches with a fixed **-b** or **--batch_size** to optimize the 
-run in parallel as each batch can be computed on a different GPU, if available.  
+run in parallel as each batch can be computed on a different GPU, if available.
 The last batch of each NN model is generally smaller than the others to match the number of predictions fixed by 
 **--predictions_per_model**.
 
-***N.B.***: an interest to use `run_massivefold.sh` on a single server with a single GPU is to be able to run massive 
-sampling for a structure in low priority, allowing other jobs with higher priority to be run in between.
+***N.B.***: Be aware of the fact that, with AFmassive, for each batch, only one seed is used, while for ColabFold and 
+AlphaFold3, the number of seeds is fixed by the **-p** parameter (for ColabFold, it means a different seed for each 
+prediction; for AlphaFold3, it means a different seed for each samples set).  
 
 For example, with **-b 25** and **-p 67** the predictions are divided into the following batches (separated runs), which 
 are repeated for each NN model:
@@ -526,6 +528,9 @@ adapt this walltime value to the one of the job). For instance:
 ```bash
 ./run_massivefold.sh -s ./input/H1140.fasta -r 1005_preds -p 67 -f AFmassive_params.json -c -w 10 -t AFmassive
 ```
+
+***N.B.***: an interest to use `run_massivefold.sh` on a single server with a single GPU is to be able to run massive 
+sampling for a structure in low priority, allowing other jobs with higher priority to be run in between.
 
 ### Parameters
 
