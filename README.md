@@ -433,15 +433,15 @@ module load arch/h100
 
 Example for AFmassive:
 ```bash
-./run_massivefold.sh -s input/H1140.fasta -r afm_default -p 5 -f AFmassive_params.json -t AFmassive
+./run_massivefold.sh -s input/H1140.fasta -r afm_default -p 5 -f AFmassive_params.json
 ```
 Example for ColabFold:
 ```bash
-./run_massivefold.sh -s input/H1140.fasta -r cf_default -p 5 -f ColabFold_params.json -t ColabFold
+./run_massivefold.sh -s input/H1140.fasta -r cf_default -p 5 -f ColabFold_params.json
 ```
 Example for AlphaFold3:
 ```bash
-./run_massivefold.sh -s input/H1140.fasta -r af3_default -p 5 -f AlphaFold3_params.json -t AlphaFold3
+./run_massivefold.sh -s input/H1140.fasta -r af3_default -p 5 -f AlphaFold3_params.json
 ```
 
 For more help and list of required and facultative parameters, run:
@@ -492,7 +492,7 @@ parameter not set as default).
 You can decide how the run will be divided by assigning `run_massivefold.sh` parameters *e.g.*:
 
 ```bash
-./run_massivefold.sh -s ./input/H1140.fasta -r 1005_preds -p 67 -b 25 -f AFmassive_params.json -t AFmassive
+./run_massivefold.sh -s ./input/H1140.fasta -r 1005_preds -p 67 -b 25 -f AFmassive_params.json
 ```
 
 The predictions are computed individually for each neural network (NN) model,  **-p** or **--predictions_per_model** 
@@ -526,7 +526,7 @@ the longest prediction duration. These options have to be coupled with the `-w` 
 adapt this walltime value to the one of the job). For instance:
 
 ```bash
-./run_massivefold.sh -s ./input/H1140.fasta -r 1005_preds -p 67 -f AFmassive_params.json -c -w 10 -t AFmassive
+./run_massivefold.sh -s ./input/H1140.fasta -r 1005_preds -p 67 -f AFmassive_params.json -c -w 10
 ```
 
 ***N.B.***: an interest to use `run_massivefold.sh` on a single server with a single GPU is to be able to run massive 
