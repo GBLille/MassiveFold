@@ -270,6 +270,11 @@ fi
 echo "Run $run_name on sequence $sequence_name with $predictions_per_model predictions per model"
 
 # Massivefold
+# in case jobarrays start before the end of the script
+mkdir -p ${logs_dir}/${sequence_name}/${run_name}/
+# copy massivefold inputs to logs/output
+cp $sequence_file ${logs_dir}/${sequence_name}/${run_name}/
+cp $parameters_file ${logs_dir}/${sequence_name}/${run_name}/
 
 # split the predictions in batches and store in json
 ${scripts_dir}/batching.py \
@@ -281,8 +286,6 @@ ${scripts_dir}/batching.py \
   --path_to_parameters=${parameters_file} \
   --tool $tool
 
-# in case jobarrays start before the end of the script
-mkdir -p ${logs_dir}/${sequence_name}/${run_name}/
 cp ${sequence_name}_${run_name}_batches.json ${logs_dir}/${sequence_name}/${run_name}/
 
 # align when forcing or no precomputed and detected msas
@@ -360,11 +363,10 @@ elif
   exit 1
 else
   echo "$msas_precomputed are valid."
+  mkdir -p ${output_dir}/${sequence_name}/${run_name}
   if [[ $tool == "AFmassive" ]]; then
-    mkdir -p ${output_dir}/${sequence_name}
     ln -s $(realpath $msas_precomputed/msas) ${output_dir}/${sequence_name}/
   elif [[ $tool == "AlphaFold3" ]]; then
-    mkdir -p ${output_dir}/${sequence_name}/${run_name}
     if ! $waiting_for_alignment; then
       ${scripts_dir}/unifier.py \
         --conversion input_inference \
@@ -375,6 +377,7 @@ else
         || { echo "Input preparation for inference has failed. Exiting."; exit 1; }
     fi
   fi
+  cp $parameters_file ${output_dir}/${sequence_name}/${run_name}/
 fi
 
 # Create and launch inference jobarray
@@ -407,5 +410,4 @@ ${scripts_dir}/create_jobfile.py \
 sbatch --dependency=afterok:$ARRAY_ID ${sequence_name}_${run_name}_post_treatment.slurm
 
 # Store jobiles and batches elements in logs
-mkdir -p ${logs_dir}/${sequence_name}/${run_name}/
 mv ${sequence_name}_${run_name}_* ${logs_dir}/${sequence_name}/${run_name}/
