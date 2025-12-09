@@ -860,8 +860,11 @@ In the `massivefold_runs` folder, run:
 
 ```commandline
 conda activate mf-colabfold-1.5.5
-colabfold_batch ./input/<sequence>.fasta ./output/<sequence>/msas_colabfold --msa-only
+colabfold_batch ./input/converted_for_colabfold/<sequence>.fasta ./output/<sequence>/msas_colabfold --msa-only
 ```
+
+***N.B.***: The format of the fasta file to send to the ColabFold/MMseqs2 server has to be the MMseqs2 one, which means each sequence 
+separated by ":".
 
 ### Using templates with ColabFold
 
