@@ -273,7 +273,7 @@ if __name__ == '__main__':
     if args.pickle_size == "custom":
       parameters = json.load(open(args.parameters, "r"))
       print(f"Using custom parameters:\n{parameters}")
-    pickles = lighten_all_pkl(directory, parameters, to_json=args.to_json)
+    pickles = lighten_all_pkl(directory, parameters, to_json=False)
     if delete_after_lightening and pickles != None:
       delete_pickles(pickles, directory)
 
