@@ -502,9 +502,8 @@ run in parallel as each batch can be computed on a different GPU, if available.
 The last batch of each NN model is generally smaller than the others to match the number of predictions fixed by 
 **--predictions_per_model**.
 
-***N.B.***: Be aware of the fact that, with AFmassive, for each batch, only one seed is used, while for ColabFold and 
-AlphaFold3, the number of seeds is fixed by the **-p** parameter (for ColabFold, it means a different seed for each 
-prediction; for AlphaFold3, it means a different seed for each samples set).  
+***N.B.***: For each tool, the number of seeds is fixed by the **-p** parameter (for AFmassive and ColabFold, 
+it means a different seed for each prediction; for AlphaFold3, it means a different seed for each samples set). 
 
 For example, with **-b 25** and **-p 67** the predictions are divided into the following batches (separated runs), which 
 are repeated for each NN model:
