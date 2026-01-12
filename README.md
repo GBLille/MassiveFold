@@ -2,42 +2,6 @@
 
 [![DOI](https://zenodo.org/badge/617429072.svg)](https://doi.org/10.5281/zenodo.13870060)
 
-## Table of contents
-<!-- TOC -->
-* [MassiveFold: parallelize protein structure prediction](#massivefold-parallelize-protein-structure-prediction)
-* [Installation](#installation)
-  * [Steps](#steps)
-  * [Jobfile's header](#jobfiles-header)
-    * [Building](#building)
-    * [How to add a parameter](#how-to-add-a-parameter)
-  * [Installation on Jean Zay](#installation-on-jean-zay)
-  * [Hardware recommendations](#hardware-recommendations)
-* [Uninstallation](#uninstallation)
-* [Usage](#usage)
-  * [Inference workflow](#inference-workflow)
-  * [Parameters](#parameters)
-    * [Parameters in run_massivefold.sh](#parameters-in-run_massivefoldsh)
-    * [Parameters in the json file](#parameters-in-the-json-file)
-  * [Ranking](#ranking)
-  * [Using ligands and modifications with AlphaFold3](#using-ligands-and-modifications-with-alphafold3)
-  * [Relaxation](#relaxation)
-  * [Multiple runs gathering](#multiple-runs-gathering)
-* [Ligand screening with MassiveFold](#ligand-screening-with-massivefold)
-  * [Format of the csv containing the ligands](#format-of-the-csv-containing-the-ligands)
-  * [Gathering the outputs](#gathering-the-outputs)
-* [massivefold_plots: output representation](#massivefold_plots-output-representation)
-  * [Required arguments](#required-arguments)
-  * [Facultative arguments](#facultative-arguments)
-* [Troubleshooting](#troubleshooting)
-  * [Uniref](#uniref)
-  * [Usage without SLURM](#usage-without-slurm)
-  * [Alignment crashes with ColabFold](#alignment-crashes-with-colabfold)
-  * [Using templates with ColabFold](#using-templates-with-colabfold)
-* [Citation](#citation)
-* [Authors](#authors)
-<!-- TOC -->
-
-
 MassiveFold is a tool that allows to massively expand the sampling of structure predictions by improving the computation 
 of [AlphaFold](https://github.com/google-deepmind/alphafold) based predictions.
 
