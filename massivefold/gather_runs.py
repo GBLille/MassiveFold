@@ -257,6 +257,10 @@ def create_global_ranking(runs, runs_path, output_path, ranking_types):
   elif "af3_ranking_score" in score_keys and "iptm+ptm" in score_keys:
     common_key_score = "iptm+ptm"
     ordering_score = [common_key_score, 'af3_ranking_score']
+  elif "af3_ranking_score" in score_keys and "plddts" in score_keys:
+    #common_key_score = "plddts"
+    common_key_score = "ptm" #temporary fix before ranking on plddts is implemented for af3
+    ordering_score = [common_key_score, 'af3_ranking_score']
   else:
     raise ValueError(f"ranking_debug.json in some runs uses different metrics: {score_keys}")
 
