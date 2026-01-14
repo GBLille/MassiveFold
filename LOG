@@ -1,0 +1,258 @@
+
+ N E X T F L O W   ~  version 24.10.5
+
+Launching `main.nf` [grave_nobel] DSL2 - revision: 337100ee5e
+
+
+==============================================
+MassiveFold Pipeline - AFMASSIVE
+==============================================
+Tool:                    afmassive
+Sequence:                examples/H1140.fasta
+Run name:                test
+Database directory:      /home/ubuntu/data/public/alphafold/
+==============================================
+
+Paramètres spécifiques à l'outil 'AFMASSIVE':
+   model_preset = multimer
+   max_recycles = 20
+   templates = true
+   dropout = false
+   dropout_structure_module = false
+   dropout_rates_filename = 
+   stop_recycling_below = 0
+   max_template_date = 2024-08-31
+   min_score = 0
+   max_score = 1
+   db_preset = full_dbs
+   early_stop_tolerance = 0.5
+   bfd_max_hits = 100000
+   mgnify_max_hits = 501
+   uniprot_max_hits = 50000
+   uniref_max_hits = 10000
+   params_weight = /home/ubuntu/data/wp4_core
+Using precomputed MSAs: ../H1140/msas/
+[-        ] Unifier_AFMassive -
+
+[-        ] Unifier_AFMassive       -
+[-        ] Create_batches_json     -
+[-        ] Run_inference_AFMassive -
+DEBUG final tuple: [H1140, /home/ubuntu/H1140/msas]
+msa: [H1140, /home/ubuntu/H1140/msas]
+
+[32/be27e8] Unifier_AFMassive (1)   [100%] 1 of 1, cached: 1 ✔
+[-        ] Create_batches_json     -
+[-        ] Run_inference_AFMassive -
+DEBUG final tuple: [H1140, /home/ubuntu/H1140/msas]
+msa: [H1140, /home/ubuntu/H1140/msas]
+fasta: /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta
+
+[32/be27e8] Unifier_AFMassive (1)   [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1) [100%] 1 of 1, cached: 1 ✔
+[-        ] Run_inference_AFMassive -
+DEBUG final tuple: [H1140, /home/ubuntu/H1140/msas]
+msa: [H1140, /home/ubuntu/H1140/msas]
+fasta: /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta
+Batch ready for inference: [0, 0, 0, model_1_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [1, 0, 0, model_2_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [2, 0, 0, model_3_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [3, 0, 0, model_4_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [4, 0, 0, model_5_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [5, 0, 0, model_1_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [6, 0, 0, model_2_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [7, 0, 0, model_3_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [8, 0, 0, model_4_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [9, 0, 0, model_5_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [10, 0, 0, model_1_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [11, 0, 0, model_2_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [12, 0, 0, model_3_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [13, 0, 0, model_4_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [14, 0, 0, model_5_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+
+[32/be27e8] Unifier_AFMassive (1)   [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1) [100%] 1 of 1, cached: 1 ✔
+[-        ] Run_inference_AFMassive [  0%] 0 of 15
+DEBUG final tuple: [H1140, /home/ubuntu/H1140/msas]
+msa: [H1140, /home/ubuntu/H1140/msas]
+fasta: /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta
+Batch ready for inference: [0, 0, 0, model_1_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [1, 0, 0, model_2_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [2, 0, 0, model_3_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [3, 0, 0, model_4_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [4, 0, 0, model_5_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [5, 0, 0, model_1_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [6, 0, 0, model_2_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [7, 0, 0, model_3_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [8, 0, 0, model_4_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [9, 0, 0, model_5_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [10, 0, 0, model_1_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [11, 0, 0, model_2_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [12, 0, 0, model_3_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [13, 0, 0, model_4_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [14, 0, 0, model_5_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+
+executor >  local (2)
+[32/be27e8] Unifier_AFMassive (1)                     [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                   [100%] 1 of 1, cached: 1 ✔
+[96/49a2c9] Run_inference_AFMassive (H1140 | batch#4) [  0%] 0 of 15
+DEBUG final tuple: [H1140, /home/ubuntu/H1140/msas]
+msa: [H1140, /home/ubuntu/H1140/msas]
+fasta: /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta
+Batch ready for inference: [0, 0, 0, model_1_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [1, 0, 0, model_2_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [2, 0, 0, model_3_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [3, 0, 0, model_4_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [4, 0, 0, model_5_multimer_v1, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [5, 0, 0, model_1_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [6, 0, 0, model_2_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [7, 0, 0, model_3_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [8, 0, 0, model_4_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [9, 0, 0, model_5_multimer_v2, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [10, 0, 0, model_1_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [11, 0, 0, model_2_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [12, 0, 0, model_3_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [13, 0, 0, model_4_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+Batch ready for inference: [14, 0, 0, model_5_multimer_v3, H1140, /home/ubuntu/H1140/msas, test, /home/ubuntu/MassiveFold/work/32/be27e82be6624b0a3b5770fe31d95b/input/H1140.fasta, /home/ubuntu/data/public/alphafold/, /home/ubuntu/data/wp4_core, OUT]
+
+executor >  local (3)
+[32/be27e8] Unifier_AFMassive (1)                     [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                   [100%] 1 of 1, cached: 1 ✔
+[fa/121045] Run_inference_AFMassive (H1140 | batch#3) [  6%] 1 of 15
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+executor >  local (4)
+[32/be27e8] Unifier_AFMassive (1)                     [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                   [100%] 1 of 1, cached: 1 ✔
+[d6/c3b835] Run_inference_AFMassive (H1140 | batch#0) [ 13%] 2 of 15
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+executor >  local (5)
+[32/be27e8] Unifier_AFMassive (1)                     [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                   [100%] 1 of 1, cached: 1 ✔
+[cb/1c792b] Run_inference_AFMassive (H1140 | batch#6) [ 20%] 3 of 15
+
+executor >  local (6)
+[32/be27e8] Unifier_AFMassive (1)                     [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                   [100%] 1 of 1, cached: 1 ✔
+[12/3bcd48] Run_inference_AFMassive (H1140 | batch#7) [ 26%] 4 of 15
+
+executor >  local (6)
+[32/be27e8] Unifier_AFMassive (1)                     [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                   [100%] 1 of 1, cached: 1 ✔
+[12/3bcd48] Run_inference_AFMassive (H1140 | batch#7) [ 26%] 4 of 15
+
+executor >  local (7)
+[32/be27e8] Unifier_AFMassive (1)                     [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                   [100%] 1 of 1, cached: 1 ✔
+[0a/b9c05d] Run_inference_AFMassive (H1140 | batch#5) [ 33%] 5 of 15
+
+executor >  local (8)
+[32/be27e8] Unifier_AFMassive (1)                     [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                   [100%] 1 of 1, cached: 1 ✔
+[4f/28b4cd] Run_inference_AFMassive (H1140 | batch#1) [ 40%] 6 of 15
+
+executor >  local (9)
+[32/be27e8] Unifier_AFMassive (1)                     [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                   [100%] 1 of 1, cached: 1 ✔
+[21/0f1695] Run_inference_AFMassive (H1140 | batch#8) [ 46%] 7 of 15
+
+executor >  local (10)
+[32/be27e8] Unifier_AFMassive (1)                      [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                    [100%] 1 of 1, cached: 1 ✔
+[2e/30330b] Run_inference_AFMassive (H1140 | batch#11) [ 53%] 8 of 15
+
+executor >  local (11)
+[32/be27e8] Unifier_AFMassive (1)                     [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                   [100%] 1 of 1, cached: 1 ✔
+[06/fd7bbb] Run_inference_AFMassive (H1140 | batch#9) [ 60%] 9 of 15
+
+executor >  local (11)
+[32/be27e8] Unifier_AFMassive (1)                     [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                   [100%] 1 of 1, cached: 1 ✔
+[06/fd7bbb] Run_inference_AFMassive (H1140 | batch#9) [ 60%] 9 of 15
+
+executor >  local (12)
+[32/be27e8] Unifier_AFMassive (1)                      [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                    [100%] 1 of 1, cached: 1 ✔
+[15/a09208] Run_inference_AFMassive (H1140 | batch#10) [ 66%] 10 of 15
+
+executor >  local (13)
+[32/be27e8] Unifier_AFMassive (1)                      [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                    [100%] 1 of 1, cached: 1 ✔
+[bc/9f79e3] Run_inference_AFMassive (H1140 | batch#14) [ 73%] 11 of 15
+
+executor >  local (13)
+[32/be27e8] Unifier_AFMassive (1)                      [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                    [100%] 1 of 1, cached: 1 ✔
+[bc/9f79e3] Run_inference_AFMassive (H1140 | batch#14) [ 73%] 11 of 15
+
+executor >  local (14)
+[32/be27e8] Unifier_AFMassive (1)                      [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                    [100%] 1 of 1, cached: 1 ✔
+[d9/d5f5c4] Run_inference_AFMassive (H1140 | batch#13) [ 80%] 12 of 15
+
+executor >  local (14)
+[32/be27e8] Unifier_AFMassive (1)                      [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                    [100%] 1 of 1, cached: 1 ✔
+[bc/9f79e3] Run_inference_AFMassive (H1140 | batch#14) [ 86%] 13 of 15
+
+executor >  local (15)
+[32/be27e8] Unifier_AFMassive (1)                      [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                    [100%] 1 of 1, cached: 1 ✔
+[19/81cf75] Run_inference_AFMassive (H1140 | batch#12) [ 86%] 13 of 15
+
+executor >  local (15)
+[32/be27e8] Unifier_AFMassive (1)                      [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                    [100%] 1 of 1, cached: 1 ✔
+[d9/d5f5c4] Run_inference_AFMassive (H1140 | batch#13) [ 93%] 14 of 15
+
+executor >  local (15)
+[32/be27e8] Unifier_AFMassive (1)                      [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                    [100%] 1 of 1, cached: 1 ✔
+[19/81cf75] Run_inference_AFMassive (H1140 | batch#12) [100%] 15 of 15 ✔
+
+executor >  local (15)
+[32/be27e8] Unifier_AFMassive (1)                      [100%] 1 of 1, cached: 1 ✔
+[a0/751092] Create_batches_json (1)                    [100%] 1 of 1, cached: 1 ✔
+[19/81cf75] Run_inference_AFMassive (H1140 | batch#12) [100%] 15 of 15 ✔
+Completed at: 09-Dec-2025 12:57:29
+Duration    : 1d 4h 20m 37s
+CPU hours   : 51.7 (0% cached)
+Succeeded   : 15
+Cached      : 2
+
+
