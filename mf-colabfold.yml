@@ -3,7 +3,6 @@ channels:
   - bioconda
   - conda-forge
   - nvidia
-  - defaults
 dependencies:
   - colabfold=1.5.5
   - jax=0.4.23
@@ -19,3 +18,4 @@ dependencies:
       - numpy==1.24.3
       - pandas==2.0.3
       - seaborn==0.13.2
+      - scipy==1.15.2

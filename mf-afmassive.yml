@@ -3,7 +3,6 @@ channels:
   - conda-forge
   - bioconda
   - nvidia
-  - defaults
 dependencies:
   - colabfold=1.5.5
   - jax=0.4.23
