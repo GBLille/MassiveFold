@@ -29,7 +29,7 @@ Usage: $USAGE\n\
     -j| --jobid: jobid of an alignment job to wait for inference, skips the alignments.\n\
 \n\
   Facultative options:\n\
-    -o| --only_msas: only compute alignments, the first step of MassiveFold\n\
+    -o| --only_msas: only compute alignments, the first step of MassiveFold. Overwrite MSAs directory by forcing re-computation.\n\
     -c| --calibrate: calibrate --batch_size value. Searches from the previous runs for the same 'fasta' path given\n\
         in --sequence and uses the longest prediction time found to compute the maximal number of predictions per batch.\n\
         This maximal number depends on the total time given by --wall_time.\n\
