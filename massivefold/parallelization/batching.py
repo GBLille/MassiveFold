@@ -7,6 +7,7 @@ import pandas as pd
 from copy import deepcopy
 from absl import app, flags
 import sys
+import os
 
 flags.DEFINE_integer('predictions_per_model', 25, 
                      'Choose the number of predictions inferred by each neural network model.')
@@ -74,6 +75,20 @@ def batches_all_models(batches_unit, all_models):
 
   return batches
 
+def detect_model_preset(fasta_file):
+  with open(fasta_file, 'r') as fasta_content:
+    lines = fasta_content.readlines()
+
+  model_preset = "monomer_ptm"
+  sequence_number = 0
+  for line in lines:
+    if line.startswith('>'):
+      sequence_number += 1
+    if sequence_number > 1:
+      model_preset = "multimer"
+      break
+  return model_preset
+
 def main(argv):
   if not FLAGS.path_to_parameters:
     raise ValueError('--path_to_parameters is required')
@@ -82,15 +97,19 @@ def main(argv):
     all_params = json.load(params)
 
   models = []
+  models_string = all_params['massivefold']["models_to_use"]
+  models = models_string.split(',') if models_string else []
+  model_preset =  detect_model_preset(
+    os.path.join(all_params["massivefold"]["input_dir"], f"{FLAGS.sequence_name}.fasta")
+  )
+
   tool_code = ""
   if FLAGS.tool == "AFmassive":
-    models = all_params['massivefold']['models_to_use'].split(',')
     tool_code = "AFM"
   elif FLAGS.tool == "AlphaFold3":
     models = ["AlphaFold3"]
     tool_code = "AF3"
   elif FLAGS.tool == "ColabFold":
-    models = all_params['massivefold']['models_to_use'].split(',')
     tool_code = "CF"
   else:
     print("Tool should be one of the three following: AFmassive, AlphaFold3 or ColabFold.")
@@ -100,7 +119,6 @@ def main(argv):
     model_names = ["AlphaFold3"]
 
   else:
-    model_preset = all_params[f'{tool_code}_run'][f'model_preset']  
     model_names = []
     if model_preset == 'multimer':
       model_names = [
@@ -111,11 +129,13 @@ def main(argv):
     elif model_preset == 'monomer_ptm':
       model_names = [ 'model_1_ptm', 'model_2_ptm', 'model_3_ptm', 'model_4_ptm', 'model_5_ptm' ]
 
-  non_existing_models = [ i for i in models if i not in model_names ]
+
+  non_existing_models = []
+  non_existing_models.extend([ i for i in models if i not in model_names ])
   non_existing_models.extend([ i for i in FLAGS.models_to_use if i not in model_names ])
 
   if non_existing_models:
-    raise ValueError(f"Model {', '.join(non_existing_models)} does not exist")
+    raise ValueError(f"Model '{', '.join(non_existing_models)}' does not exist for preset '{model_preset}'")
 
   if models:
     model_names = [model for model in model_names if model in models]

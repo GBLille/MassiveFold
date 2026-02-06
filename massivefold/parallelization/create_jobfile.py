@@ -4,6 +4,7 @@ import json
 from string import Template
 from absl import app, flags
 import shutil
+import os
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
@@ -97,6 +98,20 @@ def merge_header_and_template(header, template, jobfile_name):
       with open(filename, 'rb') as infile:
         shutil.copyfileobj(infile, outfile)
 
+def detect_model_preset(fasta_file):
+  with open(fasta_file, 'r') as fasta_content:
+    lines = fasta_content.readlines()
+
+  model_preset = "monomer_ptm"
+  sequence_number = 0
+  for line in lines:
+    if line.startswith('>'):
+      sequence_number += 1
+    if sequence_number > 1:
+      model_preset = "multimer"
+      break
+  return model_preset
+
 def main(argv):
   # extract the number of batch for the jobarray
   with open(f'{FLAGS.sequence_name}_{FLAGS.run_name}_batches.json', 'r') as json_batches:
@@ -124,6 +139,11 @@ def main(argv):
   all_params['massivefold']['sequence_name'] = FLAGS.sequence_name
   all_params['massivefold']['run_name'] = FLAGS.run_name
 
+  preset_dict = {"model_preset": detect_model_preset(
+    os.path.join(all_params["massivefold"]["input_dir"], f"{FLAGS.sequence_name}.fasta")
+  )}
+
+  all_params[f"{tool_code}_run"] = preset_dict | all_params[f"{tool_code}_run"]
   run_params.update(all_params['massivefold'])
   run_params.update(all_params['custom_params'])
   run_params.update(all_params[f'{tool_code}_run'])
@@ -147,5 +167,6 @@ def main(argv):
   else:
     all_templates = group_templates(all_params, ['alignment', 'jobarray', 'post_treatment'])
     create_all_jobfile(all_templates, run_params, FLAGS.path_to_parameters)
+
 if __name__ == "__main__":
   app.run(main)

@@ -6,7 +6,6 @@
     "custom_params": {
     },
     "CF_run": {
-        "model_preset": "multimer",
         "pair_strategy": "greedy",
         "use_dropout": "false",
         "num_recycle": "20",
