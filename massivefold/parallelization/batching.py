@@ -96,9 +96,6 @@ def main(argv):
   with open(FLAGS.path_to_parameters, 'r') as params:
     all_params = json.load(params)
 
-  models = []
-  models_string = all_params['massivefold']["models_to_use"]
-  models = models_string.split(',') if models_string else []
   model_preset =  detect_model_preset(
     os.path.join(all_params["massivefold"]["input_dir"], f"{FLAGS.sequence_name}.fasta")
   )
@@ -119,6 +116,9 @@ def main(argv):
     model_names = ["AlphaFold3"]
 
   else:
+    models = []
+    models_string = all_params['massivefold']["models_to_use"]
+    models = models_string.split(',') if models_string else []
     model_names = []
     if model_preset == 'multimer':
       model_names = [
@@ -130,17 +130,17 @@ def main(argv):
       model_names = [ 'model_1_ptm', 'model_2_ptm', 'model_3_ptm', 'model_4_ptm', 'model_5_ptm' ]
 
 
-  non_existing_models = []
-  non_existing_models.extend([ i for i in models if i not in model_names ])
-  non_existing_models.extend([ i for i in FLAGS.models_to_use if i not in model_names ])
+    non_existing_models = []
+    non_existing_models.extend([ i for i in models if i not in model_names ])
+    non_existing_models.extend([ i for i in FLAGS.models_to_use if i not in model_names ])
 
-  if non_existing_models:
-    raise ValueError(f"Model '{', '.join(non_existing_models)}' does not exist for preset '{model_preset}'")
+    if non_existing_models:
+      raise ValueError(f"Model '{', '.join(non_existing_models)}' does not exist for preset '{model_preset}'")
 
-  if models:
-    model_names = [model for model in model_names if model in models]
-  if FLAGS.models_to_use:
-    model_names = [model for model in model_names if model in FLAGS.models_to_use]
+    if models:
+      model_names = [model for model in model_names if model in models]
+    if FLAGS.models_to_use:
+      model_names = [model for model in model_names if model in FLAGS.models_to_use]
 
   print(f"Running inference on models: {(', ').join(model_names)}") 
   print(f"Running {FLAGS.predictions_per_model} predictions on each of the {len(model_names)} models")
