@@ -75,14 +75,14 @@ def extract_af3_batch_input_msas(directory: str, json_files: list):
         path_of_msas = os.path.abspath(msas_templates_paths[f"{entity}_{entity_count[entity]}"][msas])
         data["sequences"][seq_ind][entity][f"{msas}Path"] = path_of_msas
 
-        # then the templates
-        if not "templates" in data["sequences"][seq_ind][entity] or not data["sequences"][seq_ind][entity]["templates"]:
-          continue
-        templates = data["sequences"][seq_ind][entity]["templates"]
-        for n, template in enumerate(templates):
-          data["sequences"][seq_ind][entity]["templates"][n]["mmcif"] = ""
-          path_of_mmcif = os.path.abspath(msas_templates_paths[f"{entity}_{entity_count[entity]}"]["templates"][n])
-          data["sequences"][seq_ind][entity]["templates"][n]["mmcifPath"] = path_of_mmcif
+      # then the templates
+      if not "templates" in data["sequences"][seq_ind][entity] or not data["sequences"][seq_ind][entity]["templates"]:
+        continue
+      templates = data["sequences"][seq_ind][entity]["templates"]
+      for n, template in enumerate(templates):
+        data["sequences"][seq_ind][entity]["templates"][n]["mmcif"] = ""
+        path_of_mmcif = os.path.abspath(msas_templates_paths[f"{entity}_{entity_count[entity]}"]["templates"][n])
+        data["sequences"][seq_ind][entity]["templates"][n]["mmcifPath"] = path_of_mmcif
 
     json.dump(data, open(filename, 'w'), indent=4)
 
