@@ -46,13 +46,13 @@ MassiveFold was developed to run massive sampling with [AFmassive](https://githu
 Follow the MassiveFold [installation guide](docs/installation.md).  
 It details these steps of the MassiveFold installation:
 
-1. [**Retrieve MassiveFold**](docs/installation.md#1-retrieve-massivefold)
+1. [**Retrieve MassiveFold**](docs/installation.md#retrieve-massivefold)
 
-2. [**Install MassiveFold**](docs/installation.md#2-install-massivefold)
+2. [**Install MassiveFold**](docs/installation.md#install-massivefold)
 
-3. [**Create header files**](docs/installation.md#3-create-header-files)
+3. [**Create header files**](docs/installation.md#create-headers)
 
-4. [**Set custom parameters**](docs/installation.md#4-set-custom-parameters)
+4. [**Set custom parameters**](docs/installation.md#set-custom-params)
 
 ## Uninstallation
 
@@ -62,7 +62,7 @@ to keep from the `output` and `log` directories somewhere else.
 
 ## Usage
 
-Usage section includes the most simple way to run MassiveFold with examples. For more detail on its functionning and other cases, see the [usage documentation](docs/usage.md).
+Usage section includes the most simple way to run MassiveFold with examples. For more detail on its functioning and other cases, see the [usage documentation](docs/usage.md).
 
 Activate the conda environment, then launch MassiveFold.
 ```bash
@@ -90,7 +90,7 @@ For more details on this usage, see [MassiveFold plots documentation](docs/plots
 
 ## Troubleshooting
 
-Some known issues were identified and can be prevented by following steps described in the [troublehshooting documentation](docs/troubleshooting.md).
+Some known issues were identified and can be prevented by following steps described in the [troubleshooting documentation](docs/troubleshooting.md).
 
 ## Citation
 
@@ -109,6 +109,6 @@ Björn Wallner (Linköping University, Sweden)
 Marc F Lensink (UGSF - UMR8576, France)  
 Guillaume Brysbaert (UGSF - UMR 8576, France)  
 
-This work was carried out as part of Work Package 4 of the [MUDIS4LS project](https://www.france-bioinformatique.fr/actualites/mudis4ls-le-projet-despaces-numeriques-mutualises-pour-les-sciences-du-vivant/) led by the French Bioinformatics 
+This work was carried out as part of Work Package 4 of the [MUDIS4LS project](https://www.ifb-elixir.fr/rd-innovation/projet/mudis4ls/) led by the French Bioinformatics 
 Institute ([IFB](https://www.france-bioinformatique.fr/)). It was initiated at the [IDRIS Open Hackathon](http://www.idris.fr/annonces/idris-gpu-hackathon-2023.html), part of the Open Hackathons program. 
 The authors would like to acknowledge OpenACC-Standard.org for their support.

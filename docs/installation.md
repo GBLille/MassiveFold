@@ -5,6 +5,8 @@ MassiveFold was developed to run massive sampling with [AFmassive](https://githu
 
 ### Steps
 
+<a id="retrieve-massivefold"></a>
+
 1. **Retrieve MassiveFold**
 
 ```bash
@@ -24,6 +26,8 @@ and move them to a 'params' folder in the sequence databases folder (same parame
 For AlphaFold3 runs, two additional installation steps are required to use MassiveFold:
 - Download [sequence databases](https://github.com/google-deepmind/alphafold3/blob/main/docs/installation.md#obtaining-genetic-databases)
 - Retrieve the [neural network (NN) models parameters](https://github.com/google-deepmind/alphafold3?tab=readme-ov-file#obtaining-model-parameters)
+
+<a id="install-massivefold"></a>
 
 2. **Install MassiveFold**
 
@@ -107,6 +111,8 @@ in this folder, create symbolic links to the shared database files:
 ls -s <SHARED_DB_PATH>/* ~/af3_db/
 ```
 
+<a id="create-headers"></a>
+
 3. **Create header files**  
 
 Refer to [Jobfile's header](#jobfiles-header) for this installation step.
@@ -120,6 +126,8 @@ another path, this path has to be set in the `AFmassive_params.json` and/or `Col
 
 Headers for Jean Zay cluster are provided as examples to follow (named `example_header_<step>_jeanzay.slurm`), to use 
 them, rename each one following the previously mentioned naming convention.  
+
+<a id="set-custom-params"></a>
 
 4. **Set custom parameters**
 
