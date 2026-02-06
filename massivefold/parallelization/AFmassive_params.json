@@ -7,7 +7,6 @@
     "custom_params": {
     },
     "AFM_run": {
-        "model_preset": "multimer",
         "max_recycles": "20",
         "templates": "true",
         "dropout": "false",
