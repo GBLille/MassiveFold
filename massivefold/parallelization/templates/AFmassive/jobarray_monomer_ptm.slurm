@@ -47,6 +47,7 @@ templates=$templates
 min_score=$min_score
 max_score=$max_score
 stop_recycling_below=$stop_recycling_below
+fixed_seed=$fixed_seed
 
 # parameters for each task in the job array
 batches_path=${logs_dir}/${sequence_name}/${run_name}
@@ -68,6 +69,7 @@ echo "python $$(which $${run_massivefold})
     --use_precomputed_msas=$${use_precomputed_msas}
     --end_prediction=$${batch_end}
     --alignments_only=$${alignments_only}
+    --fixed_seed=$${fixed_seed}
     --dropout=$${dropout}
     --dropout_structure_module=$${dropout_structure_module}
     --dropout_rates_filename=$${dropout_rates_filename}
@@ -102,6 +104,7 @@ time python $$(which $${run_massivefold}) \
     --max_template_date=$${max_template_date} \
     --use_precomputed_msas=$${use_precomputed_msas} \
     --end_prediction=$${batch_end} \
+    --fixed_seed=$${fixed_seed} \
     --alignments_only=$${alignments_only} \
     --dropout=$${dropout} \
     --dropout_structure_module=$${dropout_structure_module} \
