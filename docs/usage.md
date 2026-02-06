@@ -17,6 +17,7 @@ Set first the [parameters of your run](https://github.com/GBLille/AFmassive?tab=
     "max_template_date": "2024-08-31",
     "min_score": "0",
     "max_score": "1",
+    "fixed_seed": "",
     "db_preset": "full_dbs",
     "early_stop_tolerance": "0.5",
     "bfd_max_hits": "100000",
@@ -117,7 +118,7 @@ Usage: ./run_massivefold.sh -s str -r str -p int -f str [-t str] [ -b int | [[-C
     -j| --jobid: jobid of an alignment job to wait for inference, skips the alignments.
 
   Facultative options:
-    -o| --only_msas: only compute alignments, the first step of MassiveFold
+    -o| --only_msas: only compute alignments, the first step of MassiveFold. Overwrite MSAs directory by forcing re-computation.
     -c| --calibrate: calibrate --batch_size value. Searches from the previous runs for the same 'fasta' path given
         in --sequence and uses the longest prediction time found to compute the maximal number of predictions per batch.
         This maximal number depends on the total time given by --wall_time.

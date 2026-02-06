@@ -84,7 +84,7 @@ Example for AlphaFold3:
 ```
 ## massivefold_plots: output representation
 
-Additionally to configurating the plots parameters inside MassiveFold JSON param file, the plotting module can also be used on an already produced MassiveFold (or AlphaFold2) output to evaluate visually its predictions.  
+Additionally to the configuration of the plots parameters inside MassiveFold JSON param file, the plot module can also be used on an already produced MassiveFold (or AlphaFold2) output to evaluate visually its predictions.  
 
 For more details on this usage, see [MassiveFold plots documentation](docs/plots.md).
 
