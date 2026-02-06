@@ -181,7 +181,6 @@ if [ -d ${output_dir}/$sequence_name/$run_name ]; then
 fi
 
 # calibration: check time taken for a previous run
-
 number_of_runs=$(ls -l ${logs_dir}/${sequence_name} | wc -l)
 if ! $calibration && [ -z $calibration_path ]; then
   echo "No calibration for the batch size."
@@ -284,7 +283,8 @@ ${scripts_dir}/batching.py \
   --batch_size=${batch_size} \
   --models_to_use=${models_to_use} \
   --path_to_parameters=${parameters_file} \
-  --tool $tool
+  --tool $tool \
+  || { echo "Batch creation failed. Exiting."; exit 1; }
 
 cp ${sequence_name}_${run_name}_batches.json ${logs_dir}/${sequence_name}/${run_name}/
 
@@ -354,8 +354,9 @@ if eval $conditions_to_align; then
     echo "Only run sequence alignment."
     exit 1
   fi
+elif [[ $waiting_for_alignment = true ]]; then
+  echo "Running inference with dependency on jobid $ALIGNMENT_ID"
 elif
-  !( [[ $waiting_for_alignment = true ]]) &&
   !( [[ $tool == "AFmassive" ]] && [[ -d $msas_precomputed/msas ]] ) &&
   !( [[ $tool == "ColabFold" ]] && [[ -d $msas_precomputed/msas_colabfold ]] ) &&
   !( [[ $tool == "AlphaFold3" ]] && [[ -f $msas_precomputed/msas_alphafold3_data.json ]]); then
