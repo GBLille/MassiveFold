@@ -84,13 +84,13 @@ def main(argv):
   models = []
   tool_code = ""
   if FLAGS.tool == "AFmassive":
-    models = all_params['massivefold']['models_to_use']
+    models = all_params['massivefold']['models_to_use'].split(',')
     tool_code = "AFM"
   elif FLAGS.tool == "AlphaFold3":
     models = ["AlphaFold3"]
     tool_code = "AF3"
   elif FLAGS.tool == "ColabFold":
-    models = all_params['massivefold']['models_to_use']
+    models = all_params['massivefold']['models_to_use'].split(',')
     tool_code = "CF"
   else:
     print("Tool should be one of the three following: AFmassive, AlphaFold3 or ColabFold.")
@@ -110,6 +110,12 @@ def main(argv):
       ]
     elif model_preset == 'monomer_ptm':
       model_names = [ 'model_1_ptm', 'model_2_ptm', 'model_3_ptm', 'model_4_ptm', 'model_5_ptm' ]
+
+  non_existing_models = [ i for i in models if i not in model_names ]
+  non_existing_models.extend([ i for i in FLAGS.models_to_use if i not in model_names ])
+
+  if non_existing_models:
+    raise ValueError(f"Model {', '.join(non_existing_models)} does not exist")
 
   if models:
     model_names = [model for model in model_names if model in models]
