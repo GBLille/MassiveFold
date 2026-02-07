@@ -1,5 +1,5 @@
 source $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-afmassive-1.1.5
+conda activate mf-afmassive-1.1.6
 
 date
 
