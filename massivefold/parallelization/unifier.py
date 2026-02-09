@@ -151,7 +151,14 @@ def glycan_traversal(sugar, parent_index, linkage, state):
   # new residue index for the current sugar instance.
   current_index = state['residue_counter'][0]
   state['residue_counter'][0] += 1
-  state['ccdCodes'].append(state['map_code'][sugar.serialize(name="iupac_lite")])
+
+  # if an alternative anomery is recorded in the ccdcode map, use it instead
+  sugar_name, sugar_anomery = sugar.serialize(name="iupac_lite"), sugar.anomer
+  full_name = f"{sugar_anomery.name[0]}-{sugar_name}"
+  if full_name in state["map_code"]:
+    sugar_name = full_name
+
+  state['ccdCodes'].append(state['map_code'][sugar_name])
   # bond caracterization
   if parent_index is not None and linkage is not None:
     parent_atom, child_atom = "O" + str(linkage.parent_position), "C" + str(linkage.child_position)
@@ -172,7 +179,7 @@ def af3_resolve_glycan(glycan_str, chain_id):
     "Gal": "GAL", "a-Gal": "GAL", "b-Gal": "GLB",
     "Glc": "GLC", "a-Glc": "GLC", "b-Glc": "BGC",
     "Man": "MAN", "a-Man": "BMA", "b-Man": "BMA",
-    "Fuc": "FUC", "a-Fuc": "FCA", "b-Fuc": "FCB",
+    "Fuc": "FUC" ,# "a-Fuc": "FCA", "b-Fuc": "FCB", => FCA would be D-Fucose
     "GlcNAc": "NAG", "Glc2NAc": "NAG",
     "GalNAc": "NGA", "Gal2NAc": "NGA",
     "Neu5Ac": "SIA"
@@ -211,18 +218,18 @@ def af3_records_to_sequences(records, fasta_ids_sequences):
   # format A, B, ..., Z, AA, BA,... ZA, AB, BB, ..., ZB, ......., AZ, BZ, ..., ZZ
   letters = string.ascii_uppercase
   all_ids_combinations = list(letters) + [a + b for b in letters for a in letters]
-  all_ids_combinations = [ i for i in all_ids_combinations if i not in used_ids ]
+  all_ids_remaining = [ i for i in all_ids_combinations if i not in used_ids ]
 
   remaining_records = records.copy()
   all_bonds = []
   # Record format: {"entity": entity, "sequence_type": "sequence|ccdCodes|smiles" "seq": record}
   all_sequences = []
   all_entities = []
-  for record, chain_id in zip(records, all_ids_combinations):
+  for record, chain_id in zip(records, all_ids_remaining):
     record_type = record["sequence_type"][:]
     # transform glycosylation record to standard record for easy translation to AF3 input format
     if record["sequence_type"] == "glycosylation":
-      chain, position  = used_ids[record["on_chain_index"]], record["at_position"]
+      chain, position  = record["on_chain_id"], record["at_position"]
       glycosylated_residue = fasta_ids_sequences[chain][position-1]
 
       ccdCodes, glycan_bondedAtomPairs = af3_resolve_glycan(record["seq"], chain_id) 
@@ -308,11 +315,14 @@ def af3_entities_to_records(af3_params, fasta_ids_sequences):
   # parse user inputed post translational modifications and register them as records
   PTMs = af3_params["modifications"]
   if PTMs:
+    letters = string.ascii_uppercase
+    all_ids_combinations = list(letters) + [a + b for b in letters for a in letters]
+    ordered_used_ids = [ id_ordered for id_ordered in all_ids_combinations if id_ordered in used_ids ]
     # parse each chain's list of PTMs
     for i, single_chain_ptms in enumerate(PTMs):
       for ptm in single_chain_ptms:
         record = {}
-        record.update({"sequence_type": ptm["type"], "on_chain_index": i})
+        record.update({"sequence_type": ptm["type"], "on_chain_index": i, "on_chain_id": ordered_used_ids[i]})
         # add informations specific to modification
         if ptm["type"] == "glycosylation":
           if not "sequence" in ptm or not ptm["sequence"]:
@@ -330,14 +340,14 @@ def af3_entities_to_records(af3_params, fasta_ids_sequences):
         for pos in list(sorted(map(int, ptm["positions"]))):
           single_record = copy.deepcopy(record)
           single_record["at_position"] = pos
-          assert pos <= len(fasta_ids_sequences[used_ids[i]]), \
-          f"{ptm['type']} position {pos} is higher than the total length of the sequence ({len(fasta_ids_sequences[used_ids[i]])})"
+          assert pos <= len(fasta_ids_sequences[ordered_used_ids[i]]), \
+          f"{ptm['type']} position {pos} is higher than the total length of the sequence ({len(fasta_ids_sequences[ordered_used_ids[i]])})"
           additional_records.append(single_record)
         # display modification info
         print(
           f"- {ptm['type'].capitalize()}: \n{ptm['sequence']}"
           f"\nAt positions {', '.join(list(map(str, ptm['positions'])))} on:\n"
-          f"{fasta_ids_sequences[used_ids[i]]}"
+          f"{fasta_ids_sequences[ordered_used_ids[i]]}"
         )
 
   PTMs = [ ptm for ptm in additional_records if ptm["sequence_type"] in all_ptm_types ]
