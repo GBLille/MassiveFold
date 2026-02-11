@@ -7,7 +7,6 @@ Set first the [parameters of your run](https://github.com/GBLille/AFmassive?tab=
 ```json
 "AFM_run":
 {
-    "model_preset": "multimer",
     "max_recycles": "20",
     "templates": "true",
     "dropout": "false",
@@ -30,7 +29,6 @@ or in the `ColabFold_params.json` file, for instance:
 ```json
 "CF_run":
 {
-    "model_preset": "multimer",
     "pair_strategy": "greedy",
     "use_dropout": "false",
     "num_recycle": "20",
@@ -50,7 +48,6 @@ or in the `AlphaFold3_params.json` file, for instance
      "PTMs": [
             [{"type": "", "sequence": "", "positions": []}]
      ],
-    "model_preset": "multimer",
     "max_template_date": "2024-11-28",
     "num_diffusion_samples": "5",
     "unpairedMsa": "true",
@@ -251,7 +248,6 @@ section (**models_to_use** and **pkl_format**).
 ```json
 "AFM_run":
 {
-    "model_preset": "multimer",
     "max_recycles": "20",
     "templates": "true",
     "dropout": "false",
@@ -351,7 +347,6 @@ the second is glycosylated twice (same glycan on residues 74 and 84).
                     }
             ]
         ],
-        "model_preset": "multimer",
         "max_template_date": "2024-11-28",
         "num_diffusion_samples": "5",
         "unpairedMsa": "true",
