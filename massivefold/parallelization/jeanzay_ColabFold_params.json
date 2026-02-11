@@ -20,7 +20,6 @@
         "jeanzay_jobarray_time": "19:59:59"
     },
     "CF_run": {
-        "model_preset": "multimer",
         "use_dropout": "false",
         "num_recycle": "20",
         "recycle_early_stop_tolerance": "0.5",

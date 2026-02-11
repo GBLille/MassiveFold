@@ -27,7 +27,6 @@
         "modifications": [
             [{"type": "", "sequence": "", "positions": []}]
         ],
-        "model_preset": "multimer",
         "max_template_date": "2024-11-28",
         "num_diffusion_samples": "5",
         "unpairedMsa": "true",
