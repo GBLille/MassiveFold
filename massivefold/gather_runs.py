@@ -296,6 +296,19 @@ def main():
   delete_symlinks(runs_path, runs)
   create_symlink_without_ranked(runs_path, runs)
   whole_prediction_ranking = create_global_ranking(runs, runs_path, output_path, ranking_types)
+  if not args.only_ranking:
+    file_index = whole_prediction_ranking.columns.tolist().index("file")
+    whole_prediction_ranking["extension"] = '.' + whole_prediction_ranking["file"].str.split('.').str[1]
+    folder = os.path.basename(output_path)
+    whole_prediction_ranking.insert(file_index, folder,
+       whole_prediction_ranking["parameters"] + '_'
+      + whole_prediction_ranking["model_name"] + whole_prediction_ranking["extension"]
+    )
+    if args.include_rank:
+        whole_prediction_ranking[folder] = 'ranked_' + \
+          (whole_prediction_ranking["global_rank"] - 1).astype(str) + '_' + \
+          whole_prediction_ranking[folder]
+    whole_prediction_ranking = whole_prediction_ranking.drop(columns={"extension"})
 
   assert not whole_prediction_ranking.empty
   other_csv = [ csv for csv in os.listdir(runs_path) if csv.endswith('.csv') and csv != "ranking.csv"]
