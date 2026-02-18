@@ -127,11 +127,8 @@ Usage: ./run_massivefold.sh -s str -r str -p int -f str [-t str] [ -b int | [[-C
 It launches MassiveFold with the same parameters introduced above but instead of running AFmassive, ColabFold or 
 AlphaFold3 a single time, it divides it into multiple batches.
 
-For the following examples, we assume that **--model_preset=multimer** as it is the majority of cases to run MassiveFold
-in parallel.
-
-However, **--model_preset=monomer_ptm** works too and needs to be adapted accordingly, at least the models to use (if 
-parameter not set as default).
+***N.B.***: with AFmassive and ColabFold, it is no more useful to specify if system to model is a monomer or a multimer 
+as the detection is automatic now.
 
 You can decide how the run will be divided by assigning `run_massivefold.sh` parameters *e.g.*:
 
@@ -156,8 +153,8 @@ are repeated for each NN model:
   2.  Second batch: **--start_prediction=25** and **--end_prediction=49**
   3.  Third batch: **--start_prediction=50** and **--end_prediction=67** 
 
-By default (if **--models_to_use** is not assigned), all NN models are used: with **--model_preset=multimer**, 
-15 models in total = 5 neural network models $\times$ 3 AlphaFold2 versions; with **--model_preset=monomer_ptm**, 5 
+By default (if **--models_to_use** is not assigned), all NN models are used: for protein complexes, 
+15 models in total = 5 neural network models $\times$ 3 AlphaFold2 versions; for monomers, 5 
 neural network models are used.
 
 The prediction number per model can be adjusted, here with 67 per model and 15 models, it amounts to **1005 predictions 
