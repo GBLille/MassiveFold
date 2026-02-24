@@ -9,11 +9,12 @@ if [[ " ${@} " == *" -h "* ]] || [[ " ${@} " == *" --help "* ]]; then
   echo -e "\
 Usage: $USAGE\n\
   Required arguments:\n\
-    -s| --sequence: path of the fasta file containing sequence(s) used for screening.\n\
-    -l| --ligands: csv file containing the list of ligands to use for screening. \n\
+    --receptors: csv file containing the list of receptors to use for screening. \n\
+    --ligands: csv file containing the list of ligands to use for screening. \n\
     -f| --parameters: json file's path containing the parameters used for the screening.\n\
 \n\
   Facultative arguments:\n\
+    --context: csv file containing the list of ligands to use for screening. \n\
     -p| --predictions_per_model: number of seed used. Each seed will have 5 samples predicted.\n\
         In total, with -p n, you will have 5n predictions computed.\n\
     -m| --msas_precomputed: path to directory that contains computed msas.\n\
@@ -37,8 +38,16 @@ while true; do
       sequence_file=$2
       shift 2
       ;;
-    -l|--ligands)
+    --ligands)
       ligand_file=$2
+      shift 2
+      ;;
+    --receptors)
+      recepot_file=$2
+      shift 2
+      ;;
+    --context)
+      additional_context=$2
       shift 2
       ;;
     -p|--predictions_per_model)
@@ -71,6 +80,7 @@ done
 if
   [ -z "$sequence_file" ] ||
   [ -z "$ligand_file" ] ||
+  [ -z "$receptor_file" ] ||
   [ -z "$parameters_file" ]; then
   echo -e "Usage: $USAGE"
   echo "Argument(s) missing"
