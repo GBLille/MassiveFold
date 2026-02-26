@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "massivefold"
+version = "1.5.7"
+description = "MassiveFold CLI"
+readme = "README.md"
+requires-python = ">=3.9"
+
+[project.scripts]
+massivefold = "massivefold.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+massivefold = [
+  "parallelization/**/*.py",
+  "parallelization/**/*.json",
+  "parallelization/**/*.slurm",
+  "parallelization/templates/**/*",
+  "parallelization/headers/**/*",
+  "plots/**/*.py"
+]
