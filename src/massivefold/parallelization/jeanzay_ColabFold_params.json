@@ -1,13 +1,13 @@
 {
     "massivefold": {
-        "run_massivefold_plots": "../massivefold/massivefold_plots.py",
+        "run_massivefold_plots": "../src/massivefold/massivefold_plots.py",
         "data_dir": "$DSDIR/ColabFold/230517",
         "jobfile_headers_dir": "./headers",
-        "jobfile_templates_dir": "../massivefold/parallelization/templates",
+        "jobfile_templates_dir": "../src/massivefold/parallelization/templates",
         "output_dir": "./output",
         "logs_dir": "./log",
         "input_dir": "./input",
-        "scripts_dir": "../massivefold/parallelization",
+        "scripts_dir": "../src/massivefold/parallelization",
         "models_to_use": "",
         "pkl_format": "full"
     },

@@ -157,6 +157,12 @@ output_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.loa
 logs_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['massivefold']['logs_dir'])")
 scripts_dir=$(cat $parameters_file | python3 -c "import sys, json; print(json.load(sys.stdin)['massivefold']['scripts_dir'])")
 
+if [ ! -f "${scripts_dir}/batching.py" ]; then
+  echo "No MassiveFold scripts found in '${scripts_dir}'."
+  echo "Set 'massivefold.scripts_dir' to a valid directory in ${parameters_file}."
+  exit 1
+fi
+
 sequence_name=$(basename -s .fasta $sequence_file)
 
 if [ ! -f ${sequence_file} ]; then

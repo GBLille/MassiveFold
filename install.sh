@@ -3,7 +3,7 @@
 setup_params () {
   tool=$1
   param_file=$runs/${tool}_params.json
-  cp massivefold/parallelization/${tool}_params.json $param_file
+  cp src/massivefold/parallelization/${tool}_params.json $param_file
   if [ $tool == "AFmassive" ]; then
     db=$alphafold_databases
   elif [ $tool == "AlphaFold3" ]; then
@@ -23,10 +23,10 @@ if '$tool' == 'AFmassive':
   params['massivefold']['run_massivefold'] = 'run_AFmassive.py'
 if '$tool' == 'AlphaFold3':
   params['massivefold']['run_massivefold'] = 'run_alphafold.py'
-params['massivefold']['run_massivefold_plots'] = 'massivefold_plots.py'
+params['massivefold']['run_massivefold_plots'] = '../src/massivefold/massivefold_plots.py'
 params['massivefold']['data_dir'] = '$(realpath $db)'
-params['massivefold']['jobfile_templates_dir'] = '../massivefold/parallelization/templates'
-params['massivefold']['scripts_dir'] = '../massivefold/parallelization'
+params['massivefold']['jobfile_templates_dir'] = '../src/massivefold/parallelization/templates'
+params['massivefold']['scripts_dir'] = '../src/massivefold/parallelization'
 params['massivefold']['jobfile_headers_dir'] = './headers'
 params['massivefold']['output_dir'] = './output'
 params['massivefold']['logs_dir'] = './log'
@@ -56,8 +56,8 @@ install_env () {
     conda activate massivefold
     conda config --env --set channel_priority flexible
 
-    cp -r massivefold/plots $CONDA_PREFIX/bin/
-    cp massivefold/massivefold_plots.py $CONDA_PREFIX/bin/
+    cp -r src/massivefold/plots $CONDA_PREFIX/bin/
+    cp src/massivefold/massivefold_plots.py $CONDA_PREFIX/bin/
     chmod +x $CONDA_PREFIX/bin/massivefold_plots.py
 
   elif [[ $env == "colabfold" ]]; then
@@ -215,14 +215,14 @@ cp examples/H1140.fasta $runs/input
 # scripts and files for each pipeline (currently only AFmassive)
 cp massivefold/run_massivefold.sh $runs
 cp massivefold/run_massivefold_screening.sh $runs
-cp -r massivefold/parallelization/headers $runs
+cp -r src/massivefold/parallelization/headers $runs
 
 if [[ $host_is_jeanzay == "true" ]]; then
   mkdir $HOME/af3_datadir/
   ln -s $DSDIR/Alphafold3/ $HOME/af3_datadir/
-  cp massivefold/parallelization/jeanzay_AFmassive_params.json $runs/AFmassive_params.json
-  cp massivefold/parallelization/jeanzay_AlphaFold3_params.json $runs/AlphaFold3_params.json
-  cp massivefold/parallelization/jeanzay_ColabFold_params.json $runs/ColabFold_params.json
+  cp src/massivefold/parallelization/jeanzay_AFmassive_params.json $runs/AFmassive_params.json
+  cp src/massivefold/parallelization/jeanzay_AlphaFold3_params.json $runs/AlphaFold3_params.json
+  cp src/massivefold/parallelization/jeanzay_ColabFold_params.json $runs/ColabFold_params.json
   echo "Taking Jean Zay's prebuilt headers and renaming them."
   mv $runs/headers/example_header_alignment_jeanzay.slurm $runs/headers/alignment.slurm
   mv $runs/headers/example_header_jobarray_jeanzay.slurm $runs/headers/jobarray.slurm
