@@ -1,34 +1,15 @@
 #!/usr/bin/env python
 
-from absl import flags, app
+import argparse
 import pandas as pd
 from math import floor, ceil
 import json
 import os 
 
-FLAGS = flags.FLAGS
-flags.DEFINE_enum(
-  "get", "models", ["models", "batch_calibration", "analytics"],
-  "Specify the role of the script."
-  )
-flags.DEFINE_string(
-  "input", "",
-  "When --get='models', --input designates the output directory containing"
-  "the ranking file where --top_n models are extracted from"
-  "When --get='batch_calibration', --input designates the log directory path"
-  "of the run containing the times taken for prediction"
-  )
-flags.DEFINE_integer(
-  "top_n", 5, "The number of top AF2 NN models to be extracted"
-  "Specify how many of the best models should be included in the final selection."
-  )
-flags.DEFINE_float('wall_time', 20, 'Inference time in hour to not exceed.')
-flags.DEFINE_float('add_excess', 0.1, 'Excess time proportion for the inference of a single prediction')
-
 def extract_longer(jobarray_path):
   time_lines = os.popen(f"cat {jobarray_path}/jobarray_* | grep 'predict time'").read()
   if not time_lines:
-    print(f'No prediction for {os.path.basename(FLAGS.logs_dir)} yet')
+    print(f'No prediction for {os.path.basename(jobarray_path)} yet')
     exit()
   i_thing = time_lines.split(' ')[0]
   time_lines_list = time_lines.split(i_thing)
@@ -75,22 +56,50 @@ def get_top_models(scores, number):
       break
   print(','.join(list(models)))
 
-def main(argv):
-  if FLAGS.get == "models":
-    path = os.path.expanduser(FLAGS.input)
+def main(get, input, top_n, wall_time, add_excess):
+  if get == "models":
+    path = os.path.expanduser(input)
     with open(f"{path}/ranking_debug.json", "r") as data:
       data = json.load(data)  
-    get_top_models(data, FLAGS.top_n)
+    get_top_models(data, top_n)
 
-  elif FLAGS.get == "batch_calibration":
-    path_to_logs = FLAGS.input
-    wall_time_h = FLAGS.wall_time
+  elif get == "batch_calibration":
+    path_to_logs = input
+    wall_time_h = wall_time
     max_time = extract_longer(path_to_logs)
-    safe_time = safen_time(max_time, FLAGS.add_excess)
+    safe_time = safen_time(max_time, add_excess)
     print(max_pred_nb_for_walltime(wall_time_h, safe_time))
 
-  elif FLAGS.get == "analytics":
+  elif get == "analytics":
+    path = os.path.expanduser(input)
+    with open(f"{path}/ranking_debug.json", "r") as data:
+      data = json.load(data)
     some_stats(data)
 
 if __name__ == "__main__":
-  app.run(main)
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+    '--get',
+    default='models',
+    choices=['models', 'batch_calibration', 'analytics'],
+    help='Specify the role of the script.')
+  parser.add_argument(
+    '--input',
+    default='',
+    help="When --get='models', --input designates the output directory containing the ranking file where --top_n models are extracted from. When --get='batch_calibration', --input designates the log directory path of the run containing the times taken for prediction.")
+  parser.add_argument(
+    '--top_n',
+    type=int,
+    default=5,
+    help='The number of top AF2 NN models to be extracted. Specify how many of the best models should be included in the final selection.')
+  parser.add_argument('--wall_time', type=float, default=20, help='Inference time in hour to not exceed.')
+  parser.add_argument('--add_excess', type=float, default=0.1, help='Excess time proportion for the inference of a single prediction')
+
+  parsed = parser.parse_args()
+  main(
+    parsed.get,
+    parsed.input,
+    parsed.top_n,
+    parsed.wall_time,
+    parsed.add_excess
+  )

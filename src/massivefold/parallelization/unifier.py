@@ -2,7 +2,7 @@
 import os
 import re
 import copy
-from absl import flags, app
+import argparse
 from Bio import SeqIO
 import pickle
 from shutil import move as mv, copy as cp
@@ -13,38 +13,6 @@ import shutil
 import string
 import random
 import numpy as np
-
-FLAGS = flags.FLAGS
-flags.DEFINE_enum(
-  'conversion',
-  None,
-  ['input', 'input_inference', 'output', 'output_singular'],
-  "What to convert."
-  "'input' to get the fasta format of colabfold from a traditionnal multichain pdb."
-  "'output' to transform colabfold output to the alphafold one.")
-flags.DEFINE_string(
-  'to_convert',
-  '',
-  'Path of the fasta file (for --conversion=input) or output directory (for --conversion=output)'
-  'To convert')
-flags.DEFINE_enum(
-  'tool',
-  None,
-  ["AFmassive", "ColabFold", "AlphaFold3"],
-  "Chose the tool from which the input/output should be unified.")
-flags.DEFINE_string(
-  "json_params",
-  "",
-  "Set json file path for input parameters. "
-  "Necessary when using '--tool AlphaFold3' coupled with '--conversion input'")
-flags.DEFINE_string(
-  'batches_file',
-  '',
-  'Path to batches file. If --conversion=output, this file is necessary.')
-flags.DEFINE_bool(
-  'do_rename',
-  True,
-  'To rename file or not')
 
 def convert_colabfold_fasta(fasta_path:str):
   records = list(SeqIO.parse(fasta_path, "fasta"))
@@ -66,8 +34,8 @@ def convert_colabfold_fasta(fasta_path:str):
   
   print(f"Fasta file has been successfully converted for ColabFold at {output_fasta}\n")
 
-def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
-  json_params = os.path.realpath(FLAGS.json_params)
+def create_alphafold3_json(fasta_path: str, adapted_input_dir: str, json_params_path):
+  json_params = os.path.realpath(json_params_path)
   assert os.path.exists(json_params) and json_params.endswith('.json'), \
   "Please provide a valid path to a json file with --json_params"
   
@@ -96,8 +64,7 @@ def create_alphafold3_json(fasta_path: str, adapted_input_dir: str):
     json.dump(json_input, f, indent=4)
   print(json.dumps(json_input, indent=4))
 
-def convert_input(args, tool):
-  fasta_file = args['input']
+def convert_input(fasta_file, tool, json_params):
   input_dir = os.path.dirname(fasta_file)
   if tool == 'ColabFold':
     adapted_input_dir =  f"{input_dir}/converted_for_colabfold/" 
@@ -106,7 +73,7 @@ def convert_input(args, tool):
   elif tool == 'AlphaFold3':
     adapted_input_dir = f"{input_dir}/alphafold3_json_requests/" 
     os.makedirs(adapted_input_dir, exist_ok=True)
-    create_alphafold3_json(fasta_file, adapted_input_dir)
+    create_alphafold3_json(fasta_file, adapted_input_dir, json_params)
 
 def set_alphafold3_parameters(af3_input: dict, parameters: list):
   for i, sequence in enumerate(af3_input["sequences"]):
@@ -133,7 +100,6 @@ def af3_alter_input(batch_input_json, af3_params):
     print(f"Input alteration parameters in use: {', '.join(alteration)}")
     batch_input_json = set_alphafold3_parameters(batch_input_json, alteration)
   return batch_input_json
-
 
 def glycan_traversal(sugar, parent_index, linkage, state):
   """
@@ -508,7 +474,6 @@ def af3_add_input_entity(batch_input_json, af3_params):
   print(json.dumps(simplified, indent=4))
   return batch_input_json
 
-
 def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
   sequence = os.path.basename(os.path.dirname(os.path.dirname(input_json)))
 
@@ -565,14 +530,11 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
     alphafold3_input = os.path.join(output_dir, sequence, run_name, f"af3_batch_{batch}.json")
     json.dump(single_batch, open(alphafold3_input, 'w'), indent=4)
 
-def prepare_inference(args, tool):
-  input = args['input']
-  params = args['params']
-  batches = args['batches']
+def prepare_inference(input, params, batches, tool):
   if tool == "AlphaFold3":
     get_alphafold3_batch_input(input, params, batches)
 
-def rename_colabfold_pkl(pkl_files:list, output_path:str, pred_shift:int, sep:str):
+def rename_colabfold_pkl(pkl_files:list, output_path:str, pred_shift:int, sep:str, do_rename: bool):
   extract = lambda x: int(x.split('_')[-1].replace('.pickle', ''))
   seed = sorted(list(map(extract, pkl_files)))[0]
   if sep == 'multimer':
@@ -583,7 +545,7 @@ _pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pkl"
 _pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pkl"
   
   new_names = { old: rename(old) for old in pkl_files }
-  if FLAGS.do_rename:
+  if do_rename:
     for old in pkl_files:
       new = new_names[old]
       #mv(f"{output_path}/{old}", f"{output_path}/{new}")
@@ -591,7 +553,7 @@ _pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pkl"
 
   return new_names
 
-def rename_colabfold_pdb(pdb_files:list, output_path:str, pred_shift:int, sep:str):
+def rename_colabfold_pdb(pdb_files:list, output_path:str, pred_shift:int, sep:str, do_rename: bool, to_convert: str):
   extract = lambda x: int(x.split('_')[-1].replace('.pdb', ''))
   seed = sorted(list(map(extract, pdb_files)))[0]
   print(f"Seed used: {seed}")
@@ -603,7 +565,7 @@ _multimer_v{x.split('multimer_v')[1][0]}_pred_{int(x.split('seed_')[1].split('.'
 _ptm_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pdb"
     
   new_names = { old: rename(old) for old in pdb_files }
-  if FLAGS.do_rename:
+  if do_rename:
     for old in pdb_files:
       new = new_names[old]
       #mv(f"{output_path}/{old}", f"{output_path}/{new}")
@@ -614,8 +576,8 @@ _ptm_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pdb"
     for old in new_names
   }
 
-  if FLAGS.do_rename:
-    map_file = os.path.join(FLAGS.to_convert, 'unified_map.json')
+  if do_rename:
+    map_file = os.path.join(to_convert, 'unified_map.json')
     if os.path.isfile(map_file):
       with open(map_file, 'r') as map_json:
         name_map = json.load(map_json)
@@ -652,19 +614,19 @@ def create_colabfold_ranking(predictions_to_rank:pd.core.frame.DataFrame, output
     with open(ranking_file_name, 'w') as json_scores:
       json.dump({ metric: scores_dict, 'order': order }, json_scores, indent=4)
 
-def move_output(output_path:str, batch):
+def move_output(output_path:str, batch, do_rename: bool):
   whole_path = os.path.realpath(output_path)
   sequence = os.path.basename(os.path.dirname(whole_path))
   batch_path = f"{whole_path}/{batch}"
   destination_path = f"{whole_path}/{batch}/{sequence}"
   to_move = os.listdir(batch_path)
-  if FLAGS.do_rename:
+  if do_rename:
     os.makedirs(destination_path)
 
   for element in to_move:
     source = os.path.join(batch_path, element)
     destination = os.path.join(destination_path, element)
-    if FLAGS.do_rename:
+    if do_rename:
       shutil.move(source, destination)
 
 def rank_colabfold_predictions(output_path:str, pdb_files:list, new_pdb_names:list, preset):
@@ -690,16 +652,16 @@ def rank_colabfold_predictions(output_path:str, pdb_files:list, new_pdb_names:li
   
   create_colabfold_ranking(all_preds, output_path, preset)
 
-def convert_output(tool):
+def convert_output(tool, batches_file: str, to_convert: str, do_rename: bool):
   if tool not in ["ColabFold", "AlphaFold3"]:
     print(f"No conversion needed for {tool} output")
     return
-  with open(FLAGS.batches_file, 'r') as batches_json:
+  with open(batches_file, 'r') as batches_json:
     all_batches_infos = json.load(batches_json)
 
   if tool == "AlphaFold3":
     batches_files = [
-      batch_file for batch_file in os.listdir(FLAGS.to_convert)
+      batch_file for batch_file in os.listdir(to_convert)
       if batch_file.startswith('af3_batch_') and batch_file.endswith('.json')
     ]
     batches_files = sorted(
@@ -707,11 +669,11 @@ def convert_output(tool):
       key=lambda x: int(x.replace('af3_batch_', '').replace('.json', ''))
     )
     batches = [
-      json.load(open(os.path.join(FLAGS.to_convert, batch_file), 'r'))['name']
+      json.load(open(os.path.join(to_convert, batch_file), 'r'))['name']
       for batch_file in batches_files
     ]
   elif tool in ["AFmassive", "ColabFold"]:
-    batches = [ batch for batch in os.listdir(FLAGS.to_convert) if batch.startswith('batch_') ]
+    batches = [ batch for batch in os.listdir(to_convert) if batch.startswith('batch_') ]
     batches = sorted(batches, key=lambda x: int(x.split('_')[1]))
     batches_files = batches
 
@@ -720,13 +682,13 @@ def convert_output(tool):
     if tool == "ColabFold":
       batch_number = batch.split('_')[1]
       batch_shift = int(all_batches_infos[batch_number]['start'])
-      convert_colabfold_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
-      move_output(FLAGS.to_convert, batch)
+      convert_colabfold_output(f"{to_convert}/{batch}", batch_shift, do_rename, to_convert)
+      move_output(to_convert, batch, do_rename)
     elif tool == "AlphaFold3":
       batch_number = file.replace('af3_batch_', '').replace('.json', '')
       batch_shift = int(all_batches_infos[batch_number]['start'])
       try:
-        convert_alphafold3_output(f"{FLAGS.to_convert}/{batch}", batch_shift)
+        convert_alphafold3_output(f"{to_convert}/{batch}", batch_shift)
         working.append(batch)
       except FileNotFoundError as e:
         not_working.append(batch)
@@ -736,8 +698,7 @@ def convert_output(tool):
     print(f"Batch not completed: {' - '.join(not_working)}")
     print(f"{' - '.join(error)}")
 
-
-def convert_colabfold_output(output_path:str, pred_shift:int):
+def convert_colabfold_output(output_path:str, pred_shift:int, do_rename: bool, to_convert: str):
   pkls = [ file for file in os.listdir(output_path) if file.endswith('.pickle') ]
   pdbs = [ file for file in os.listdir(output_path) if file.endswith('.pdb') and 'rank' in file ]
 
@@ -748,9 +709,9 @@ def convert_colabfold_output(output_path:str, pred_shift:int):
   else:
     raise ValueError('Neither multimer nor monomer_ptm, an error occured somewhere')
   # rename files
-  renamed_pdbs = rename_colabfold_pdb(pdbs, output_path, pred_shift, sep=sep)
+  renamed_pdbs = rename_colabfold_pdb(pdbs, output_path, pred_shift, sep=sep, do_rename=do_rename, to_convert=to_convert)
   rank_colabfold_predictions(output_path, pdbs, renamed_pdbs.values(), preset=sep)
-  rename_colabfold_pkl(pkls, output_path, pred_shift, sep=sep)
+  rename_colabfold_pkl(pkls, output_path, pred_shift, sep=sep, do_rename=do_rename)
 
 def convert_alphafold3_output(output_path: str, pred_shift: int):
   df_ranking_scores = pd.read_csv(os.path.join(output_path, "ranking_scores.csv"))
@@ -869,51 +830,86 @@ def af3_extract_plddts_create_pkl(df, output_dir):
   updated_df = pd.DataFrame(pred_list)
   return updated_df
 
-def main(argv):
-  assert FLAGS.conversion and FLAGS.to_convert, \
+def main(conversion, to_convert, tool, json_params, batches_file, do_rename):
+  assert conversion and to_convert, \
   'Parameter --conversion and --to_convert are mandatory.'
-  assert FLAGS.tool, "Please specify the tool used for prediction."
+  assert tool, "Please specify the tool used for prediction."
   
-  if FLAGS.conversion == 'input':
+  if conversion == 'input':
     tools = ["ColabFold", "AlphaFold3"]
-    if FLAGS.tool not in tools:
-      print(f"No input conversion needed with {FLAGS.tool}.")
+    if tool not in tools:
+      print(f"No input conversion needed with {tool}.")
       return 
-    assert os.path.isfile(FLAGS.to_convert) and FLAGS.to_convert.endswith('.fasta'), \
-    f"Fasta file is invalid {FLAGS.to_convert}"
-    convert_input({"input": FLAGS.to_convert}, FLAGS.tool)
+    assert os.path.isfile(to_convert) and to_convert.endswith('.fasta'), \
+    f"Fasta file is invalid {to_convert}"
+    convert_input(to_convert, tool, json_params)
 
-  elif FLAGS.conversion == 'input_inference':
+  elif conversion == 'input_inference':
     tools = ["AlphaFold3"]
-    if FLAGS.tool not in tools:
-      print(f"No input preparation in anticipation of inference for {FLAGS.tool}.")
+    if tool not in tools:
+      print(f"No input preparation in anticipation of inference for {tool}.")
       return  
-    assert os.path.isfile(FLAGS.batches_file) and FLAGS.batches_file.endswith('.json'), \
-    f"Json batches file is invalid: {FLAGS.batches_file}"
-    assert os.path.isfile(FLAGS.to_convert) and FLAGS.to_convert.endswith('.json'), \
-    f"Json request file is invalid: {FLAGS.to_convert}"
-    arguments = {"input": FLAGS.to_convert, "params": FLAGS.json_params, "batches": FLAGS.batches_file}
-    prepare_inference(arguments, FLAGS.tool)
+    assert os.path.isfile(batches_file) and batches_file.endswith('.json'), \
+    f"Json batches file is invalid: {batches_file}"
+    assert os.path.isfile(to_convert) and to_convert.endswith('.json'), \
+    f"Json request file is invalid: {to_convert}"
+    prepare_inference(to_convert, json_params, batches_file, tool)
 
-  elif FLAGS.conversion == 'output':
+  elif conversion == 'output':
     tools = ["ColabFold", "AlphaFold3"]
-    if FLAGS.tool not in tools:
-      print(f"No output standardization for {FLAGS.tool}.")
+    if tool not in tools:
+      print(f"No output standardization for {tool}.")
       return 
-    assert FLAGS.batches_file, 'Json batches file (--batches_file) is mandatory for output conversion (--conversion output)'
-    print(f"Convert for tool {FLAGS.tool}")
-    convert_output(FLAGS.tool)
+    assert batches_file, 'Json batches file (--batches_file) is mandatory for output conversion (--conversion output)'
+    print(f"Convert for tool {tool}")
+    convert_output(tool, batches_file, to_convert, do_rename)
 
-  elif FLAGS.conversion == "output_singular":
+  elif conversion == "output_singular":
     tools = ["ColabFold", "AlphaFold3"]
-    if FLAGS.tool not in tools:
-      print(f"No output standardization for {FLAGS.tool}.")
+    if tool not in tools:
+      print(f"No output standardization for {tool}.")
       return
-    if FLAGS.tool == "ColabFold":
-      convert_colabfold_output(FLAGS.to_convert, 0)
-      move_output(os.path.dirname(os.path.realpath(FLAGS.to_convert)), "batch_0")
-    elif FLAGS.tool == "AlphaFold3":
-      convert_alphafold3_output(FLAGS.to_convert, 0)
+    if tool == "ColabFold":
+      convert_colabfold_output(to_convert, 0, do_rename, to_convert)
+      move_output(os.path.dirname(os.path.realpath(to_convert)), "batch_0", do_rename)
+    elif tool == "AlphaFold3":
+      convert_alphafold3_output(to_convert, 0)
 
 if __name__ == "__main__": 
-  app.run(main)
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+    '--conversion',
+    default=None,
+    choices=['input', 'input_inference', 'output', 'output_singular'],
+    help="What to convert. 'input' to get the fasta format of colabfold from a traditionnal multichain pdb. 'output' to transform colabfold output to the alphafold one.")
+  parser.add_argument(
+    '--to_convert',
+    default='',
+    help='Path of the fasta file (for --conversion=input) or output directory (for --conversion=output)To convert')
+  parser.add_argument(
+    '--tool',
+    default=None,
+    choices=['AFmassive', 'ColabFold', 'AlphaFold3'],
+    help='Chose the tool from which the input/output should be unified.')
+  parser.add_argument(
+    '--json_params',
+    default='',
+    help="Set json file path for input parameters. Necessary when using '--tool AlphaFold3' coupled with '--conversion input'")
+  parser.add_argument(
+    '--batches_file',
+    default='',
+    help='Path to batches file. If --conversion=output, this file is necessary.')
+  parser.add_argument(
+    '--do_rename',
+    action=argparse.BooleanOptionalAction,
+    default=True,
+    help='To rename file or not')
+  parsed = parser.parse_args()
+  main(
+    parsed.conversion,
+    parsed.to_convert,
+    parsed.tool,
+    parsed.json_params,
+    parsed.batches_file,
+    parsed.do_rename
+  )

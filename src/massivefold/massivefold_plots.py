@@ -6,9 +6,7 @@ import os
 import sys
 import pickle
 import json
-from absl import flags
-from absl import app
-from absl.flags._exceptions import UnparsedFlagAccessError
+import argparse
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from plots.colabfold_plots import plot_msa_v2, plot_plddts, plot_confidence, plot_paes, plot_plddt_legend
@@ -17,34 +15,25 @@ import shutil
 from matplotlib.lines import Line2D
 import seaborn as sns
 
-FLAGS = flags.FLAGS
+def parse_csv(value):
+  if value is None:
+    return []
+  if value == '':
+    return []
+  return [item.strip() for item in value.split(',') if item.strip()]
 
-flags.DEFINE_string('input_path', None, 
-                    'Path to directory were the alphafold output to be plotted lies.')
-flags.DEFINE_integer('top_n_predictions', 10, 
-                     'Specify the number of predictions taken into account for plotting, it will be the n best predictions.')
-flags.DEFINE_list('chosen_plots', [], 
-                  'Specify the plots you want to get.'
-                  'CF_plddt for plddt of each predictions, DM_plddt_PAE for plddt and PAE on the same plot for each prediction,'
-                  'CF_PAEs for PAEs of all predictions on the same plot and CF_plddts for plddt of all predictions on the same plot.')
-flags.DEFINE_enum('action', "save", ["save", "show"], "Choose to save the plot or show them.")
-flags.DEFINE_enum('format', "png", ["png", "svg"], "Format in which the plots are saved.")
-flags.DEFINE_string('output_path', None, 
-                    'Path to directory that will store the plots, same as the input dir by default.')
-flags.DEFINE_list('runs_to_compare', [], 'Runs that you want to compare on a same distribution plot')
-
-def extract_top_predictions():
-  with open(f'{FLAGS.input_path}/ranking_debug.json', 'r') as json_file:
+def extract_top_predictions(input_path, top_n_predictions):
+  with open(f'{input_path}/ranking_debug.json', 'r') as json_file:
     scores = json.load(json_file)
-  top_pred = scores['order'][:FLAGS.top_n_predictions]
-  #top_pred = [pred for pred in top_pred if os.path.isfile(f'{FLAGS.input_path}/result_{pred}.pkl')] 
+  top_pred = scores['order'][:top_n_predictions]
+  #top_pred = [pred for pred in top_pred if os.path.isfile(f'{input_path}/result_{pred}.pkl')] 
 
   return top_pred
   
-def CF_PAEs():
+def CF_PAEs(input_path, top_n_predictions, action, output_path, image_format):
   all_models_pae = []
-  jobname = FLAGS.input_path
-  preds_to_plot = extract_top_predictions()
+  jobname = input_path
+  preds_to_plot = extract_top_predictions(input_path, top_n_predictions)
   
   pkl_dir = jobname
   light_pkl = f'{jobname}/light_pkl'
@@ -56,31 +45,31 @@ def CF_PAEs():
       data = pickle.load(pkl_file)
     all_models_pae.append(np.asarray(data['predicted_aligned_error']))
   plot_paes(all_models_pae)
-  if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/top_{FLAGS.top_n_predictions}_PAE.{FLAGS.format}", dpi=200)
-    print(f"Saved as top_{FLAGS.top_n_predictions}_PAE.{FLAGS.format}")
+  if action == "save":
+    plt.savefig(f"{output_path}/top_{top_n_predictions}_PAE.{image_format}", dpi=200)
+    print(f"Saved as top_{top_n_predictions}_PAE.{image_format}")
     plt.close()
-  if FLAGS.action == "show":
+  if action == "show":
     plt.show()
     
-def CF_plddts():
+def CF_plddts(input_path, top_n_predictions, action, output_path, image_format):
   all_models_plddt = []
-  jobname = FLAGS.input_path
-  preds_to_plot = extract_top_predictions()
+  jobname = input_path
+  preds_to_plot = extract_top_predictions(input_path, top_n_predictions)
   for pred in preds_to_plot:
     with open(f'{jobname}/result_{pred}.pkl', "rb") as pkl_file:
       data = pickle.load(pkl_file)
     all_models_plddt.append(np.asarray(data['plddt']))
   plot_plddts(all_models_plddt)
-  if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/top_{FLAGS.top_n_predictions}_plddt.{FLAGS.format}", dpi=200)
-    print(f"Saved as top_{FLAGS.top_n_predictions}_plddt.{FLAGS.format}")
+  if action == "save":
+    plt.savefig(f"{output_path}/top_{top_n_predictions}_plddt.{image_format}", dpi=200)
+    print(f"Saved as top_{top_n_predictions}_plddt.{image_format}")
     plt.close()
-  if FLAGS.action == "show":
+  if action == "show":
     plt.show()
 
-def MF_DM_dual_plddt_PAE(prediction, rank):
-  jobname = FLAGS.input_path
+def MF_DM_dual_plddt_PAE(prediction, rank, input_path, action, output_path, image_format):
+  jobname = input_path
   pkl_dir = jobname
   light_pkl = f'{jobname}/light_pkl'
   if os.path.isdir(light_pkl) and len(os.listdir(light_pkl)) != 0:
@@ -108,47 +97,47 @@ def MF_DM_dual_plddt_PAE(prediction, rank):
   plt.xlabel('Scored residue')
   plt.ylabel('Aligned residue')
   
-  if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/rank_{rank}_{prediction}_plddt_PAE.{FLAGS.format}", dpi=200)
-    print(f"Saved as rank_{rank}_{prediction}_plddt_PAE.{FLAGS.format}")
+  if action == "save":
+    plt.savefig(f"{output_path}/rank_{rank}_{prediction}_plddt_PAE.{image_format}", dpi=200)
+    print(f"Saved as rank_{rank}_{prediction}_plddt_PAE.{image_format}")
     plt.close()
-  if FLAGS.action == "show":
+  if action == "show":
     plt.show()
 
-def call_dual():
-  preds_to_plot = extract_top_predictions()
+def call_dual(input_path, top_n_predictions, action, output_path, image_format):
+  preds_to_plot = extract_top_predictions(input_path, top_n_predictions)
   for i, pred in enumerate(preds_to_plot):
-    MF_DM_dual_plddt_PAE(pred, i)
+    MF_DM_dual_plddt_PAE(pred, i, input_path, action, output_path, image_format)
   
-def MF_indiv_plddt():
-  jobname = FLAGS.input_path
-  preds_to_plot = extract_top_predictions()
+def MF_indiv_plddt(input_path, top_n_predictions, action, output_path, image_format):
+  jobname = input_path
+  preds_to_plot = extract_top_predictions(input_path, top_n_predictions)
   for i, pred in enumerate(preds_to_plot):
     with open(f'{jobname}/result_{pred}.pkl', "rb") as pkl_file:
       data = pickle.load(pkl_file)
     plot_confidence(data['plddt'])
     plt.title(f'rank_{i}_{pred} predicted lDDT')
-    if FLAGS.action == "save":
-      plt.savefig(f"{FLAGS.output_path}/rank_{i}_{pred}_plddt.{FLAGS.format}", dpi=200)
-      print(f"Saved as rank_{i}_{pred}_plddt.{FLAGS.format}")
+    if action == "save":
+      plt.savefig(f"{output_path}/rank_{i}_{pred}_plddt.{image_format}", dpi=200)
+      print(f"Saved as rank_{i}_{pred}_plddt.{image_format}")
       plt.close()
-    if FLAGS.action == "show":
+    if action == "show":
       plt.show()
             
-def MF_coverage():
-  jobname = FLAGS.input_path
+def MF_coverage(input_path, action, output_path, image_format):
+  jobname = input_path
   if os.path.isfile(f'{jobname}/features.pkl'):
     with open(f'{jobname}/features.pkl', 'rb') as f:
       data = pickle.load(f)
     plot_msa_v2(data)
-    if FLAGS.action == "save":
-      plt.savefig(f"{FLAGS.output_path}/alignment_coverage.{FLAGS.format}", dpi=200)
-      print(f"Saved as alignment_coverage.{FLAGS.format}")
+    if action == "save":
+      plt.savefig(f"{output_path}/alignment_coverage.{image_format}", dpi=200)
+      print(f"Saved as alignment_coverage.{image_format}")
       plt.close()
-    elif FLAGS.action == "show":
+    elif action == "show":
       plt.show()
 
-def MF_score_histogram(scores:dict):
+def MF_score_histogram(scores, action, output_path, image_format):
   try:
     scores = scores['iptm+ptm']
   except KeyError:
@@ -160,12 +149,12 @@ def MF_score_histogram(scores:dict):
   ax1.hist(all_scores, bins=50)
   histogram.suptitle('Global score distribution')
   ax1.set(xlabel='Ranking confidence', ylabel='Number of predictions')
-  if FLAGS.action == "save":
-    histogram.savefig(f"{FLAGS.output_path}/score_distribution.{FLAGS.format}", dpi=200)
-    print(f"Saved as score_distribution.{FLAGS.format}")
+  if action == "save":
+    histogram.savefig(f"{output_path}/score_distribution.{image_format}", dpi=200)
+    print(f"Saved as score_distribution.{image_format}")
     plt.close(histogram)
 
-def MF_versions_density(scores:dict, given_ax=None):
+def MF_versions_density(scores, action=None, output_path=None, image_format=None, given_ax=None):
   try:
     scores = scores['iptm+ptm']
   except KeyError:
@@ -190,16 +179,16 @@ def MF_versions_density(scores:dict, given_ax=None):
     ylabel="Density"
   )
   
-  if not flags.FLAGS.is_parsed():
+  if action is None:
     plt.close()
     return ax2
 
-  if FLAGS.action == "save":
-    kde_versions.savefig(f"{FLAGS.output_path}/versions_density.{FLAGS.format}",dpi=200)
-    print(f"Saved as versions_density.{FLAGS.format}")
+  if action == "save":
+    kde_versions.savefig(f"{output_path}/versions_density.{image_format}",dpi=200)
+    print(f"Saved as versions_density.{image_format}")
     plt.close(kde_versions)
 
-def MF_models_scores(scores:dict, given_ax=None):
+def MF_models_scores(scores, action=None, output_path=None, image_format=None, given_ax=None):
   try:
     scores = scores['iptm+ptm']
     s_type = 'iptm+ptm'
@@ -243,29 +232,29 @@ def MF_models_scores(scores:dict, given_ax=None):
   elif s_type == 'plddts':
     ax.set_ylim(bottom=0, top=110)
   
-  if not flags.FLAGS.is_parsed():
+  if action is None:
     plt.close()
     return ax
 
   plt.tight_layout()
-  if FLAGS.action == "save":
-    plt.savefig(f"{FLAGS.output_path}/models_scores.{FLAGS.format}", dpi=200)
-    print(f"Saved as models_scores.{FLAGS.format}")
+  if action == "save":
+    plt.savefig(f"{output_path}/models_scores.{image_format}", dpi=200)
+    print(f"Saved as models_scores.{image_format}")
 
-  if FLAGS.action == "show":
+  if action == "show":
     plt.show()
   plt.close()
 
-def MF_score_distribution():
+def MF_score_distribution(input_path, action, output_path, image_format):
   distribution_types = ["scores", "versions_scores", "models_scores"]
-  jobname = FLAGS.input_path
+  jobname = input_path
   with open(f'{jobname}/ranking_debug.json', 'r') as json_scores:
     scores = json.load(json_scores)
   
   DISTRIBUTION_MAP = {
-    "scores": MF_score_histogram,
-    "versions_scores": MF_versions_density,
-    "models_scores":MF_models_scores
+    "scores": lambda run_scores: MF_score_histogram(run_scores, action, output_path, image_format),
+    "versions_scores": lambda run_scores: MF_versions_density(run_scores, action, output_path, image_format),
+    "models_scores": lambda run_scores: MF_models_scores(run_scores, action, output_path, image_format)
   }
 
   for distrib in distribution_types:
@@ -302,19 +291,19 @@ def MF_legacy_recycle_extraction(log):
   
   return recycle_logs
 
-def MF_distribution_comparison(run_names:list=None, given_ax=None):
+def MF_distribution_comparison(run_names=None, given_ax=None, input_path=None, runs_to_compare=None, image_format=None):
   fig, ax = plt.subplots()
   
-  if flags.FLAGS.is_parsed():
-    sequence_path = FLAGS.input_path
-    run_names = FLAGS.runs_to_compare
+  if input_path is not None and runs_to_compare is not None:
+    sequence_path = input_path
+    run_names = runs_to_compare
     runs = [ os.path.normpath(os.path.join(sequence_path, run)) for run in run_names ]
   elif given_ax:
     sequence_path = ''
     runs = [ os.path.normpath(run) for run in run_names ]
     ax = given_ax
   else:
-    raise UnparsedFlagAccessError()
+    raise RuntimeError('Arguments not initialized.')
   
   all_scores = {}
   for run in runs:
@@ -344,9 +333,9 @@ def MF_distribution_comparison(run_names:list=None, given_ax=None):
   if given_ax:
     return ax
 
-  plt.savefig(f'{sequence_path}/distribution_compa.{FLAGS.format}', dpi=200)
+  plt.savefig(f'{sequence_path}/distribution_compa.{image_format}', dpi=200)
   plt.close()
-  print(f'Saved as distribution_compa.{FLAGS.format}')
+  print(f'Saved as distribution_compa.{image_format}')
 
 def MF_decode_array(encoded_pred:str):
   encoded_lst = [ int(i) for i in encoded_pred.replace('[', '').replace(']', '').split() ]
@@ -487,11 +476,14 @@ def MF_recycling_plot(
     rank:int, 
     tol:float,
     preset:str,
+    action,
+    output_path,
+    image_format,
     given_ax=None):
  
   if not given_ax:
     fig, ax1 = plt.subplots()
-    recycle_dir = f'{FLAGS.output_path}/recycles/'
+    recycle_dir = f'{output_path}/recycles/'
     if not shutil.os.path.exists(recycle_dir):
       shutil.os.makedirs(recycle_dir)
   else:
@@ -533,21 +525,21 @@ def MF_recycling_plot(
   plt.title(f"ranked_{rank}_{prediction_to_plot}")
   fig.tight_layout()
 
-  if FLAGS.action == "save":
-    plt.savefig(f"{recycle_dir}/ranked_{rank}_unrelaxed_{prediction_to_plot}.{FLAGS.format}", dpi=200)
-    print(f"Saved as recycles/ranked_{rank}_unrelaxed_{prediction_to_plot}.{FLAGS.format}")
+  if action == "save":
+    plt.savefig(f"{recycle_dir}/ranked_{rank}_unrelaxed_{prediction_to_plot}.{image_format}", dpi=200)
+    print(f"Saved as recycles/ranked_{rank}_unrelaxed_{prediction_to_plot}.{image_format}")
     plt.close()
-  if FLAGS.action == "show":
+  if action == "show":
     plt.show()
 
-def MF_recycling():
+def MF_recycling(input_path, top_n_predictions, action, output_path, image_format):
   all_models_pae = []
-  jobname = FLAGS.input_path 
+  jobname = input_path
   run, seq = os.path.basename(jobname), os.path.basename(os.path.dirname(jobname))
   logs_dir = os.path.join(jobname, '../../../log/', seq, run)
   batches_file = os.path.join(logs_dir, f'{seq}_{run}_batches.json')
   
-  preds_to_plot = extract_top_predictions()
+  preds_to_plot = extract_top_predictions(input_path, top_n_predictions)
   model_to_batch = MF_recycling_pred_to_batch(batches_file) 
   
   all_recycling_values = {}
@@ -589,40 +581,49 @@ def MF_recycling():
       pred,
       i,
       early_stop_tolerance,
-      preset)
+      preset,
+      action,
+      output_path,
+      image_format)
 
-def main(argv):
-  FLAGS.input_path = os.path.realpath(FLAGS.input_path)
-  MF_plots = {
-    "DM_plddt_PAE": call_dual,
-    "CF_plddt": MF_indiv_plddt,
-    "CF_PAEs": CF_PAEs,
-    "CF_plddts": CF_plddts,
-    "coverage": MF_coverage,
-    "score_distribution": MF_score_distribution,
-    "distribution_comparison": MF_distribution_comparison,
-    "recycles": MF_recycling
-    }
+def main(input_path, top_n_predictions, chosen_plots, action, image_format, output_path, runs_to_compare):
+  if not input_path or not chosen_plots:
+    print('Required flags: --input_path and --chosen_plots')
+    return
 
-  # Flags checking
-  if not FLAGS.input_path or not FLAGS.chosen_plots:
-    print('Required flags: --input_path and --chosen_plots')  
-  if not FLAGS.output_path:
-    FLAGS.output_path = f"{FLAGS.input_path}/plots/"
-  print(f"Plot are stored in {FLAGS.output_path}")
-  if "distribution_comparison" in FLAGS.chosen_plots and not FLAGS.runs_to_compare:
+  input_path = os.path.realpath(input_path)
+
+  # Arguments checking
+  if not output_path:
+    output_path = f"{input_path}/plots/"
+  print(f"Plot are stored in {output_path}")
+  if "distribution_comparison" in chosen_plots and not runs_to_compare:
     print('Flag --runs_to_compare is required for --chosen_plots=distribution_comparison')
-    FLAGS.chosen_plots = [ plot for plot in FLAGS.chosen_plots if plot != 'distribution_comparison' ]
+    chosen_plots = [ plot for plot in chosen_plots if plot != 'distribution_comparison' ]
+
+  MF_plots = {
+    "DM_plddt_PAE": lambda: call_dual(input_path, top_n_predictions, action, output_path, image_format),
+    "CF_plddt": lambda: MF_indiv_plddt(input_path, top_n_predictions, action, output_path, image_format),
+    "CF_PAEs": lambda: CF_PAEs(input_path, top_n_predictions, action, output_path, image_format),
+    "CF_plddts": lambda: CF_plddts(input_path, top_n_predictions, action, output_path, image_format),
+    "coverage": lambda: MF_coverage(input_path, action, output_path, image_format),
+    "score_distribution": lambda: MF_score_distribution(input_path, action, output_path, image_format),
+    "distribution_comparison": lambda: MF_distribution_comparison(
+      input_path=input_path,
+      runs_to_compare=runs_to_compare,
+      image_format=image_format),
+    "recycles": lambda: MF_recycling(input_path, top_n_predictions, action, output_path, image_format)
+  }
 
   try:
-    extract_top_predictions()
+    extract_top_predictions(input_path, top_n_predictions)
   except FileNotFoundError:
     print("Your output is not formatted for plots. Exiting...")
     return
 
-  if not shutil.os.path.exists(FLAGS.output_path) and 'distribution_comparison' not in FLAGS.chosen_plots:
-    shutil.os.makedirs(FLAGS.output_path)
-  for chosen_plot in FLAGS.chosen_plots:
+  if not shutil.os.path.exists(output_path) and 'distribution_comparison' not in chosen_plots:
+    shutil.os.makedirs(output_path)
+  for chosen_plot in chosen_plots:
     MF_plots[chosen_plot]()
 
 if __name__ == "__main__":
@@ -636,4 +637,48 @@ if __name__ == "__main__":
   python MF_plots.py --input_path ./jobname --chosen_plots coverage,CF_PAEs
     -> regardless of the plot type, plot alignment coverage and group PAE for top 10 predictions
   """
-  app.run(main)
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+    '--input_path',
+    default=None,
+    help='Path to directory were the alphafold output to be plotted lies.')
+  parser.add_argument(
+    '--top_n_predictions',
+    type=int,
+    default=10,
+    help='Specify the number of predictions taken into account for plotting, it will be the n best predictions.')
+  parser.add_argument(
+    '--chosen_plots',
+    type=parse_csv,
+    default=[],
+    help='Specify the plots you want to get.CF_plddt for plddt of each predictions, DM_plddt_PAE for plddt and PAE on the same plot for each prediction,CF_PAEs for PAEs of all predictions on the same plot and CF_plddts for plddt of all predictions on the same plot.')
+  parser.add_argument(
+    '--action',
+    default='save',
+    choices=['save', 'show'],
+    help='Choose to save the plot or show them.')
+  parser.add_argument(
+    '--format',
+    default='png',
+    choices=['png', 'svg'],
+    help='Format in which the plots are saved.')
+  parser.add_argument(
+    '--output_path',
+    default=None,
+    help='Path to directory that will store the plots, same as the input dir by default.')
+  parser.add_argument(
+    '--runs_to_compare',
+    type=parse_csv,
+    default=[],
+    help='Runs that you want to compare on a same distribution plot')
+
+  parsed = parser.parse_args()
+  main(
+    parsed.input_path,
+    parsed.top_n_predictions,
+    parsed.chosen_plots,
+    parsed.action,
+    parsed.format,
+    parsed.output_path,
+    parsed.runs_to_compare
+  )

@@ -1,45 +1,51 @@
 #!/usr/bin/env python
 
-from absl import app, flags
+import argparse
 import json
 
-FLAGS = flags.FLAGS
-
-flags.DEFINE_string('batch_id', '', 'Task id or batch number from which the element are retrieved.')
-flags.DEFINE_enum('element', 'all', ['all', 'start', 'end', 'model'],
-                  'Select the element (start, end or model) that is retrieved by the script.')
-flags.DEFINE_string('json_path', './batches.json', 'Path of the json from which the element are retrieved.')
-
-def get_single_element(batches):
-  with open(FLAGS.json_path, 'r') as f:
+def get_single_element(batch_id, element, json_path):
+  with open(json_path, 'r') as f:
     all_batches = json.load(f)
 
   try:
-    print(all_batches[FLAGS.batch_id][FLAGS.element])
+    print(all_batches[batch_id][element])
   except KeyError:
-    raise ValueError(f"Either no batch {FLAGS.batch_id} or no element '{FLAGS.element}' for this batch.")
+    raise ValueError(f"Either no batch {batch_id} or no element '{element}' for this batch.")
 
-
-def get_all_elements(all_batches):
+def get_all_elements(all_batches, batch_id, element):
   for element in ['start', 'end', 'model']:
     try:
-      print(all_batches[FLAGS.batch_id][element])
+      print(all_batches[batch_id][element])
     except KeyError:
-      raise ValueError(f"Either no batch {FLAGS.batch_id} or no element '{FLAGS.element}' for this batch.")
+      raise ValueError(f"Either no batch {batch_id} or no element '{element}' for this batch.")
   
-def main(argv):
-  if not FLAGS.batch_id or not FLAGS.element:
+def main(batch_id, element, json_path):
+  if not batch_id or not element:
     raise ValueError('\nUsage: ./get_batch.py --batch_id [str:batch_id] --element [str:element] [[options]]')
-  if FLAGS.element not in ['start', 'end', 'model', 'all']:
+  if element not in ['start', 'end', 'model', 'all']:
     raise ValueError('--element is either start, end or model.')
   
-  with open(FLAGS.json_path, 'r') as f:
+  with open(json_path, 'r') as f:
     all_batches = json.load(f)
     
-  if FLAGS.element != 'all':
-    get_single_element(all_batches)
+  if element != 'all':
+    get_single_element(batch_id, element, json_path)
   else:
-    get_all_elements(all_batches)
+    get_all_elements(all_batches, batch_id, element)
 
 if __name__ == "__main__":
-  app.run(main)
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--batch_id', default='', help='Task id or batch number from which the element are retrieved.')
+  parser.add_argument(
+    '--element',
+    default='all',
+    choices=['all', 'start', 'end', 'model'],
+    help='Select the element (start, end or model) that is retrieved by the script.')
+  parser.add_argument('--json_path', default='./batches.json', help='Path of the json from which the element are retrieved.')
+
+  parsed = parser.parse_args()
+  main(
+    parsed.batch_id,
+    parsed.element,
+    parsed.json_path
+  )
