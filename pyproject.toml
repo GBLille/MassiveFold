@@ -22,8 +22,8 @@ where = ["src"]
 massivefold = [
   "parallelization/**/*.py",
   "parallelization/**/*.json",
-  "parallelization/**/*.slurm",
+  "parallelization/headers/*.slurm",
   "parallelization/templates/**/*",
-  "parallelization/headers/**/*",
-  "plots/**/*.py"
+  "plots/**/*.py",
+  "examples/*"
 ]
