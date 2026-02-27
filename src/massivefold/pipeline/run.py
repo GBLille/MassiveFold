@@ -247,7 +247,7 @@ def create_batches_file(
     json.dump(all_model_batches, json_output, indent=4)
   return batches_file
 
-def create_jobfile(
+def build_jobfile(
   job_type,
   sequence_name,
   run_name,
@@ -474,7 +474,7 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
     convert_input_if_needed(sequence_file, parameters_file, tool)
     print(f"Running alignment for {sequence_name}")
     following_msas = not only_msas
-    alignment_jobfile_content = create_jobfile(
+    alignment_jobfile_content = build_jobfile(
       "alignment",
       sequence_name,
       run_name,
@@ -516,7 +516,7 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
 
     shutil.copy2(parameters_file, output_run_dir)
 
-  jobarray_jobfile_content = create_jobfile(
+  jobarray_jobfile_content = build_jobfile(
     "jobarray",
     sequence_name,
     run_name,
@@ -534,7 +534,7 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
     array_size=array_size,
   )
 
-  post_treatment_jobfile_content = create_jobfile("post_treatment", sequence_name, run_name, parameters_file, tool)
+  post_treatment_jobfile_content = build_jobfile("post_treatment", sequence_name, run_name, parameters_file, tool)
   submit_scheduler_job(scheduler, post_treatment_jobfile_content, dependency_id=array_id)
 
   move_generated_files_to_logs(sequence_name, run_name, logs_run_dir)
