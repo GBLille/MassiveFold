@@ -339,8 +339,8 @@ def move_generated_files_to_logs(sequence_name, run_name, logs_run_dir):
         os.remove(target)
     shutil.move(path, logs_run_dir)
 
-def submit_scheduler_job(scheduler, jobfile_content, dependency_id=None, array_size=None):
-  return scheduler["submit_job"](jobfile_content, dependency_id=dependency_id, array_size=array_size)
+def submit_scheduler_job(scheduler, jobfile_content, jobfile_name, dependency_id=None, array_size=None):
+  return scheduler["submit_job"](jobfile_content, job_name=jobfile_name, dependency_id=dependency_id, array_size=array_size)
 
 def run_pipeline_internal(args, forwarded_args, scheduler):
   if forwarded_args:
@@ -482,7 +482,8 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
       tool,
       mf_following_msas=bool_arg(following_msas),
     )
-    alignment_id = submit_scheduler_job(scheduler, alignment_jobfile_content)
+    alignment_jobfile_name = f"alignment-{sequence_name}"
+    alignment_id = submit_scheduler_job(scheduler, alignment_jobfile_content, alignment_jobfile_name)
     waiting_for_alignment = True
 
     if only_msas:
@@ -527,15 +528,18 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
 
   array_size = count_batches(batches_file)
   dependency = alignment_id if waiting_for_alignment else None
+  inference_jobfile_name = f"inference-{sequence_name}_{run_name}"
   array_id = submit_scheduler_job(
     scheduler,
     jobarray_jobfile_content,
+    inference_jobfile_name,
     dependency_id=dependency,
     array_size=array_size,
   )
 
   post_treatment_jobfile_content = build_jobfile("post_treatment", sequence_name, run_name, parameters_file, tool)
-  submit_scheduler_job(scheduler, post_treatment_jobfile_content, dependency_id=array_id)
+  post_treatment_jobfile_name = f"post_treatment-{sequence_name}_{run_name}"
+  submit_scheduler_job(scheduler, post_treatment_jobfile_content, post_treatment_jobfile_name, dependency_id=array_id)
 
   move_generated_files_to_logs(sequence_name, run_name, logs_run_dir)
   return 0

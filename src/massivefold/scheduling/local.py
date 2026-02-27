@@ -31,7 +31,7 @@ def array_env(base_env, task_id, array_size):
   env["SLURM_ARRAY_TASK_COUNT"] = str(array_size)
   return env
 
-def submit_job(jobfile_content, dependency_id=None, array_size=None):
+def submit_job(jobfile_content, job_name=None, dependency_id=None, array_size=None):
   if dependency_id:
     print(f"Ignoring dependency '{dependency_id}' for local scheduler (synchronous execution)")
 
