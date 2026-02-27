@@ -97,8 +97,8 @@ $USAGE
     --alphafold-db <str>: path to AlphaFold2 database
     --alphafold3-db <str>: path to AlphaFold3 database
     --colabfold-db <str>: path to ColabFold database
-    --install-path <str>: where to create the MassiveFold scaffold (default: massivefold_runs)
-    --no-env: do not install the environments, only scaffold files and parameters.
+    --install-path <str>: where to create the MassiveFold file architecture (default: massivefold_runs)
+    --no-env: do not install the environments, only files and parameters.
       At least one of --alphafold-db or --colabfold-db is required with this option.
     --only-envs: only install the environments (other arguments are not used)"
   exit 1
