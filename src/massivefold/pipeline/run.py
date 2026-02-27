@@ -1,11 +1,14 @@
 """Shared implementation of `massivefold run` pipeline."""
 
+import os
+import re
 import glob
 import json
 import math
-import os
 import shutil
-import re
+from massivefold.parallelization import unifier
+from massivefold.parallelization import batching
+from massivefold.parallelization import create_jobfile
 
 def read_json(path):
   with open(path, "r", encoding="utf-8") as handle:
@@ -197,10 +200,9 @@ def create_batches_file(
   models_to_use,
   tool,
   to_screen=""):
-  from massivefold.parallelization import batching as batching_script
 
   all_params = read_json(parameters_file)
-  model_preset = batching_script.detect_model_preset(
+  model_preset = batching.detect_model_preset(
     os.path.join(all_params["massivefold"]["input_dir"], f"{sequence_name}.fasta")
   )
 
@@ -235,10 +237,10 @@ def create_batches_file(
   print(f"Total prediction number: {predictions_per_model * len(model_names)}")
 
   if not to_screen:
-    per_model_batches = batching_script.batches_per_model(predictions_per_model, batch_size)
-    all_model_batches = batching_script.batches_all_models(per_model_batches, model_names)
+    per_model_batches = batching.batches_per_model(predictions_per_model, batch_size)
+    all_model_batches = batching.batches_all_models(per_model_batches, model_names)
   else:
-    all_model_batches = batching_script.batches_per_ligand(to_screen, predictions_per_model)
+    all_model_batches = batching.batches_per_ligand(to_screen, predictions_per_model)
 
   batches_file = f"{sequence_name}_{run_name}_batches.json"
   with open(batches_file, "w", encoding="utf-8") as json_output:
@@ -254,7 +256,6 @@ def create_jobfile(
   mf_following_msas="true",
   mf_before_inference="false",
   create_files=True):
-  from massivefold.parallelization import create_jobfile as jobfile_script
 
   with open(f"{sequence_name}_{run_name}_batches.json", "r", encoding="utf-8") as json_batches:
     batches = json.load(json_batches)
@@ -270,7 +271,7 @@ def create_jobfile(
 
   tool_code = "AFM" if tool == "AFmassive" else "AF3" if tool == "AlphaFold3" else "CF"
   preset_dict = {
-    "model_preset": jobfile_script.detect_model_preset(
+    "model_preset": create_jobfile.detect_model_preset(
       os.path.join(all_params["massivefold"]["input_dir"], f"{sequence_name}.fasta")
     )
   }
@@ -294,8 +295,8 @@ def create_jobfile(
       print(f"{key}: {all_params['plots'][key]}")
 
   if job_type != "all":
-    templates = jobfile_script.group_templates(all_params, [job_type], tool)
-    return jobfile_script.create_single_jobfile(
+    templates = create_jobfile.group_templates(all_params, [job_type], tool)
+    return create_jobfile.create_single_jobfile(
       job_type,
       templates,
       run_params,
@@ -307,8 +308,8 @@ def create_jobfile(
       run_name,
     )
 
-  templates = jobfile_script.group_templates(all_params, ["alignment", "jobarray", "post_treatment"], tool)
-  return jobfile_script.create_all_jobfile(
+  templates = create_jobfile.group_templates(all_params, ["alignment", "jobarray", "post_treatment"], tool)
+  return create_jobfile.create_all_jobfile(
     templates,
     run_params,
     path_to_parameters,
@@ -322,12 +323,10 @@ def create_jobfile(
 def convert_input_if_needed(sequence_file, parameters_file, tool):
   if tool not in ["ColabFold", "AlphaFold3"]:
     return
-  from massivefold.parallelization import unifier as unifier_script
-  unifier_script.convert_input(sequence_file, tool, parameters_file)
+  unifier.convert_input(sequence_file, tool, parameters_file)
 
 def prepare_af3_inference_input(msas_json, parameters_file, batches_file):
-  from massivefold.parallelization import unifier as unifier_script
-  unifier_script.prepare_inference(msas_json, parameters_file, batches_file, "AlphaFold3")
+  unifier.prepare_inference(msas_json, parameters_file, batches_file, "AlphaFold3")
 
 def move_generated_files_to_logs(sequence_name, run_name, logs_run_dir):
   pattern = f"{sequence_name}_{run_name}_*"
