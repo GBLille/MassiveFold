@@ -5,6 +5,7 @@ import argparse
 import sys
 
 from massivefold.pipeline import run_pipeline
+from massivefold.pipeline import screening_pipeline
 from massivefold.install import install_workspace
 from massivefold.scheduling import resolve_scheduler
 
@@ -39,14 +40,14 @@ def add_install_arguments(install_parser):
   install_parser.add_argument("--no-env", dest="no_env", action="store_true")
   install_parser.add_argument("--only-envs", dest="only_envs", action="store_true")
 
-def build_parser():
-  parser = argparse.ArgumentParser(prog="massivefold")
-  subparsers = parser.add_subparsers(dest="command")
-
-  run_parser = subparsers.add_parser("run", help="Run MassiveFold")
-  add_run_arguments(run_parser)
-
-  screening_parser = subparsers.add_parser("screening", help="Run MassiveFold screening")
+def add_screening_arguments(screening_parser):
+  screening_parser.add_argument("-s", "--sequence", dest="sequence", required=True, help="Path of the receptor FASTA file")
+  screening_parser.add_argument("-l", "--ligands", dest="ligands", required=True, help="Path of ligands CSV file")
+  screening_parser.add_argument("-f", "--parameters", dest="parameters", required=True, help="Path to parameter JSON file")
+  screening_parser.add_argument("-p", "--predictions_per_model", dest="predictions_per_model", type=int, default=1)
+  screening_parser.add_argument("-m", "--msas_precomputed", dest="msas_precomputed")
+  screening_parser.add_argument("-o", "--only_msas", dest="only_msas", action="store_true")
+  screening_parser.add_argument("-j", "--jobid", dest="jobid")
   screening_parser.add_argument(
     "--scheduler",
     dest="scheduler",
@@ -54,6 +55,16 @@ def build_parser():
     choices=["auto", "slurm", "local"],
     help="Scheduler selector (default: auto)",
   )
+
+def build_parser():
+  parser = argparse.ArgumentParser(prog="massivefold")
+  subparsers = parser.add_subparsers(dest="command")
+
+  run_parser = subparsers.add_parser("run", help="Run MassiveFold")
+  add_run_arguments(run_parser)
+
+  screening_parser = subparsers.add_parser("screen", help="Run MassiveFold screening")
+  add_screening_arguments(screening_parser)
 
   install_parser = subparsers.add_parser("install", help="Create MassiveFold file architecture")
   add_install_arguments(install_parser)
@@ -68,10 +79,10 @@ def dispatch_run(args, forwarded_args, scheduler):
     print(error)
     return 1
 
-def dispatch_screening(args, forwarded_args, scheduler):
+def dispatch_screen(args, forwarded_args, scheduler):
   print(f"Selected scheduler: {scheduler['name']}")
   try:
-    return scheduler["screening"](args, forwarded_args)
+    return screening_pipeline(args, forwarded_args, scheduler)
   except RuntimeError as error:
     print(error)
     return 1
@@ -94,14 +105,14 @@ def main(argv=None):
     parser.print_help()
     return 0
 
-  if args.command in ["run", "screening"]:
+  if args.command in ["run", "screen"]:
     scheduler, status = resolve_selected_scheduler(args)
     if status != 0:
       return status
 
     if args.command == "run":
       return dispatch_run(args, unknown, scheduler)
-    return dispatch_screening(args, unknown, scheduler)
+    return dispatch_screen(args, unknown, scheduler)
 
   if args.command == "install":
     if unknown:
