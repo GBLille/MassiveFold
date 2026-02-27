@@ -5,6 +5,7 @@ import argparse
 import sys
 
 from massivefold.pipeline import run_pipeline
+from massivefold.install import install_workspace
 from massivefold.scheduling import resolve_scheduler
 
 def add_run_arguments(run_parser):
@@ -30,6 +31,14 @@ def add_run_arguments(run_parser):
     help="Scheduler selector (default: auto)",
   )
 
+def add_install_arguments(install_parser):
+  install_parser.add_argument("--alphafold-db", dest="alphafold_databases", default="")
+  install_parser.add_argument("--alphafold3-db", dest="alphafold3_databases", default="")
+  install_parser.add_argument("--colabfold-db", dest="colabfold_databases", default="")
+  install_parser.add_argument("--install-path", dest="install_path", default="massivefold_runs")
+  install_parser.add_argument("--no-env", dest="no_env", action="store_true")
+  install_parser.add_argument("--only-envs", dest="only_envs", action="store_true")
+
 def build_parser():
   parser = argparse.ArgumentParser(prog="massivefold")
   subparsers = parser.add_subparsers(dest="command")
@@ -45,6 +54,9 @@ def build_parser():
     choices=["auto", "slurm", "local"],
     help="Scheduler selector (default: auto)",
   )
+
+  install_parser = subparsers.add_parser("install", help="Create MassiveFold file architecture")
+  add_install_arguments(install_parser)
 
   return parser
 
@@ -63,6 +75,9 @@ def dispatch_screening(args, forwarded_args, scheduler):
   except RuntimeError as error:
     print(error)
     return 1
+
+def dispatch_install(args):
+  return install_workspace(args)
 
 def resolve_selected_scheduler(args):
   scheduler, error = resolve_scheduler(args.scheduler)
@@ -87,6 +102,11 @@ def main(argv=None):
     if args.command == "run":
       return dispatch_run(args, unknown, scheduler)
     return dispatch_screening(args, unknown, scheduler)
+
+  if args.command == "install":
+    if unknown:
+      print("Ignoring extra arguments:", " ".join(unknown))
+    return dispatch_install(args)
 
   parser.print_help()
   return 1
