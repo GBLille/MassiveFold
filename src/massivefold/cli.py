@@ -6,45 +6,51 @@ import sys
 
 from massivefold.pipeline import run_pipeline
 from massivefold.pipeline import screening_pipeline
+from massivefold.pipeline import ppi_pipeline
 from massivefold.install import install_workspace
 from massivefold.scheduling import resolve_scheduler
 
 def add_run_arguments(run_parser):
-  run_parser.add_argument("-s", "--sequence", dest="sequence", required=True,
+  # required arguments
+  run_required = run_parser.add_argument_group("Required arguments")
+  run_required.add_argument("-s", "--sequence", dest="sequence", required=True,
                           help="Path of the sequence(s) to infer, should be a 'fasta' file.")
-  run_parser.add_argument("-r", "--run", dest="run_name", required=True,
+  run_required.add_argument("-r", "--run", dest="run_name", required=True,
                           help="Name chosen for the run to organize in outputs.")
-  run_parser.add_argument("-f", "--parameters", dest="parameters", required=True,
+  run_required.add_argument("-f", "--parameters", dest="parameters", required=True,
                           help="Json file's path containing the parameters used for this run.")
-  run_parser.add_argument("-p", "--predictions_per_model", dest="predictions_per_model", type=int, default=5,
+
+  # optional arguments
+  run_optional = run_parser.add_argument_group("Optional arguments")
+  run_optional.add_argument("-p", "--predictions_per_model", dest="predictions_per_model", type=int, default=5,
                           help="Number of predictions (default: 5) computed for each neural network model. "
                           "If used with -t AlphaFold3, -p is the number of seeds used. Each seed will have m "
                           "samples predicted. The number of sample set m is set in the AlphaFold3_params.json file. "
                           "In total, with -p n, you will have m*n predictions computed.")
-  run_parser.add_argument("-b", "--batch_size", dest="batch_size", type=int, default=25,
+  run_optional.add_argument("-b", "--batch_size", dest="batch_size", type=int, default=25,
                           help="Number of predictions per batch (default: 25). For AlphaFold3, it corresponds to "
                           "number of seeds should not be higher than -p.")
-  run_parser.add_argument("-j", "--jobid", dest="jobid", 
+  run_optional.add_argument("-j", "--jobid", dest="jobid", 
                           help="Jobid of an alignment job to wait for inference, skips the alignments.")
-  run_parser.add_argument("-o", "--only_msas", dest="only_msas", action="store_true",
+  run_optional.add_argument("-o", "--only_msas", dest="only_msas", action="store_true",
                           help="Only compute alignments, the first step of MassiveFold. "
                           "Overwrite MSAs directory by forcing re-computation.")
-  run_parser.add_argument("-c", "--calibrate", dest="calibrate", action="store_true",
+  run_optional.add_argument("-c", "--calibrate", dest="calibrate", action="store_true",
                           help="Calibrate --batch_size value. Searches from the previous runs for the same 'fasta' "
                           "path given in --sequence and uses the longest prediction time found to compute the maximal "
                           "number of predictions per batch. This maximal number depends on the total time given by "
                           "--wall_time.")
-  run_parser.add_argument("-C", "--calibration_from", dest="calibration_from",
+  run_optional.add_argument("-C", "--calibration_from", dest="calibration_from",
                           help="Path of a previous run to calibrate the batch size from (see --calibrate).")
-  run_parser.add_argument("-w", "--wall_time", dest="wall_time", type=float, default=20,
+  run_optional.add_argument("-w", "--wall_time", dest="wall_time", type=float, default=20,
                           help="Total time in hour (default: 20) available for calibration computations.")
-  run_parser.add_argument("-m", "--msas_precomputed", dest="msas_precomputed", 
+  run_optional.add_argument("-m", "--msas_precomputed", dest="msas_precomputed", 
                           help="Path to directory that contains computed msas.")
-  run_parser.add_argument("-n", "--top_n_model", dest="top_n_model",
+  run_optional.add_argument("-n", "--top_n_model", dest="top_n_model",
                           help="Uses the n neural network models with best ranking confidence from this run's path.")
-  run_parser.add_argument("-a", "--recompute_msas", dest="recompute_msas", action="store_true",
+  run_optional.add_argument("-a", "--recompute_msas", dest="recompute_msas", action="store_true",
                           help="Purges previous alignment step and recomputes msas.")
-  run_parser.add_argument(
+  run_optional.add_argument(
     "--scheduler",
     dest="scheduler",
     default="auto",
@@ -65,22 +71,57 @@ def add_install_arguments(install_parser):
                               help="Only install the environments (other arguments are not used.")
 
 def add_screening_arguments(screening_parser):
-  screening_parser.add_argument("-s", "--sequence", dest="sequence", required=True,
+  # required arguments
+  screening_required = screening_parser.add_argument_group("Required arguments")
+  screening_required.add_argument("-s", "--sequence", dest="sequence", required=True,
                                 help="Path of the fasta file containing sequence(s) used for screening.")
-  screening_parser.add_argument("-l", "--ligands", dest="ligands", required=True,
+  screening_required.add_argument("-l", "--ligands", dest="ligands", required=True,
                                 help="Csv file containing the list of ligands to use for screening.")
-  screening_parser.add_argument("-f", "--parameters", dest="parameters", required=True,
+  screening_required.add_argument("-f", "--parameters", dest="parameters", required=True,
                                 help="Json file's path containing the parameters used for the screening.")
-  screening_parser.add_argument("-p", "--predictions_per_model", dest="predictions_per_model", type=int, default=1,
+
+  # optional arguments
+  screening_optional = screening_parser.add_argument_group("Optional arguments")
+  screening_optional.add_argument("-p", "--predictions_per_model", dest="predictions_per_model", type=int, default=1,
                                 help="Number of seed used. Each seed will have 5 samples predicted. In total, "
                                 "with -p n, you will have 5n predictions computed.")
-  screening_parser.add_argument("-m", "--msas_precomputed", dest="msas_precomputed",
+  screening_optional.add_argument("-m", "--msas_precomputed", dest="msas_precomputed",
                                 help="Path to directory that contains computed msas.")
-  screening_parser.add_argument("-o", "--only_msas", dest="only_msas", action="store_true",
+  screening_optional.add_argument("-o", "--only_msas", dest="only_msas", action="store_true",
                                 help="Only compute alignments, the first step of MassiveFold.")
-  screening_parser.add_argument("-j", "--jobid", dest="jobid",
+  screening_optional.add_argument("-j", "--jobid", dest="jobid",
                                 help="Jobid of an alignment job to wait for inference, skips the alignments.")
-  screening_parser.add_argument(
+  screening_optional.add_argument(
+    "--scheduler",
+    dest="scheduler",
+    default="auto",
+    choices=["auto", "slurm", "local"],
+    help="Scheduler selector (default: auto)",
+  )
+
+def add_ppi_arguments(ppi_parser):
+  # required arguments
+  ppi_required = ppi_parser.add_argument_group('Required arguments')
+  ppi_required.add_argument("--receptors", dest="receptors", required=True,
+                                help="Path to CSV file containing fasta file paths to proteic sequence(s) used as receptors.")
+  ppi_required.add_argument("--ligands", dest="ligands", required=True,
+                                help="Path to CSV file containing fasta file paths to proteic sequence(s) used as ligands.")
+  ppi_required.add_argument("--context", dest="ligands", required=True,
+                                help="Path to CSV file containing molecules that are used as context (substrate, ions, ...) in the PPI simulations.")
+  ppi_required.add_argument("-f", "--parameters", dest="parameters", required=True,
+                                help="Json file's path containing the parameters used for the screening.")
+  # optional arguments
+  ppi_optional = ppi_parser.add_argument_group('Optional arguments')
+  ppi_optional.add_argument("-p", "--predictions_per_model", dest="predictions_per_model", type=int, default=1,
+                                help="Number of seed used. Each seed will have 5 samples predicted. In total, "
+                                "with -p n, you will have 5n predictions computed.")
+  ppi_optional.add_argument("-m", "--msas_precomputed", dest="msas_precomputed",
+                                help="Path to directory that contains computed msas.")
+  ppi_optional.add_argument("-o", "--only_msas", dest="only_msas", action="store_true",
+                                help="Only compute alignments, the first step of MassiveFold.")
+  ppi_optional.add_argument("-j", "--jobid", dest="jobid",
+                                help="Jobid of an alignment job to wait for inference, skips the alignments.")
+  ppi_optional.add_argument(
     "--scheduler",
     dest="scheduler",
     default="auto",
@@ -97,6 +138,9 @@ def build_parser():
 
   screening_parser = subparsers.add_parser("screen", help="Run MassiveFold screening")
   add_screening_arguments(screening_parser)
+
+  ppi_parser = subparsers.add_parser("ppi", help="Run MassiveFold PPI screening")
+  add_ppi_arguments(ppi_parser)
 
   install_parser = subparsers.add_parser("install", help="Create MassiveFold file architecture")
   add_install_arguments(install_parser)
@@ -119,6 +163,14 @@ def dispatch_screen(args, forwarded_args, scheduler):
     print(error)
     return 1
 
+def dispatch_ppi(args, forwarded_args, scheduler):
+  print(f"Selected scheduler: {scheduler['name']}")
+  try:
+    return ppi_pipeline(args, forwarded_args, scheduler)
+  except RuntimeError as error:
+    print(error)
+    return 1
+
 def dispatch_install(args):
   return install_workspace(args)
 
@@ -137,14 +189,17 @@ def main(argv=None):
     parser.print_help()
     return 0
 
-  if args.command in ["run", "screen"]:
+  if args.command in ["run", "screen", "ppi"]:
     scheduler, status = resolve_selected_scheduler(args)
     if status != 0:
       return status
 
     if args.command == "run":
       return dispatch_run(args, unknown, scheduler)
-    return dispatch_screen(args, unknown, scheduler)
+    elif args.command == "screen":
+      return dispatch_screen(args, unknown, scheduler)
+    elif args.command == "ppi":
+      return dispatch_screen(args, unknown, scheduler)
 
   if args.command == "install":
     if unknown:
