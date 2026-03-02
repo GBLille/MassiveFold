@@ -474,6 +474,58 @@ def af3_add_input_entity(batch_input_json, af3_params):
   print(json.dumps(simplified, indent=4))
   return batch_input_json
 
+def ppi_create_input(receptors, ligands, context, parameters_file):
+  try:
+    df_receptors = pd.read_csv(receptors)
+    df_ligands = pd.read_csv(ligands)
+    df_context = pd.read_csv(context)
+  except FileNotFoundError:
+    pass
+
+  # ------ ------ ------ ------ ------ ------ ------ 
+  # placeholders for test
+  df_receptors = {"fasta_file": []}
+  df_ligands= {"fasta_file": []}
+  base_dir = json.load(open(parameters_file, 'r'))["massivefold"]["input_dir"]
+  for _ in range(4):
+    df_receptors["fasta_file"].append(os.path.join(base_dir, 'H1140.fasta'))
+    df_ligands["fasta_file"].append(os.path.join(base_dir, 'H1140.fasta'))
+  df_receptors = pd.DataFrame(df_receptors)
+  df_ligands = pd.DataFrame(df_ligands)
+  # ------ ------ ------ ------ ------ ------ ------ 
+
+  all_receptors = df_receptors["fasta_file"]
+  all_ligands = df_ligands["fasta_file"]
+  # combine ligand & receptors in all vs all
+  all_ppi = {"receptor": [], "ligand": []}
+  for receptor in all_receptors:
+    for ligand in all_ligands:
+      all_ppi["receptor"].append(receptor)
+      all_ppi["ligand"].append(ligand)
+
+  df_all_ppi = pd.DataFrame(all_ppi)
+  get_sequence = lambda x: os.path.basename(x).replace('.fasta', '')
+  filenames = (df_all_ppi["receptor"].apply(get_sequence) + '_' + df_all_ppi["ligand"].apply(get_sequence) + '.fasta')
+  base_dir = json.load(open(parameters_file, 'r'))["massivefold"]["input_dir"]
+  df_all_ppi["ppi"] = filenames.apply(lambda x: os.path.join(base_dir, x))
+
+  # output the PPI fasta file that combines receptor and ligand files
+  for recep_filename, lig_filename, ppi_filename in zip(
+    df_all_ppi["receptor"].tolist(),
+    df_all_ppi["ligand"].tolist(),
+    df_all_ppi["ppi"].tolist()
+  ):
+    with open(ppi_filename, 'w') as output_file:
+      with open(recep_filename, 'r') as input1_file:
+        content = input1_file.read()
+      output_file.write(content)
+      with open(lig_filename, 'r') as input2_file:
+        content = input2_file.read()
+      output_file.write(content)
+
+  print(f"Created {len(df_all_ppi["ppi"].tolist())} PPI input files...")
+  return df_all_ppi
+
 def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
   sequence = os.path.basename(os.path.dirname(os.path.dirname(input_json)))
 

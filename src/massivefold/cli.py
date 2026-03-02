@@ -106,7 +106,7 @@ def add_ppi_arguments(ppi_parser):
                                 help="Path to CSV file containing fasta file paths to proteic sequence(s) used as receptors.")
   ppi_required.add_argument("--ligands", dest="ligands", required=True,
                                 help="Path to CSV file containing fasta file paths to proteic sequence(s) used as ligands.")
-  ppi_required.add_argument("--context", dest="ligands", required=True,
+  ppi_required.add_argument("--context", dest="context", required=True,
                                 help="Path to CSV file containing molecules that are used as context (substrate, ions, ...) in the PPI simulations.")
   ppi_required.add_argument("-f", "--parameters", dest="parameters", required=True,
                                 help="Json file's path containing the parameters used for the screening.")
@@ -199,7 +199,7 @@ def main(argv=None):
     elif args.command == "screen":
       return dispatch_screen(args, unknown, scheduler)
     elif args.command == "ppi":
-      return dispatch_screen(args, unknown, scheduler)
+      return dispatch_ppi(args, unknown, scheduler)
 
   if args.command == "install":
     if unknown:
