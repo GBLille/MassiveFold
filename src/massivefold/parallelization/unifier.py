@@ -523,7 +523,7 @@ def ppi_create_input(receptors, ligands, context, parameters_file):
         content = input2_file.read()
       output_file.write(content)
 
-  print(f"Created {len(df_all_ppi["ppi"].tolist())} PPI input files...")
+  print(f"Created {len(df_all_ppi['ppi'].tolist())} PPI input files...")
   return df_all_ppi
 
 def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
