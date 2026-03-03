@@ -163,10 +163,10 @@ def dispatch_screen(args, forwarded_args, scheduler):
     print(error)
     return 1
 
-def dispatch_ppi(args, forwarded_args, run_args, screen_args, scheduler):
+def dispatch_ppi(args, forwarded_args, scheduler):
   print(f"Selected scheduler: {scheduler['name']}")
   try:
-    return ppi_pipeline(args, forwarded_args, run_args, screen_args, scheduler)
+    return ppi_pipeline(args, forwarded_args, scheduler)
   except RuntimeError as error:
     print(error)
     return 1
@@ -180,16 +180,6 @@ def resolve_selected_scheduler(args):
     print(error)
     return None, 2
   return scheduler, 0
-
-def get_temporary_argv(parameters_file):
-  run_argv, screen_argv = [], []
-  for pipeline, pipeline_argv in zip(["run", "screen"], [run_argv, screen_argv]):
-    pipeline_argv.extend([ pipeline, "--sequence", "<seq_placeholder>", "--parameters", parameters_file ])
-    if pipeline == "run":
-      pipeline_argv.extend([ "--run", "<run_placeholder>" ])
-    elif pipeline == "screen":
-      pipeline_argv.extend([ "--ligands", "<ligands_placeholder>" ])
-  return run_argv, screen_argv
 
 def main(argv=None):
   parser = build_parser()
@@ -210,11 +200,7 @@ def main(argv=None):
     elif args.command == "screen":
       return dispatch_screen(args, unknown, scheduler)
     elif args.command == "ppi":
-      temp_run_argv, temp_screen_argv = get_temporary_argv(args.parameters)
-
-      temp_run_args, unknown = parser.parse_known_args(temp_run_argv)
-      temp_screen_args, unknown = parser.parse_known_args(temp_screen_argv)
-      return dispatch_ppi(args, unknown, temp_run_args, temp_screen_args, scheduler)
+      return dispatch_ppi(args, unknown, scheduler)
 
   if args.command == "install":
     if unknown:

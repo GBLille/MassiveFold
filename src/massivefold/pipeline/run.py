@@ -199,7 +199,8 @@ def create_batches_file(
   batch_size,
   models_to_use,
   tool,
-  to_screen=""):
+  to_screen=""
+):
 
   all_params = read_json(parameters_file)
   model_preset = batching.detect_model_preset(
