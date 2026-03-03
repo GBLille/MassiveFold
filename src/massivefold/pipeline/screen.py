@@ -9,7 +9,7 @@ from .run import copy_batches_file
 from .run import copy_inputs
 from .run import count_batches
 from .run import create_batches_file
-from .run import create_jobfile
+from .run import build_jobfile
 from .run import convert_input_if_needed
 from .run import detect_precomputed_msas
 from .run import has_valid_msas
@@ -109,7 +109,7 @@ def run_screening_pipeline_internal(args, forwarded_args, scheduler):
   ):
     convert_input_if_needed(sequence_file, parameters_file, tool)
     print(f"Running alignment for {sequence_name}")
-    alignment_jobfile_content = create_jobfile(
+    alignment_jobfile_content = build_jobfile(
       "alignment",
       sequence_name,
       run_name,
@@ -117,7 +117,8 @@ def run_screening_pipeline_internal(args, forwarded_args, scheduler):
       tool,
       mf_following_msas=bool_arg(not only_msas),
     )
-    alignment_id = submit_scheduler_job(scheduler, alignment_jobfile_content)
+    alignment_jobfile_name = f"alignment-{sequence_name}"
+    alignment_id = submit_scheduler_job(scheduler, alignment_jobfile_content, alignment_jobfile_name)
     waiting_for_alignment = True
 
     if only_msas:
@@ -146,7 +147,7 @@ def run_screening_pipeline_internal(args, forwarded_args, scheduler):
 
     shutil.copy2(parameters_file, output_run_dir)
 
-  jobarray_jobfile_content = create_jobfile(
+  jobarray_jobfile_content = build_jobfile(
     "jobarray",
     sequence_name,
     run_name,
@@ -157,15 +158,19 @@ def run_screening_pipeline_internal(args, forwarded_args, scheduler):
 
   array_size = count_batches(batches_file)
   dependency = alignment_id if waiting_for_alignment else None
+
+  inference_jobfile_name = f"inference-{sequence_name}_{run_name}"
   array_id = submit_scheduler_job(
     scheduler,
     jobarray_jobfile_content,
+    jobfile_name=inference_jobfile_name,
     dependency_id=dependency,
     array_size=array_size,
   )
 
-  post_treatment_jobfile_content = create_jobfile("post_treatment", sequence_name, run_name, parameters_file, tool)
-  submit_scheduler_job(scheduler, post_treatment_jobfile_content, dependency_id=array_id)
+  post_treatment_jobfile_content = build_jobfile("post_treatment", sequence_name, run_name, parameters_file, tool)
+  post_treatment_jobfile_name = f"post_treatment-{sequence_name}_{run_name}"
+  submit_scheduler_job(scheduler, post_treatment_jobfile_content, dependency_id=array_id, jobfile_name=post_treatment_jobfile_name)
 
   move_generated_files_to_logs(sequence_name, run_name, logs_run_dir)
   return 0
