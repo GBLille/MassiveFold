@@ -3,6 +3,8 @@ import os
 import re
 import copy
 import argparse
+
+from pandas._libs.lib import infer_dtype
 from Bio import SeqIO
 import pickle
 from shutil import move as mv, copy as cp
@@ -474,11 +476,55 @@ def af3_add_input_entity(batch_input_json, af3_params):
   print(json.dumps(simplified, indent=4))
   return batch_input_json
 
-def ppi_create_input(receptors, ligands, context, parameters_file):
-  df_receptors = pd.read_csv(receptors)
-  df_ligands = pd.read_csv(ligands)
-  if context:
-    df_context = pd.read_csv(context)
+def ppi_create_base_fasta(file_list, output_dir):
+  fasta_types = ["protein", "DNA", "RNA"]
+
+  if file_list.endswith('.json'):
+    interactors = pd.DataFrame(json.load(open(file_list, 'r')))
+  elif file_list.endswith('.csv'):
+    interactors = pd.read_csv(file_list)
+  else:
+    raise ValueError(f"Unsupported interactor file format for {file_list} (expected .csv or .json)")
+
+  if not any(fasta_type in interactors.columns for fasta_type in fasta_types):
+    raise ValueError(f'Interactor types in {file_list} should be in {{"protein"|"DNA"|"RNA"}}')
+
+  for fasta_type in fasta_types:
+    if fasta_type not in interactors.columns:
+      interactors[fasta_type] = ""
+
+  fasta_files_col = []
+  for _, row in interactors.iterrows():
+    fasta_files = [
+      str(row[fasta_type]).strip()
+      for fasta_type in fasta_types
+      if not pd.isna(row[fasta_type]) and str(row[fasta_type]).strip()
+    ]
+
+    if not fasta_files:
+      fasta_files_col.append("")
+      continue
+
+    combined_name = "_".join(
+      os.path.basename(path).replace(".fasta", "").replace(".fa", "")
+      for path in fasta_files
+    ) + ".fasta"
+    combined_fasta = os.path.join(output_dir, combined_name)
+    with open(combined_fasta, "w") as output_file:
+      for fasta_path in fasta_files:
+        with open(fasta_path, "r") as input_file:
+          output_file.write(input_file.read())
+
+    fasta_files_col.append(combined_fasta)
+
+  interactors["fasta_file"] = fasta_files_col
+
+  return interactors
+
+def ppi_create_input(receptors, ligands, parameters_file):
+  base_dir = json.load(open(parameters_file, 'r'))["massivefold"]["input_dir"]
+  df_receptors = ppi_create_base_fasta(receptors, base_dir)
+  df_ligands = ppi_create_base_fasta(ligands, base_dir)
 
   all_receptors = df_receptors["fasta_file"]
   all_ligands = df_ligands["fasta_file"]
@@ -497,7 +543,6 @@ def ppi_create_input(receptors, ligands, context, parameters_file):
   df_all_ppi = pd.DataFrame(all_ppi)
   get_sequence = lambda x: os.path.basename(x).replace('.fasta', '')
   filenames = (df_all_ppi["receptor"].apply(get_sequence) + '_' + df_all_ppi["ligand"].apply(get_sequence) + '.fasta')
-  base_dir = json.load(open(parameters_file, 'r'))["massivefold"]["input_dir"]
   df_all_ppi["ppi"] = filenames.apply(lambda x: os.path.join(base_dir, x))
 
   # output the PPI fasta file that combines receptor and ligand files
