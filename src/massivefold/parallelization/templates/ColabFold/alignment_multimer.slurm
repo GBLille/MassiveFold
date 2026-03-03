@@ -1,4 +1,4 @@
-source $$(conda info --base)/etc/profile.d/conda.sh
+. $$(conda info --base)/etc/profile.d/conda.sh
 conda activate mf-colabfold-1.5.5
 
 # variables to adapt: used for alignment

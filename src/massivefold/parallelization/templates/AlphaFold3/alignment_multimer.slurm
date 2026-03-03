@@ -1,4 +1,4 @@
-source $$(conda info --base)/etc/profile.d/conda.sh
+. $$(conda info --base)/etc/profile.d/conda.sh
 conda activate mf-alphafold-3.0.1
 
 mf_following_msas=$mf_following_msas

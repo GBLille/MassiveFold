@@ -71,7 +71,7 @@ else
   echo "Batches have already been prepared."
 fi
 
-source $$(conda info --base)/etc/profile.d/conda.sh
+. $$(conda info --base)/etc/profile.d/conda.sh
 conda activate mf-alphafold-3.0.1
 
 date

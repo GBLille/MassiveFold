@@ -1,5 +1,5 @@
 
-source $$(conda info --base)/etc/profile.d/conda.sh
+. $$(conda info --base)/etc/profile.d/conda.sh
 conda activate mf-colabfold-1.5.5
 #conda activate mf-colabfold
 
