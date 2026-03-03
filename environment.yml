@@ -11,7 +11,7 @@ dependencies:
       - matplotlib==3.10.0
       - seaborn==0.13.2
       - numpy==2.2.3
-      - tqdm==-4.67.3
+      - tqdm==4.67.3
       - pandas==2.2.3
       - scipy==1.15.2
       - glypy==1.0.14
