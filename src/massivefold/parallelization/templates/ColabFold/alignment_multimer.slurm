@@ -10,9 +10,9 @@ data_dir=$data_dir
 scripts_dir=$scripts_dir
 
 pair_strategy=$pair_strategy
-if [[ $$pair_strategy == "greedy" ]]; then
+if [ "$$pair_strategy" = "greedy" ]; then
   pairing_strategy=0
-elif [[ $$pair_strategy == "complete" ]]; then
+elif [ "$$pair_strategy" = "complete" ]; then
   pairing_strategy=1
 else
   echo "ValueError: pair_strategy should be 'greedy' or 'complete'"

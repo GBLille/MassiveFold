@@ -33,7 +33,7 @@ path_to_msas=$${output_dir}/$${sequence_name}/$${run_name}/$${json_batch_input}
 
 if $${mf_before_inference}; then
   echo "Waiting for input batches for inference..."
-  if [[ $$batch == 0 ]]; then
+  if [ "$$batch" = 0 ]; then
     echo "Preparing the input batches for inference..."
     json_params=$json_params
     batches_file=$${logs_dir}/$${sequence_name}/$${run_name}/$${sequence_name}_$${run_name}_batches.json
@@ -55,7 +55,7 @@ if $${mf_before_inference}; then
     # wait until all af3_batch_n.json are finished or crash if it takes too long (10 minutes)
     timeout=600
     elapsed=0
-    while [[ ! -f $$path_to_msas  ]];
+    while [ ! -f "$$path_to_msas" ];
     do
       if (( elapsed >= timeout )); then
         echo "Something may have happened during input preparation in batch 0 (see jobarray_0.log)"

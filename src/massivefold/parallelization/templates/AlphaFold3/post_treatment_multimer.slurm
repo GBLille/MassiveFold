@@ -39,13 +39,13 @@ time python3 $$(which $${mf_plots_path}) \
 
 date
 
-if [[ $$pkl_format == "light" ]]; then
+if [ "$$pkl_format" = "light" ]; then
   pkl_mode="light"
   echo "Reducing pkl size"
-elif [[ $$pkl_format == "none" ]]; then
+elif [ "$$pkl_format" = "none" ]; then
   echo "Not keeping pkl files"
   pkl_mode="delete"
-elif [[ $$pkl_format == "full" ]]; then
+elif [ "$$pkl_format" = "full" ]; then
   echo "Keeping pkl files as in AlphaFold output"
   pkl_mode="full"
 else
