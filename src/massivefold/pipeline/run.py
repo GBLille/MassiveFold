@@ -483,7 +483,7 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
       tool,
       mf_following_msas=bool_arg(following_msas),
     )
-    alignment_jobfile_name = f"alignment-{sequence_name}"
+    alignment_jobfile_name = f"alignment-{sequence_name}-{tool}"
     alignment_id = submit_scheduler_job(scheduler, alignment_jobfile_content, alignment_jobfile_name)
     waiting_for_alignment = True
 

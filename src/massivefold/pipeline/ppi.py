@@ -45,7 +45,6 @@ def run_ppi_pipeline_internal(args, forwarded_args, scheduler):
   ppi_inputs = ppi_create_input(
     receptors_file,
     ligands_file,
-    context_file,
     parameters_file
   )
 
