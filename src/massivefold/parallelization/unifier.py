@@ -482,10 +482,15 @@ def ppi_create_input(receptors, ligands, context, parameters_file):
 
   all_receptors = df_receptors["fasta_file"]
   all_ligands = df_ligands["fasta_file"]
-  # combine ligand & receptors in all vs all
+  # combine ligand & receptors in all vs all (skip duplicates)
+  interactions = set()
   all_ppi = {"receptor": [], "ligand": []}
   for receptor in all_receptors:
     for ligand in all_ligands:
+      interaction = ','.join(sorted([ligand, receptor]))
+      if interaction in interactions:
+        continue
+      interactions.add(interaction)
       all_ppi["receptor"].append(receptor)
       all_ppi["ligand"].append(ligand)
 
