@@ -106,12 +106,12 @@ def add_ppi_arguments(ppi_parser):
                                 help="Path to CSV file containing fasta file paths to proteic sequence(s) used as receptors.")
   ppi_required.add_argument("--ligands", dest="ligands", required=True,
                                 help="Path to CSV file containing fasta file paths to proteic sequence(s) used as ligands.")
-  ppi_required.add_argument("--context", dest="context", required=True,
-                                help="Path to CSV file containing molecules that are used as context (substrate, ions, ...) in the PPI simulations.")
   ppi_required.add_argument("-f", "--parameters", dest="parameters", required=True,
                                 help="Json file's path containing the parameters used for the screening.")
   # optional arguments
   ppi_optional = ppi_parser.add_argument_group('Optional arguments')
+  ppi_optional.add_argument("--context", dest="context",
+                                help="Path to CSV file containing molecules that are used as context (substrate, ions, ...) in the PPI simulations.")
   ppi_optional.add_argument("-p", "--predictions_per_model", dest="predictions_per_model", type=int, default=1,
                                 help="Number of seed used. Each seed will have 5 samples predicted. In total, "
                                 "with -p n, you will have 5n predictions computed.")
@@ -163,10 +163,10 @@ def dispatch_screen(args, forwarded_args, scheduler):
     print(error)
     return 1
 
-def dispatch_ppi(args, forwarded_args, scheduler):
+def dispatch_ppi(args, forwarded_args, run_args, screen_args, scheduler):
   print(f"Selected scheduler: {scheduler['name']}")
   try:
-    return ppi_pipeline(args, forwarded_args, scheduler)
+    return ppi_pipeline(args, forwarded_args, run_args, screen_args, scheduler)
   except RuntimeError as error:
     print(error)
     return 1
@@ -181,8 +181,19 @@ def resolve_selected_scheduler(args):
     return None, 2
   return scheduler, 0
 
+def get_temporary_argv(parameters_file):
+  run_argv, screen_argv = [], []
+  for pipeline, pipeline_argv in zip(["run", "screen"], [run_argv, screen_argv]):
+    pipeline_argv.extend([ pipeline, "--sequence", "<seq_placeholder>", "--parameters", parameters_file ])
+    if pipeline == "run":
+      pipeline_argv.extend([ "--run", "<run_placeholder>" ])
+    elif pipeline == "screen":
+      pipeline_argv.extend([ "--ligands", "<ligands_placeholder>" ])
+  return run_argv, screen_argv
+
 def main(argv=None):
   parser = build_parser()
+
   args, unknown = parser.parse_known_args(argv)
 
   if not args.command:
@@ -199,7 +210,11 @@ def main(argv=None):
     elif args.command == "screen":
       return dispatch_screen(args, unknown, scheduler)
     elif args.command == "ppi":
-      return dispatch_ppi(args, unknown, scheduler)
+      temp_run_argv, temp_screen_argv = get_temporary_argv(args.parameters)
+
+      temp_run_args, unknown = parser.parse_known_args(temp_run_argv)
+      temp_screen_args, unknown = parser.parse_known_args(temp_screen_argv)
+      return dispatch_ppi(args, unknown, temp_run_args, temp_screen_args, scheduler)
 
   if args.command == "install":
     if unknown:
