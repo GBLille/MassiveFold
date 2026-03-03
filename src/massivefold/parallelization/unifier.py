@@ -475,24 +475,10 @@ def af3_add_input_entity(batch_input_json, af3_params):
   return batch_input_json
 
 def ppi_create_input(receptors, ligands, context, parameters_file):
-  try:
-    df_receptors = pd.read_csv(receptors)
-    df_ligands = pd.read_csv(ligands)
+  df_receptors = pd.read_csv(receptors)
+  df_ligands = pd.read_csv(ligands)
+  if context:
     df_context = pd.read_csv(context)
-  except FileNotFoundError:
-    pass
-
-  # ------ ------ ------ ------ ------ ------ ------ 
-  # placeholders for test
-  df_receptors = {"fasta_file": []}
-  df_ligands= {"fasta_file": []}
-  base_dir = json.load(open(parameters_file, 'r'))["massivefold"]["input_dir"]
-  for _ in range(4):
-    df_receptors["fasta_file"].append(os.path.join(base_dir, 'H1140.fasta'))
-    df_ligands["fasta_file"].append(os.path.join(base_dir, 'H1140.fasta'))
-  df_receptors = pd.DataFrame(df_receptors)
-  df_ligands = pd.DataFrame(df_ligands)
-  # ------ ------ ------ ------ ------ ------ ------ 
 
   all_receptors = df_receptors["fasta_file"]
   all_ligands = df_ligands["fasta_file"]

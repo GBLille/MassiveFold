@@ -6,7 +6,7 @@ from .screen import screening_pipeline
 from .run import run_pipeline
 from massivefold.parallelization.unifier import ppi_create_input
 
-def run_ppi_pipeline_internal(args, forwarded_args, scheduler):
+def run_ppi_pipeline_internal(args, forwarded_args, run_args, screen_args, scheduler):
   receptors_file = args.receptors
   ligands_file = args.ligands
   context_file = args.context
@@ -25,30 +25,37 @@ def run_ppi_pipeline_internal(args, forwarded_args, scheduler):
   )
 
   ppi_sequences = ppi_inputs["ppi"].tolist()
-  base_args = {
-    "parameters": parameters_file,
-    "predictions_per_model": predictions_per_model,
-    "msas_precomputed": msas_precomputed,
-    "only_msas": only_msas,
-    "wait_for_jobid": wait_for_jobid
-  }
-  for ppi in ppi_sequences:
-    args_ppi = base_args.copy()
-    args_ppi["sequence"] = ppi
-    if context_file:
-      args_ppi["ligands"] = context_file
-      args = Namespace(**args_ppi)
-      screening_pipeline(args, forwarded_args, scheduler)
-    else:
-      args_ppi["run"] = "PPI"
-      args = Namespace(**args_ppi)
-      run_pipeline(args, forwarded_args, scheduler)
 
+  # update temporary args partially parsed from cli.py module
+  args_updates = {}
+  # small molecules present is a screen call
+  if context_file:
+    args_updates["ligands"] = context_file
+    for ppi in ppi_sequences:
+      args_updates["sequence"] = ppi
+      vars(screen_args).update(args_updates)
+      screening_pipeline(
+        screen_args,
+        forwarded_args,
+        scheduler
+      )
+  # no small molecules is a simple run call
+  else:
+    args_updates["run_name"] = "PPI"
+    for ppi in ppi_sequences:
+      args_updates["sequence"] = ppi
+      vars(run_args).update(args_updates)
+      print(run_args)
+      run_pipeline(
+        run_args,
+        forwarded_args,
+        scheduler
+      )
   return 0
 
-def ppi_pipeline(args, forwarded_args, scheduler):
+def ppi_pipeline(args, forwarded_args, run_args, screen_args, scheduler):
   try:
-    return run_ppi_pipeline_internal(args, forwarded_args, scheduler)
+    return run_ppi_pipeline_internal(args, forwarded_args, run_args, screen_args, scheduler)
   except RuntimeError as error:
     print(error)
     print("Exiting.")
