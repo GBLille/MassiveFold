@@ -9,11 +9,12 @@ import json
 import argparse
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-from plots.colabfold_plots import plot_msa_v2, plot_plddts, plot_confidence, plot_paes, plot_plddt_legend
 from scipy.stats import gaussian_kde
 import shutil
 from matplotlib.lines import Line2D
 import seaborn as sns
+
+from .plots.colabfold_plots import plot_msa_v2, plot_plddts, plot_confidence, plot_paes, plot_plddt_legend
 
 def parse_csv(value):
   if value is None:
