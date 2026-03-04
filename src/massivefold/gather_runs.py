@@ -19,7 +19,7 @@ parser.add_argument('--only_ranking', help="Skips the run gathering, only output
 parser.add_argument('--include_pickles', help="If specified, include the .pkl pickle" 
 " files in the gathered results stored in <OUTPUT_PATH>", required=False, action='store_true')
 parser.add_argument('--include_rank', help="Include a ranking (ambiguous for ties resolving) on 0.8 x iptm + 0.2 x ptm" 
-"in the name of the ranked files, also provides a mapping from original files to the gathered files.", required=False, action='store_true')
+" in the name of the ranked files, also provides a mapping from original files to the gathered files.", required=False, action='store_true')
 
 def global_rank_to_json(ranking, output_path):
   map_pred_run = dict(zip(list(ranking["parameters"] + "_" + ranking["model_name"]), list(ranking['parameters'])))
