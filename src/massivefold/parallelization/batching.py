@@ -45,7 +45,7 @@ def batches_per_ligand(ligands, preds_per_model):
     iupac = "" if pd.isna(iupac) else iupac
     smiles, ccdcode, iupac = smiles.strip(), ccdcode.strip(), iupac.strip()
     batches[str(i)] = {
-      'start': 0, 'end': preds_per_model - 1, "id": id.lower(),
+      'start': 0, 'end': preds_per_model - 1, "id": str(id).lower(),
       "smiles": smiles, "ccdcode": [ ccdcode ], "iupac": iupac
     }
 
