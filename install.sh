@@ -175,4 +175,5 @@ if [[ $do_not_create_env == "true" ]]; then
   install_cmd+=(--no-env)
 fi
 
+conda install massivefold
 "${install_cmd[@]}"
