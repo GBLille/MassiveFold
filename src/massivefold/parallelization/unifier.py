@@ -478,6 +478,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
 
 def ppi_create_base_fasta(file_list, output_dir):
   fasta_types = ["protein", "DNA", "RNA"]
+  combined_fasta_dir = os.path.join(output_dir, "combined")
 
   if file_list.endswith('.json'):
     interactors = pd.DataFrame(json.load(open(file_list, 'r')))
@@ -494,56 +495,70 @@ def ppi_create_base_fasta(file_list, output_dir):
       interactors[fasta_type] = ""
 
   fasta_files_col = []
+  fasta_files_types_col = []
   for _, row in interactors.iterrows():
-    fasta_files = [
-      str(row[fasta_type]).strip()
+    fasta_pairs = [
+      (str(row[fasta_type]).strip(), fasta_type)
       for fasta_type in fasta_types
       if not pd.isna(row[fasta_type]) and str(row[fasta_type]).strip()
     ]
+    fasta_files = [path for path, _ in fasta_pairs]
 
     if not fasta_files:
       fasta_files_col.append("")
+      fasta_files_types_col.append([])
       continue
 
     combined_name = "_".join(
       os.path.basename(path).replace(".fasta", "").replace(".fa", "")
       for path in fasta_files
     ) + ".fasta"
-    combined_fasta = os.path.join(output_dir, combined_name)
+    combined_fasta = os.path.join(combined_fasta_dir, combined_name)
+    fasta_files_types = []
     with open(combined_fasta, "w") as output_file:
-      for fasta_path in fasta_files:
+      for fasta_path, fasta_type in fasta_pairs:
         with open(fasta_path, "r") as input_file:
-          output_file.write(input_file.read())
+          content = input_file.read().rstrip()
+        output_file.write(content)
+        sequence_count = sum(1 for line in content.splitlines() if line.startswith(">"))
+        fasta_files_types.extend([fasta_type] * sequence_count)
 
     fasta_files_col.append(combined_fasta)
+    fasta_files_types_col.append(fasta_files_types)
 
   interactors["fasta_file"] = fasta_files_col
+  interactors["fasta_files_types"] = fasta_files_types_col
 
   return interactors
 
 def ppi_create_input(receptors, ligands, parameters_file):
   base_dir = json.load(open(parameters_file, 'r'))["massivefold"]["input_dir"]
+  combined_fasta_dir = os.path.join(base_dir, "combined")
+
   df_receptors = ppi_create_base_fasta(receptors, base_dir)
   df_ligands = ppi_create_base_fasta(ligands, base_dir)
 
   all_receptors = df_receptors["fasta_file"]
+  receptors_chains = df_receptors["fasta_files_types"]
   all_ligands = df_ligands["fasta_file"]
+  ligands_chains = df_ligands["fasta_files_types"]
   # combine ligand & receptors in all vs all (skip duplicates)
   interactions = set()
-  all_ppi = {"receptor": [], "ligand": []}
-  for receptor in all_receptors:
-    for ligand in all_ligands:
+  all_ppi = {"receptor": [], "ligand": [], "fasta_chains": []}
+  for receptor, r_chains in zip(all_receptors, receptors_chains):
+    for ligand, l_chains in zip(all_ligands, ligands_chains):
       interaction = ','.join(sorted([ligand, receptor]))
       if interaction in interactions:
         continue
       interactions.add(interaction)
       all_ppi["receptor"].append(receptor)
       all_ppi["ligand"].append(ligand)
+      all_ppi["fasta_chains"].append([*r_chains, *l_chains])
 
   df_all_ppi = pd.DataFrame(all_ppi)
   get_sequence = lambda x: os.path.basename(x).replace('.fasta', '')
   filenames = (df_all_ppi["receptor"].apply(get_sequence) + '_' + df_all_ppi["ligand"].apply(get_sequence) + '.fasta')
-  df_all_ppi["ppi"] = filenames.apply(lambda x: os.path.join(base_dir, x))
+  df_all_ppi["ppi"] = filenames.apply(lambda x: os.path.join(combined_fasta_dir, x))
 
   # output the PPI fasta file that combines receptor and ligand files
   for recep_filename, lig_filename, ppi_filename in zip(
@@ -553,12 +568,12 @@ def ppi_create_input(receptors, ligands, parameters_file):
   ):
     with open(ppi_filename, 'w') as output_file:
       with open(recep_filename, 'r') as input1_file:
-        content = input1_file.read()
-      output_file.write(content)
+        content = input1_file.readlines()
       with open(lig_filename, 'r') as input2_file:
-        content = input2_file.read()
-      output_file.write(content)
+        content.extend(input2_file.readlines())
+      output_file.write('\n'.join(content))
 
+  df_all_ppi = df_all_ppi[["ppi", "fasta_chains"]]
   print(f"Created {len(df_all_ppi['ppi'].tolist())} PPI input files...")
   return df_all_ppi
 

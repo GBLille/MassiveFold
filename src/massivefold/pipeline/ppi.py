@@ -1,6 +1,8 @@
 """Implementation of `massivefold screen` pipeline."""
 
 from argparse import Namespace
+import json
+import os
 
 from .screen import screening_pipeline
 from .run import run_pipeline
@@ -49,19 +51,37 @@ def run_ppi_pipeline_internal(args, forwarded_args, scheduler):
   )
 
   ppi_sequences = ppi_inputs["ppi"].tolist()
+  ppi_fasta_chains = ppi_inputs["fasta_chains"].tolist()
+  parameters = json.load(open(parameters_file, 'r'))
+  is_af3 = 'AF3_run' in parameters
 
-  # small molecules present is a screen call
-  if context_file:
-    for ppi in ppi_sequences:
+  for ppi, fasta_chains in zip(ppi_sequences, ppi_fasta_chains):
+    sequence_parameters = parameters.copy()
+    # automatically detect and register the fasta chain types in af3 param file
+    if is_af3:
+      sequence_parameters["AF3_run"]["fasta_chains"] = fasta_chains
+    # created combined fasta stored inside input directory
+    combined_fasta_dir = os.path.join(sequence_parameters["massivefold"]["input_dir"], 'combined')
+    os.makedirs(combined_fasta_dir, exist_ok=True)
+    sequence_parameters["massivefold"]["input_dir"] = combined_fasta_dir
+    # copy param file in each sequence's log directory
+    prefix = '<ppi-internal>-'
+    internal_parameters_file = os.path.join(
+      os.path.dirname(parameters_file),
+      f"{prefix}{os.path.basename(parameters_file)}"
+    )
+    json.dump(sequence_parameters, open(internal_parameters_file, 'w'))
+    args.parameters = internal_parameters_file
+    # small molecules present is a screen call
+    if context_file:
       screen_args = screening_item_args(args, ppi)
       screening_pipeline(
         screen_args,
         forwarded_args,
         scheduler
       )
-  # no small molecules is a simple run call
-  else:
-    for ppi in ppi_sequences:
+    # no small molecules is a simple run call
+    else:
       pipeline_args = run_item_args(args, ppi)
       run_pipeline(
         pipeline_args,
