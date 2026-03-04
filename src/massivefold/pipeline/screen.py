@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import json
 
 from .run import alignment_is_needed
 from .run import bool_arg
@@ -65,7 +66,7 @@ def run_screening_pipeline_internal(args, forwarded_args, scheduler):
   print(f"Run {run_name} on sequence {sequence_name} with {predictions_per_model} predictions per model")
 
   logs_run_dir = os.path.join(logs_dir, sequence_name, run_name)
-  copy_inputs(sequence_file, parameters_file, logs_run_dir)
+  copy_inputs(sequence_file, parameters_file, logs_run_dir, tool="AlphaFold3")
   copy_ligands_file(ligands_file, logs_run_dir)
 
   batches_file = create_batches_file(
