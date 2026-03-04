@@ -7,12 +7,14 @@ import os
 
 from .screen import screening_pipeline
 from .run import run_pipeline
+from .run import detect_tool_code
 from massivefold.parallelization.unifier import ppi_create_input
 
 def run_item_args(args, sequence):
+  tool = detect_tool_code(args.parameters)
   return Namespace(
     sequence=sequence,
-    run_name="PPI",
+    run_name=f"PPI_{tool}",
     parameters=args.parameters,
     predictions_per_model=args.predictions_per_model,
     batch_size=25,

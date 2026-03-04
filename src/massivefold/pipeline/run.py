@@ -10,12 +10,8 @@ from massivefold.parallelization import unifier
 from massivefold.parallelization import batching
 from massivefold.parallelization import create_jobfile
 
-def read_json(path):
-  with open(path, "r", encoding="utf-8") as handle:
-    return json.load(handle)
-
 def detect_tool_code(parameters_file):
-  data = read_json(parameters_file)
+  data = json.load(open(parameters_file, 'r'))
   keys = list(data.keys())
   tools = [item for item in keys if item.endswith("_run")]
   if len(tools) != 1:
@@ -112,7 +108,7 @@ def batch_size_from_specific_run(calibration_path, wall_time):
 
 def models_from_run(path_to_run, top_n=5):
   ranking_debug = os.path.join(path_to_run, "ranking_debug.json")
-  data = read_json(ranking_debug)
+  data = json.load(open(ranking_debug, 'r'))
   models = []
   for prediction in data["order"]:
     model = prediction.split("_pred")[0]
@@ -207,7 +203,7 @@ def create_batches_file(
   to_screen=""
 ):
 
-  all_params = read_json(parameters_file)
+  all_params = json.load(open(parameters_file, 'r'))
   model_preset = batching.detect_model_preset(
     os.path.join(all_params["massivefold"]["input_dir"], f"{sequence_name}.fasta")
   )
@@ -271,7 +267,7 @@ def build_jobfile(
     "substitute_batch_number": list(batches.keys())[-1],
   }
 
-  all_params = read_json(path_to_parameters)
+  all_params = json.load(open(path_to_parameters, 'r'))
   all_params["massivefold"]["sequence_name"] = sequence_name
   all_params["massivefold"]["run_name"] = run_name
 
@@ -383,7 +379,7 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
     return 1
 
   print(f"Tool used is {tool}")
-  parameters = read_json(temp_parameters_file)
+  parameters = json.load(open(temp_parameters_file, 'r'))
   massivefold_params = parameters.get("massivefold", {})
   output_dir = massivefold_params.get("output_dir")
   logs_dir = massivefold_params.get("logs_dir")
@@ -536,7 +532,7 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
 
   array_size = count_batches(batches_file)
   dependency = alignment_id if waiting_for_alignment else None
-  inference_jobfile_name = f"inference-{sequence_name}_{run_name}"
+  inference_jobfile_name = f"inference-{sequence_name}_{run_name}-{tool}"
   array_id = submit_scheduler_job(
     scheduler,
     jobarray_jobfile_content,
@@ -546,7 +542,7 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
   )
 
   post_treatment_jobfile_content = build_jobfile("post_treatment", sequence_name, run_name, parameters_file, tool)
-  post_treatment_jobfile_name = f"post_treatment-{sequence_name}_{run_name}"
+  post_treatment_jobfile_name = f"post_treatment-{sequence_name}_{run_name}-{tool}"
   submit_scheduler_job(scheduler, post_treatment_jobfile_content, post_treatment_jobfile_name, dependency_id=array_id)
 
   move_generated_files_to_logs(sequence_name, run_name, logs_run_dir)

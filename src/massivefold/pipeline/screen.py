@@ -16,7 +16,6 @@ from .run import has_valid_msas
 from .run import move_generated_files_to_logs
 from .run import next_run_name
 from .run import prepare_af3_inference_input
-from .run import read_json
 from .run import sequence_name_from_path
 from .run import submit_scheduler_job
 
@@ -50,7 +49,7 @@ def run_screening_pipeline_internal(args, forwarded_args, scheduler):
     print(f"Parameter file '{parameters_file}' not found, exiting.")
     return 1
 
-  parameters = read_json(parameters_file)
+  parameters = json.load(open(parameters_file, 'r'))
   massivefold_params = parameters.get("massivefold", {})
   output_dir = massivefold_params.get("output_dir")
   logs_dir = massivefold_params.get("logs_dir")
