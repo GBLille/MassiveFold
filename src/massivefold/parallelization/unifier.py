@@ -479,6 +479,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
 def ppi_create_base_fasta(file_list, output_dir):
   fasta_types = ["protein", "DNA", "RNA"]
   combined_fasta_dir = os.path.join(output_dir, "combined")
+  os.makedirs(combined_fasta_dir, exist_ok=True)
 
   if file_list.endswith('.json'):
     interactors = pd.DataFrame(json.load(open(file_list, 'r')))
@@ -534,6 +535,7 @@ def ppi_create_base_fasta(file_list, output_dir):
 def ppi_create_input(receptors, ligands, parameters_file):
   base_dir = json.load(open(parameters_file, 'r'))["massivefold"]["input_dir"]
   combined_fasta_dir = os.path.join(base_dir, "combined")
+  os.makedirs(combined_fasta_dir, exist_ok=True)
 
   df_receptors = ppi_create_base_fasta(receptors, base_dir)
   df_ligands = ppi_create_base_fasta(ligands, base_dir)
