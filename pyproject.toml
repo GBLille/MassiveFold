@@ -11,6 +11,8 @@ requires-python = ">=3.9"
 
 [project.scripts]
 massivefold = "massivefold.cli:main"
+massivefold_plots = "massivefold.massivefold_plots:cli"
+gather = "massivefold.gather_runs:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

@@ -626,7 +626,7 @@ def main(input_path, top_n_predictions, chosen_plots, action, image_format, outp
   for chosen_plot in chosen_plots:
     MF_plots[chosen_plot]()
 
-if __name__ == "__main__":
+def cli():
   """ 
   These functions are a combination of MassiveFold's team work and the following scripts from ColabFold repository and DeepMind colab notebook:
   https://github.com/sokrypton/ColabFold/blob/main/colabfold/plot.py
@@ -682,3 +682,6 @@ if __name__ == "__main__":
     parsed.output_path,
     parsed.runs_to_compare
   )
+
+if __name__ == "__main__":
+  cli()
