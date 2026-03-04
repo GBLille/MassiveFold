@@ -34,10 +34,12 @@ set the `uniref_database` parameter in the AFmassive_params.json file to the upd
 
 ### Usage without SLURM
 
-MassiveFold can't run without SLURM. However, the `mf-afmassive-1.1.5`, `mf-colabfold-1.5.5` and `mf-alphafold-3.0.1` 
-conda environments created at the installation allow to use respectively AFmassive, ColabFold and AlphaFold3 without parallelization. 
-Their usage is detailed on their respective GitHub webpages.
-
+MassiveFold can run without SLURM even though it is preferable.  
+Whether SLURM is installed or not, MassiveFold detects it automatically and run on the available backend.  
+However, if you have SLURM installed but you still want to run MassiveFold directly, you can force MassiveFold to switch to the local backend with:
+```bash
+massivefold run .... --scheduler local
+``` 
 ### Alignment crashes with ColabFold
 
 For a few sequences, the alignment step crashes for ColabFold. In this case, the web server can be called directly to get the alignments. 
@@ -73,12 +75,12 @@ output
 Then, run the following scripts from the `massivefold_runs` folder, replacing `<sequence>` and `<run>` generic names 
 with yours.
 ```commandline
-python3 ../massivefold/parallelization/unifier.py \
+python3 ../src/massivefold/parallelization/unifier.py \
     --to_convert output/<sequence>/<run>/batch_0/ \
     --conversion output_singular \
     --tool ColabFold
 
-python3 ../massivefold/parallelization/organize_outputs.py \
+python3 ../src/massivefold/parallelization/organize_outputs.py \
     --batches_path output/<sequence>/<run>/
 ```
 

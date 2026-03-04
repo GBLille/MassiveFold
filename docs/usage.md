@@ -66,7 +66,7 @@ Then you can set the parameters of the **custom_params** section if necessary an
 Activate the conda environment, then launch MassiveFold.
 ```bash
 conda activate massivefold
-./run_massivefold.sh -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> -t <TOOL> 
+massivefold run -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> -t <TOOL> 
 ```
 **N.B.**: on the Jean Zay cluster, simply load the `massivefold` module. To be able to run on H100 or A100, uncomment the 
 corresponding last lines of the `jobarray.slurm` header. Example for H100:
@@ -77,49 +77,61 @@ module load arch/h100
 
 Example for AFmassive:
 ```bash
-./run_massivefold.sh -s input/H1140.fasta -r afm_default -p 5 -f AFmassive_params.json
+massivefold run -s input/H1140.fasta -r afm_default -p 5 -f AFmassive_params.json
 ```
 Example for ColabFold:
 ```bash
-./run_massivefold.sh -s input/H1140.fasta -r cf_default -p 5 -f ColabFold_params.json
+massivefold run -s input/H1140.fasta -r cf_default -p 5 -f ColabFold_params.json
 ```
 Example for AlphaFold3:
 ```bash
-./run_massivefold.sh -s input/H1140.fasta -r af3_default -p 5 -f AlphaFold3_params.json
+massivefold run -s input/H1140.fasta -r af3_default -p 5 -f AlphaFold3_params.json
 ```
 
 For more help and list of required and facultative parameters, run:
 ```bash
-./run_massivefold.sh -h
+massivefold run -h
 ```
 Here is the help message given by this command:
+
 ```txt
-Usage: ./run_massivefold.sh -s str -r str -p int -f str [-t str] [ -b int | [[-C str | -c] [-w int]] ] [-m str] [-n str] [-a] [-o]
-./run_massivefold.sh -h for more details 
-  Required arguments:
-    -s| --sequence: path of the sequence(s) to infer, should be a 'fasta' file 
-    -r| --run: name chosen for the run to organize in outputs.
-    -p| --predictions_per_model: number of predictions computed for each neural network model.
-        If used with -t AlphaFold3, -p is the number of seeds used. Each seed will have 5 samples predicted.
-        In total, with -p n, you will have 5n predictions computed.
-    -f| --parameters: json file's path containing the parameters used for this run.
-    -t| --tool: (default: 'AFmassive') Use either AFmassive, AlphaFold3 or ColabFold in structure prediction for MassiveFold
+usage: massivefold run [-h] -s SEQUENCE -r RUN_NAME -f PARAMETERS [-p PREDICTIONS_PER_MODEL] [-b BATCH_SIZE] [-j JOBID] [-o] [-c] [-C CALIBRATION_FROM] [-w WALL_TIME] [-m MSAS_PRECOMPUTED]
+                       [-n TOP_N_MODEL] [-a] [--scheduler {auto,slurm,local}]
 
-  Facultative arguments:
-    -b| --batch_size: (default: 25) number of predictions per batch (number of seeds for AlphaFold3),
-        should not be higher than -p.
-    -C| --calibration_from: path of a previous run to calibrate the batch size from (see --calibrate).
-    -w| --wall_time: (default: 20) total time available for calibration computations, unit is hours.
-    -m| --msas_precomputed: path to directory that contains computed msas.
-    -n| --top_n_models: uses the n neural network models with best ranking confidence from this run's path.
-    -j| --jobid: jobid of an alignment job to wait for inference, skips the alignments.
+optional arguments:
+  -h, --help            show this help message and exit
 
-  Facultative options:
-    -o| --only_msas: only compute alignments, the first step of MassiveFold. Overwrite MSAs directory by forcing re-computation.
-    -c| --calibrate: calibrate --batch_size value. Searches from the previous runs for the same 'fasta' path given
-        in --sequence and uses the longest prediction time found to compute the maximal number of predictions per batch.
-        This maximal number depends on the total time given by --wall_time.
-    -a| --recompute_msas: purges previous alignment step and recomputes msas.
+Required arguments:
+  -s SEQUENCE, --sequence SEQUENCE
+                        Path of the sequence(s) to infer, should be a 'fasta' file.
+  -r RUN_NAME, --run RUN_NAME
+                        Name chosen for the run to organize in outputs.
+  -f PARAMETERS, --parameters PARAMETERS
+                        Json file's path containing the parameters used for this run.
+
+Optional arguments:
+  -p PREDICTIONS_PER_MODEL, --predictions_per_model PREDICTIONS_PER_MODEL
+                        Number of predictions (default: 5) computed for each neural network model. If used with -t AlphaFold3, -p is the number of seeds used. Each seed will have m samples
+                        predicted. The number of sample set m is set in the AlphaFold3_params.json file. In total, with -p n, you will have m*n predictions computed.
+  -b BATCH_SIZE, --batch_size BATCH_SIZE
+                        Number of predictions per batch (default: 25). For AlphaFold3, it corresponds to number of seeds should not be higher than -p.
+  -j JOBID, --jobid JOBID
+                        Jobid of an alignment job to wait for inference, skips the alignments.
+  -o, --only_msas       Only compute alignments, the first step of MassiveFold. Overwrite MSAs directory by forcing re-computation.
+  -c, --calibrate       Calibrate --batch_size value. Searches from the previous runs for the same 'fasta' path given in --sequence and uses the longest prediction time found to compute
+                        the maximal number of predictions per batch. This maximal number depends on the total time given by --wall_time.
+  -C CALIBRATION_FROM, --calibration_from CALIBRATION_FROM
+                        Path of a previous run to calibrate the batch size from (see --calibrate).
+  -w WALL_TIME, --wall_time WALL_TIME
+                        Total time in hour (default: 20) available for calibration computations.
+  -m MSAS_PRECOMPUTED, --msas_precomputed MSAS_PRECOMPUTED
+                        Path to directory that contains computed msas.
+  -n TOP_N_MODEL, --top_n_model TOP_N_MODEL
+                        Uses the n neural network models with best ranking confidence from this run's path.
+  -a, --recompute_msas  Purges previous alignment step and recomputes msas.
+  --scheduler {auto,slurm,local}
+                        Scheduler selector (default: auto)
+
 ```
 
 ### Inference workflow
@@ -133,7 +145,7 @@ as the detection is automatic now.
 You can decide how the run will be divided by assigning `run_massivefold.sh` parameters *e.g.*:
 
 ```bash
-./run_massivefold.sh -s ./input/H1140.fasta -r 1005_preds -p 67 -b 25 -f AFmassive_params.json
+massivefold run -s ./input/H1140.fasta -r 1005_preds -p 67 -b 25 -f AFmassive_params.json
 ```
 
 The predictions are computed individually for each neural network (NN) model,  **-p** or **--predictions_per_model** 
@@ -166,7 +178,7 @@ the longest prediction duration. These options have to be coupled with the `-w` 
 adapt this walltime value to the one of the job). For instance:
 
 ```bash
-./run_massivefold.sh -s ./input/H1140.fasta -r 1005_preds -p 67 -f AFmassive_params.json -c -w 10
+massivefold run -s ./input/H1140.fasta -r 1005_preds -p 67 -f AFmassive_params.json -c -w 10
 ```
 
 ***N.B.***: an interest to use `run_massivefold.sh` on a single server with a single GPU is to be able to run massive 
@@ -367,33 +379,62 @@ colabfold_relax -h
 
 ### Multiple runs gathering
 
-We provide a `gather_runs.py` script in the `massivefold` folder that allows to collate the results of several runs. It 
-gathers all the results and ranks them all. Run `python3 gather_runs.py -h` for help.
+We provide a `gather` command in the environment where MassiveFold is installed (also as a script at `src/massivefold/gather_runs.py`) that allows to collate the results of several runs. It 
+gathers all the results and ranks them all. Run `gather -h` for help.
 
 We also provide an `extract_scores.py` script that allows to extract the scores from pickle files and create rankings
 (notably useful for interrupted runs). Run `python3 extract_scores.py -h` for help.
 
-## Ligand screening with MassiveFold
+## Ligand screening
 
 To launch a screening round, run:
 
 ```bash
-./run_massivefold_screening.sh -s <receptor_fasta_file> -l <ligand_list_csv> -f <AlphaFold3_params.json>
+massivefold screen -s <receptor_fasta_file> -l <ligand_list_csv> -f <AlphaFold3_params.json>
 ```
 
 Run -h for help, as usual:
-```````bash
-./run_massivefold_screening.sh -h
-```````
+```bash
+massivefold screen -h
+```
 
 ### Format of the csv containing the ligands
 
-This csv has 3 columns: "id", "smiles", and "ccdCode".  
+This csv has 4 columns: `id`, `smiles`, `ccdCode` and `IUPAC`.  
 Each row is a ligand to use for the screening round. "id" designates the name of the ligand, it can simply be the number of the ligand  in the list.   
-For the ligand sequence, use either "smiles" or "ccdCode" but not both, respectively in the SMILES format or the Chemical Compound Dictionnary code format (ccdCode) found at https://www.ebi.ac.uk/pdbe-srv/pdbechem/.
+For the ligand sequence, use either `smiles`, `ccdCode` or `IUPAC` but not two at the same time, respectively in the SMILES format or the Chemical Compound Dictionnary code format (ccdCode) found at https://www.ebi.ac.uk/pdbe-srv/pdbechem/.
 
 ### Gathering the outputs
 
 The predictions for each ligand will be located in a dedicated folder, itself located in an output folder 
-named with the name of the csv file. All the results, notably the scores, can be gathered with the `gather_runs.py` 
-script that can be found in the `massivefold` folder. See this [section](#multiple-runs-gathering).
+named with the name of the csv file. All the results, notably the scores, can be gathered with the `gather` command (or script at `./src/massivefold/gather_runs.py`).  
+See this [section](#multiple-runs-gathering).
+
+## PPI screening 
+
+To launch a PPI discovery round, run:
+
+```bash
+massivefold ppi --receptors <receptor_list> --ligands <ligand_list> -f <AlphaFold3_params.json>
+```
+
+Run -h for help, as usual:
+```bash
+massivefold ppi -h
+```
+
+The `--receptors <receptor_list>` and `--ligands <ligand_list>` contain fasta paths for protein, DNA or RNA sequence(s).  
+This file is a CSV, with each line being a receptor (if passed to `--receptors`)  
+or a ligand (if passed to `--ligands`) in this format:  
+protein | DNA | RNA
+--|--|--|
+./path/to/prot1.fasta | ||
+./path/to/prot2.fasta | ||
+./path/to/prot3.fasta | ||
+./path/to/prot4.fasta | |./path/to/rna1.fasta|
+./path/to/prot5.fasta |  | |
+./path/to/prot6.fasta| | | 
+| | ./path/to/dna1.fasta | |
+| | | ./path/to/rna2.fasta|
+
+Additionally, a screening round (see [ligand screening](#ligand-screening)) can be applied on every PPI receptor-ligand pair by using the parameter `--context <ligand_csv>` (with the same format as [seen before](#format-of-the-csv-containing-the-ligands)).

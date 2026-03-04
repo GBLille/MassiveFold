@@ -5,7 +5,7 @@ MassiveFold plotting module can also be used on a MassiveFold output to evaluate
 Here is an example of a basic command you can run:
 ```bash
 conda activate massivefold
-massivefold_plots.py --input_path=<path_to_MF_output> --chosen_plots=DM_plddt_PAE
+massivefold_plots --input_path=<path_to_MF_output> --chosen_plots=DM_plddt_PAE
 ```
 
 ### Required arguments
@@ -32,7 +32,7 @@ Here is the list of available plots:
     - a boxplot for each neural network model  
     ![header](../imgs/plot_illustrations/models_scores.png)
   * distribution_comparison: ranking confidence distribution comparison between various MassiveFold outputs, typically 
-  useful for runs with different sets of parameters on the same input sequence(s). The `massivefold_plots.py` script has to be used directly with the `--runs_to_compare` parameter.  
+  useful for runs with different sets of parameters on the same input sequence(s). The `massivefold_plots` command has to be used directly with the `--runs_to_compare` parameter.  
   ![header](../imgs/plot_illustrations/distribution_comparison.png)
   * recycles: ranking confidence during the recycle process (only for multimers and ColabFold monomers)
   ![header](../imgs/plot_illustrations/recycles.png)

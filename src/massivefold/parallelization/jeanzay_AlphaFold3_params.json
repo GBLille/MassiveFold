@@ -1,0 +1,40 @@
+{
+    "massivefold": {
+        "run_massivefold": "run_alphafold.py",
+        "run_massivefold_plots": "../src/massivefold/massivefold_plots.py",
+        "data_dir": "$HOME/af3_datadir",
+        "jobfile_headers_dir": "./headers",
+        "jobfile_templates_dir": "../src/massivefold/parallelization/templates",
+        "output_dir": "./output",
+        "logs_dir": "./log",
+        "input_dir": "./input",
+        "scripts_dir": "../src/massivefold/parallelization",
+        "pkl_format": "full"
+    },
+    "custom_params": {
+        "jeanzay_gpu": "a100",
+        "jeanzay_project": "<project>",
+        "jeanzay_account": "<project>@a100",
+        "jeanzay_gpu_with_memory": "a100", 
+        "jeanzay_alignment_time": "10:00:00",
+        "jeanzay_jobarray_time": "19:59:59"
+    },
+    "AF3_run": {
+        "fasta_chains": [],
+        "ligand": [
+            {"ccdCodes": [""], "smiles": ""}
+        ],
+        "modifications": [
+            [{"type": "", "sequence": "", "positions": []}]
+        ],
+        "max_template_date": "2024-11-28",
+        "num_diffusion_samples": "5",
+        "unpairedMsa": "true",
+        "pairedMsa": "true",
+        "templates": "true"
+    },
+    "plots": {
+        "MF_plots_top_n_predictions": "10",
+        "MF_plots_chosen_plots": "DM_plddt_PAE,CF_PAEs"
+    }
+}

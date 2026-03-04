@@ -1,0 +1,34 @@
+{
+    "massivefold": {
+        "run_massivefold_plots": "../src/massivefold/massivefold_plots.py",
+        "data_dir": "$DSDIR/ColabFold/230517",
+        "jobfile_headers_dir": "./headers",
+        "jobfile_templates_dir": "../src/massivefold/parallelization/templates",
+        "output_dir": "./output",
+        "logs_dir": "./log",
+        "input_dir": "./input",
+        "scripts_dir": "../src/massivefold/parallelization",
+        "models_to_use": "",
+        "pkl_format": "full"
+    },
+    "custom_params": {
+        "jeanzay_gpu": "v100",
+        "jeanzay_project": "<project>",
+        "jeanzay_account": "<project>@v100",
+        "jeanzay_gpu_with_memory": "v100", 
+        "jeanzay_alignment_time": "10:00:00",
+        "jeanzay_jobarray_time": "19:59:59"
+    },
+    "CF_run": {
+        "use_dropout": "false",
+        "num_recycle": "20",
+        "recycle_early_stop_tolerance": "0.5",
+        "stop_at_score": "100",
+        "disable_cluster_profile": "false",
+        "pair_strategy": "greedy"
+    },
+    "plots": {
+        "MF_plots_top_n_predictions": "10",
+        "MF_plots_chosen_plots": "coverage,DM_plddt_PAE,CF_PAEs,score_distribution,recycles"
+    }
+}

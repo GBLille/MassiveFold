@@ -1,90 +1,36 @@
 #!/bin/bash
 
-setup_params () {
-  tool=$1
-  param_file=$runs/${tool}_params.json
-  cp massivefold/parallelization/${tool}_params.json $param_file
-  if [ $tool == "AFmassive" ]; then
-    db=$alphafold_databases
-  elif [ $tool == "AlphaFold3" ]; then
-    db=$alphafold3_databases
-  elif [ $tool == "ColabFold" ]; then
-    db=$colabfold_databases
-  fi
-
-  # parameters auto setting
-  params_with_paths=$(cat $param_file | python3 -c "
-import json
-import sys
-
-params = json.load(sys.stdin)
-
-if '$tool' == 'AFmassive':
-  params['massivefold']['run_massivefold'] = 'run_AFmassive.py'
-if '$tool' == 'AlphaFold3':
-  params['massivefold']['run_massivefold'] = 'run_alphafold.py'
-params['massivefold']['run_massivefold_plots'] = 'massivefold_plots.py'
-params['massivefold']['data_dir'] = '$(realpath $db)'
-params['massivefold']['jobfile_templates_dir'] = '../massivefold/parallelization/templates'
-params['massivefold']['scripts_dir'] = '../massivefold/parallelization'
-params['massivefold']['jobfile_headers_dir'] = './headers'
-params['massivefold']['output_dir'] = './output'
-params['massivefold']['logs_dir'] = './log'
-params['massivefold']['input_dir'] = './input'
-
-key_order = ['run_massivefold', 'run_massivefold_plots', 'data_dir', 'uniref_database', \
-'jobfile_headers_dir', 'jobfile_templates_dir', 'scripts_dir', 'output_dir', \
-'logs_dir', 'input_dir', 'models_to_use', 'pkl_format']
-sorted_keys = sorted(params['massivefold'], key=lambda x: key_order.index(x))
-mf_params_ordered = {key: params['massivefold'][key] for key in sorted_keys}
-
-params['massivefold'] = mf_params_ordered
-with open('$param_file', 'w') as params_output:
-    json.dump(params, params_output, indent=4)")
-
-  cat $param_file
-    tool=$1
-    echo "$tool"
-}
-
 install_env () {
   env=$1
-  source $(conda info --base)/etc/profile.d/conda.sh
+  source "$(conda info --base)/etc/profile.d/conda.sh"
   if [[ $env == "massivefold" ]]; then
     echo "Installing MassiveFold environment"
     conda env create -f environment.yml
     conda activate massivefold
     conda config --env --set channel_priority flexible
-
-    cp -r massivefold/plots $CONDA_PREFIX/bin/
-    cp massivefold/massivefold_plots.py $CONDA_PREFIX/bin/
-    chmod +x $CONDA_PREFIX/bin/massivefold_plots.py
-
+    python -m pip install -e .
   elif [[ $env == "colabfold" ]]; then
     echo "Installing ColabFold environment"
     conda activate massivefold || { echo "massivefold environment is needed and is missing"; exit 1; }
     CONDA_OVERRIDE_CUDA="11.8" conda env create -f mf-colabfold.yml
-
   elif [[ $env == "afmassive" ]]; then
     echo "Installing afmassive environment"
     conda activate massivefold || { echo "massivefold environment is needed and is missing"; exit 1; }
     CONDA_OVERRIDE_CUDA="11.8" conda env create -f mf-afmassive.yml
     conda activate mf-afmassive-1.1.6
-    wget -O ${CONDA_PREFIX}/lib/python3.10/site-packages/alphafold/common/stereo_chemical_props.txt https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
-    # add run_AFmassive.py and massivefold_plots.py in path (python executables)
-    wget -O $CONDA_PREFIX/bin/run_AFmassive.py https://raw.githubusercontent.com/GBLille/AFmassive/v1.1.6/run_AFmassive.py
-    chmod +x $CONDA_PREFIX/bin/run_AFmassive.py
+    wget -O "${CONDA_PREFIX}/lib/python3.10/site-packages/alphafold/common/stereo_chemical_props.txt" https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
+    wget -O "${CONDA_PREFIX}/bin/run_AFmassive.py" https://raw.githubusercontent.com/GBLille/AFmassive/v1.1.6/run_AFmassive.py
+    chmod +x "${CONDA_PREFIX}/bin/run_AFmassive.py"
     conda deactivate
-
   elif [[ $env == "alphafold3" ]]; then
     echo "Installing alphafold3 environment"
     conda activate massivefold || { echo "massivefold environment is needed and is missing"; exit 1; }
     conda env create -f mf-alphafold3.yml
     conda activate mf-alphafold-3.0.1
     build_data
-    wget -O $CONDA_PREFIX/bin/run_alphafold.py https://raw.githubusercontent.com/google-deepmind/alphafold3/v3.0.1/run_alphafold.py
-    sed -i '1i #!/usr/bin/env python' $CONDA_PREFIX/bin/run_alphafold.py
-    chmod +x $CONDA_PREFIX/bin/run_alphafold.py
+    wget -O "${CONDA_PREFIX}/bin/run_alphafold.py" https://raw.githubusercontent.com/google-deepmind/alphafold3/v3.0.1/run_alphafold.py
+    sed -i '1i #!/usr/bin/env python' "${CONDA_PREFIX}/bin/run_alphafold.py"
+    chmod +x "${CONDA_PREFIX}/bin/run_alphafold.py"
     conda deactivate
   fi
 }
@@ -95,8 +41,8 @@ db_cf=false
 db_af3=false
 only_create_env=false
 do_not_create_env=false
+install_path="massivefold_runs"
 
-# argument parser
 while true; do
   case "$1" in
     --alphafold-db)
@@ -112,6 +58,10 @@ while true; do
     --colabfold-db)
       colabfold_databases=$2
       db_cf=true
+      shift 2
+      ;;
+    --install-path)
+      install_path=$2
       shift 2
       ;;
     --no-env)
@@ -134,12 +84,11 @@ done
 
 USAGE="\
 On Jean Zay cluster:\n\
-  ./install.sh\n\
+  ./install.sh [--install-path str]\n\
 Otherwise:\n\
-  ./install.sh [--only-envs] || --alphafold-db str --alphafold3-db str --colabfold-db str [--no-env]\n\n\
-./install -h for more details"
+  ./install.sh [--only-envs] || --alphafold-db str --alphafold3-db str --colabfold-db str [--no-env] [--install-path str]\n\n\
+./install.sh -h for more details"
 
-# help message
 if [[ $do_help == "true" ]]; then
   echo -e "\
 Usage:
@@ -149,28 +98,29 @@ $USAGE
     --alphafold-db <str>: path to AlphaFold2 database
     --alphafold3-db <str>: path to AlphaFold3 database
     --colabfold-db <str>: path to ColabFold database
-    --no-env: do not install the environments, only sets up the files and parameters.
-      At least one of --alphafold-db or colabfold-db is required with this option.
+    --install-path <str>: where to create the MassiveFold file architecture (default: massivefold_runs)
+    --no-env: do not install the environments, only files and parameters.
+      At least one of --alphafold-db or --colabfold-db is required with this option.
     --only-envs: only install the environments (other arguments are not used)"
   exit 1
 fi
+
 host=$(hostname | cut -c1-8)
+host_is_jeanzay=false
+if [[ "$host" == "jean-zay" ]]; then
+  host_is_jeanzay=true
+fi
 
 if [[ $only_create_env == "true" ]]; then
   install_env "massivefold"
   install_env "alphafold3"
   install_env "afmassive"
   install_env "colabfold"
-  
   echo "Both environments installed, exiting."
   exit 1
 fi
 
-if [ "$host" == 'jean-zay' ]; then
-  host_is_jeanzay=true
-  echo "Currently on Jean Zay cluster, using prebuilt headers and json parameter files."
-else
-  host_is_jeanzay=false
+if [[ $host_is_jeanzay == "false" ]]; then
   if [[ $db_af == "true" && ! -d $alphafold_databases ]]; then
     echo "$alphafold_databases doesn't exists"
     exit 1
@@ -184,58 +134,46 @@ else
     echo -e "$USAGE"
     exit 1
   fi
-  
-  conda="$(conda info --base)/etc/profile.d/conda.sh"
-  source $conda
-  if [[ $do_not_create_env == "false" && $db_af == "false" && $db_cf == "false" && $db_af3 == "false" ]]; then 
-    echo "Neither AF3 nor ColabFold databases are provided, install skipped"
-  elif [[ $do_not_create_env == "true" ]]; then
-    echo "No env asked, install skipped"
-  else
-    install_env "massivefold"
-    if [[ $db_af == "true" ]]; then
-      install_env "afmassive"
-    fi
-    if [[ $db_af3 == "true" ]]; then
-      install_env "alphafold3"
-    fi
-    if [[ $db_cf == "true" ]]; then
-      install_env "colabfold"
-    fi
+else
+  echo "Currently on Jean Zay cluster, using prebuilt headers and json parameter files."
+  mkdir -p "$HOME/af3_datadir/"
+  if [[ ! -e "$HOME/af3_datadir/Alphafold3" ]]; then
+    ln -s "$DSDIR/Alphafold3/" "$HOME/af3_datadir/"
   fi
 fi
 
-# set file tree
-runs=massivefold_runs
-mkdir -p $runs/input
-mkdir $runs/output
-mkdir $runs/log
-cp examples/H1140.fasta $runs/input
+conda_sh="$(conda info --base)/etc/profile.d/conda.sh"
+source "$conda_sh"
 
-# scripts and files for each pipeline (currently only AFmassive)
-cp massivefold/run_massivefold.sh $runs
-cp massivefold/run_massivefold_screening.sh $runs
-cp -r massivefold/parallelization/headers $runs
-
-if [[ $host_is_jeanzay == "true" ]]; then
-  mkdir $HOME/af3_datadir/
-  ln -s $DSDIR/Alphafold3/ $HOME/af3_datadir/
-  cp massivefold/parallelization/jeanzay_AFmassive_params.json $runs/AFmassive_params.json
-  cp massivefold/parallelization/jeanzay_AlphaFold3_params.json $runs/AlphaFold3_params.json
-  cp massivefold/parallelization/jeanzay_ColabFold_params.json $runs/ColabFold_params.json
-  echo "Taking Jean Zay's prebuilt headers and renaming them."
-  mv $runs/headers/example_header_alignment_jeanzay.slurm $runs/headers/alignment.slurm
-  mv $runs/headers/example_header_jobarray_jeanzay.slurm $runs/headers/jobarray.slurm
-  mv $runs/headers/example_header_post_treatment_jeanzay.slurm $runs/headers/post_treatment.slurm
-  exit 1
+if [[ $do_not_create_env == "false" ]]; then
+  install_env "massivefold"
+  if [[ $db_af == "true" ]]; then
+    install_env "afmassive"
+  fi
+  if [[ $db_af3 == "true" ]]; then
+    install_env "alphafold3"
+  fi
+  if [[ $db_cf == "true" ]]; then
+    install_env "colabfold"
+  fi
+else
+  echo "No env asked, install skipped"
 fi
 
+
+install_cmd=(massivefold install --install-path "$install_path")
 if [[ $db_af == "true" ]]; then
-  setup_params "AFmassive"
+  install_cmd+=(--alphafold-db "$alphafold_databases")
 fi
 if [[ $db_af3 == "true" ]]; then
-  setup_params "AlphaFold3"
+  install_cmd+=(--alphafold3-db "$alphafold3_databases")
 fi
 if [[ $db_cf == "true" ]]; then
-  setup_params "ColabFold"
+  install_cmd+=(--colabfold-db "$colabfold_databases")
 fi
+if [[ $do_not_create_env == "true" ]]; then
+  install_cmd+=(--no-env)
+fi
+
+conda activate massivefold
+"${install_cmd[@]}"
