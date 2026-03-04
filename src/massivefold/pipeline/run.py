@@ -122,10 +122,15 @@ def models_from_run(path_to_run, top_n=5):
       break
   return ",".join(models)
 
-def copy_inputs(sequence_file, parameters_file, logs_run_dir):
+def copy_inputs(sequence_file, parameters_file, logs_run_dir, tool):
   os.makedirs(logs_run_dir, exist_ok=True)
   shutil.copy2(sequence_file, logs_run_dir)
-  shutil.copy2(parameters_file, logs_run_dir)
+  # give standard name to param filename
+  new_param_path = os.path.join(
+    logs_run_dir, f"params_{tool}.json"
+  )
+  shutil.copy2(parameters_file, new_param_path)
+  return new_param_path
 
 def copy_batches_file(batches_file, logs_run_dir):
   os.makedirs(logs_run_dir, exist_ok=True)
@@ -349,7 +354,7 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
 
   sequence_file = args.sequence
   run_name = args.run_name
-  parameters_file = args.parameters
+  temp_parameters_file = args.parameters
   predictions_per_model = args.predictions_per_model
   batch_size = args.batch_size
   wall_time = args.wall_time
@@ -365,12 +370,12 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
     sequence_name = sequence_name_from_path(sequence_file)
     print(f"No sequence named {sequence_name}.fasta in input directory {os.path.dirname(sequence_file)}, exiting.")
     return 1
-  if not os.path.isfile(parameters_file):
-    print(f"Parameter file '{parameters_file}' not found, exiting.")
+  if not os.path.isfile(temp_parameters_file):
+    print(f"Parameter file '{temp_parameters_file}' not found, exiting.")
     return 1
 
   try:
-    short_tool = detect_tool_code(parameters_file)
+    short_tool = detect_tool_code(temp_parameters_file)
     tool = tool_from_code(short_tool)
   except RuntimeError as error:
     print(error)
@@ -378,7 +383,7 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
     return 1
 
   print(f"Tool used is {tool}")
-  parameters = read_json(parameters_file)
+  parameters = read_json(temp_parameters_file)
   massivefold_params = parameters.get("massivefold", {})
   output_dir = massivefold_params.get("output_dir")
   logs_dir = massivefold_params.get("logs_dir")
@@ -433,7 +438,9 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
   print(f"Run {run_name} on sequence {sequence_name} with {predictions_per_model} predictions per model")
 
   logs_run_dir = os.path.join(logs_dir, sequence_name, run_name)
-  copy_inputs(sequence_file, parameters_file, logs_run_dir)
+  new_param_path = copy_inputs(sequence_file, temp_parameters_file, logs_run_dir, tool)
+  args.parameters = new_param_path
+  parameters_file = args.parameters
 
   batches_file = create_batches_file(
     parameters_file,
