@@ -45,15 +45,21 @@ cd MassiveFold
 
 Installation with:
 ```bash
-/install.sh [--only-envs] || --alphafold-db str --alphafold3-db str --colabfold-db str [--no-env]
+Usage:
+------
+On Jean Zay cluster:
+  ./install.sh [--install-path str]
+Otherwise:
+  ./install.sh [--only-envs] || --alphafold-db str --alphafold3-db str --colabfold-db str [--no-env] [--install-path str]
 
-./install -h for more details
+./install.sh -h for more details
   Options:
     --alphafold-db <str>: path to AlphaFold2 database
     --alphafold3-db <str>: path to AlphaFold3 database
     --colabfold-db <str>: path to ColabFold database
-    --no-env: do not install the environments, only sets up the files and parameters.
-      At least one of --alphafold-db or colabfold-db is required with this option.
+    --install-path <str>: where to create the MassiveFold file architecture (default: massivefold_runs)
+    --no-env: do not install the environments, only files and parameters.
+      At least one of --alphafold-db or --colabfold-db is required with this option.
     --only-envs: only install the environments (other arguments are not used)
 ```
 
@@ -62,22 +68,23 @@ This file tree displays the files' architecture after running `./install.sh`.
 <a id="tree"></a> 
 ```txt
 MassiveFold
+├── pyproject.toml
 ├── install.sh
 ├── ...
-├── examples
-├── massivefold
+├── docs
+├── src/massivefold
 └── massivefold_runs
     ├── AFmassive_params.json
     ├── ColabFold_params.json
     ├── AlphaFold3_params.json
     ├── headers/
-        ├── example_header_alignment_jeanzay.slurm
-        ├── example_header_jobarray_jeanzay.slurm
-        └── example_header_post_treatment_jeanzay.slurm
+    |    ├── example_header_alignment_jeanzay.slurm
+    |    ├── example_header_jobarray_jeanzay.slurm
+    |    └── example_header_post_treatment_jeanzay.slurm
     ├── input/
+    |    └── H1140.fasta
     ├── log/
-    ├── output/
-    └── run_massivefold.sh
+    └── output/
 ```
 The directory `massivefold_runs` is created, which contains:
 - `AFmassive_params.json` to set the run parameters for AFmassive,
@@ -108,7 +115,7 @@ in a personal folder in your `home`, for instance in `~/af3_db` (that is your <A
 in this folder, create symbolic links to the shared database files:
 
 ```bash
-ls -s <SHARED_DB_PATH>/* ~/af3_db/
+ln -s <SHARED_DB_PATH>/* ~/af3_db/
 ```
 
 <a id="create-headers"></a>

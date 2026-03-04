@@ -22,8 +22,7 @@ ranked on a global level instead of the level of each individual job.
 
 This automatic splitting is also convenient for massive sampling on a single GPU server to manage jobs priorities.  
 
-MassiveFold is only available with the **SLURM** workload manager (Simple Linux Utility for Resource Management) as 
-it relies heavily on its features (job array, job dependency, etc...).
+MassiveFold is optimized for **SLURM** workload manager (Simple Linux Utility for Resource Management) as it relies heavily on its features (job array, job dependency, etc...). But it can still be used sequentially (no batches running in parallel)(see [documentation](docs/troubleshooting.md#usage-without-slurm)).
 
 ![header](imgs/massivefold_diagram.svg)
 
@@ -62,26 +61,44 @@ to keep from the `output` and `log` directories somewhere else.
 
 ## Usage
 
+### Running MassiveFold
 Usage section includes the most simple way to run MassiveFold with examples. For more detail on its functioning and other cases, see the [usage documentation](docs/usage.md).
 
 Activate the conda environment, then launch MassiveFold.
 ```bash
 conda activate massivefold
-./run_massivefold.sh -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> -t <TOOL> 
+massivefold run -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> -t <TOOL> 
 ```
 
 Example for AFmassive:
 ```bash
-./run_massivefold.sh -s input/H1140.fasta -r afm_default -p 5 -f AFmassive_params.json
+massivefold run -s input/H1140.fasta -r afm_default -p 5 -f AFmassive_params.json
 ```
 Example for ColabFold:
 ```bash
-./run_massivefold.sh -s input/H1140.fasta -r cf_default -p 5 -f ColabFold_params.json
+massivefold run -s input/H1140.fasta -r cf_default -p 5 -f ColabFold_params.json
 ```
 Example for AlphaFold3:
 ```bash
-./run_massivefold.sh -s input/H1140.fasta -r af3_default -p 5 -f AlphaFold3_params.json
+massivefold run -s input/H1140.fasta -r af3_default -p 5 -f AlphaFold3_params.json
 ```
+
+### Screening a receptor with ligands
+
+```bash
+massivefold screen -s <receptor_fasta_file> -l <ligand_list_csv> -f <AlphaFold3_params.json>
+```
+See documentation for [further details](docs/usage.md#ligand-screening)
+
+### Discover PPI between receptors and ligands
+
+To launch a PPI discovery round, run:
+
+```bash
+massivefold ppi --receptors <receptor_list> --ligands <ligand_list> -f <AlphaFold3_params.json>
+```
+See documentation for [further details](docs/usage.md#ppi-screening)
+
 ## massivefold_plots: output representation
 
 Additionally to the configuration of the plots parameters inside MassiveFold JSON param file, the plot module can also be used on an already produced MassiveFold (or AlphaFold2) output to evaluate visually its predictions.  
