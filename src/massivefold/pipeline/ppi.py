@@ -1,6 +1,7 @@
 """Implementation of `massivefold screen` pipeline."""
 
 from argparse import Namespace
+import copy
 import json
 import os
 
@@ -56,7 +57,7 @@ def run_ppi_pipeline_internal(args, forwarded_args, scheduler):
   is_af3 = 'AF3_run' in parameters
 
   for ppi, fasta_chains in zip(ppi_sequences, ppi_fasta_chains):
-    sequence_parameters = parameters.copy()
+    sequence_parameters = copy.deepcopy(parameters)
     # automatically detect and register the fasta chain types in af3 param file
     if is_af3:
       sequence_parameters["AF3_run"]["fasta_chains"] = fasta_chains
@@ -65,10 +66,10 @@ def run_ppi_pipeline_internal(args, forwarded_args, scheduler):
     os.makedirs(combined_fasta_dir, exist_ok=True)
     sequence_parameters["massivefold"]["input_dir"] = combined_fasta_dir
     # copy param file in each sequence's log directory
-    prefix = '<ppi-internal>-'
+    file_id = os.urandom(6).hex()
     internal_parameters_file = os.path.join(
       os.path.dirname(parameters_file),
-      f"{prefix}{os.path.basename(parameters_file)}"
+      f"{file_id}.json"
     )
     json.dump(sequence_parameters, open(internal_parameters_file, 'w'))
     args.parameters = internal_parameters_file
