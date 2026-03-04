@@ -89,6 +89,7 @@ def run_ppi_pipeline_internal(args, forwarded_args, scheduler):
         forwarded_args,
         scheduler
       )
+    os.remove(internal_parameters_file)
   return 0
 
 def ppi_pipeline(args, forwarded_args, scheduler):
