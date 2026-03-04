@@ -8,6 +8,7 @@ install_env () {
     conda env create -f environment.yml
     conda activate massivefold
     conda config --env --set channel_priority flexible
+    python -m pip install -e .
   elif [[ $env == "colabfold" ]]; then
     echo "Installing ColabFold environment"
     conda activate massivefold || { echo "massivefold environment is needed and is missing"; exit 1; }
@@ -159,10 +160,6 @@ else
   echo "No env asked, install skipped"
 fi
 
-conda activate massivefold || { echo "massivefold environment is needed and is missing"; exit 1; }
-if [[ $do_not_create_env == "false" ]]; then
-  python -m pip install -e .
-fi
 
 install_cmd=(massivefold install --install-path "$install_path")
 if [[ $db_af == "true" ]]; then
