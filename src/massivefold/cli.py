@@ -14,48 +14,48 @@ def add_run_arguments(run_parser):
   # required arguments
   run_required = run_parser.add_argument_group("Required arguments")
   run_required.add_argument("-s", "--sequence", dest="sequence", required=True,
-                          help="Path of the sequence(s) to infer, should be a 'fasta' file.")
+                              help="Path of the sequence(s) to infer, should be a 'fasta' file.")
   run_required.add_argument("-r", "--run", dest="run_name", required=True,
-                          help="Name chosen for the run to organize in outputs.")
+                              help="Name chosen for the run to organize in outputs.")
   run_required.add_argument("-f", "--parameters", dest="parameters", required=True,
-                          help="Json file's path containing the parameters used for this run.")
+                              help="Json file's path containing the parameters used for this run.")
 
   # optional arguments
   run_optional = run_parser.add_argument_group("Optional arguments")
   run_optional.add_argument("-p", "--predictions_per_model", dest="predictions_per_model", type=int, default=5,
-                          help="Number of predictions (default: 5) computed for each neural network model. "
-                          "If used with -t AlphaFold3, -p is the number of seeds used. Each seed will have m "
-                          "samples predicted. The number of sample set m is set in the AlphaFold3_params.json file. "
-                          "In total, with -p n, you will have m*n predictions computed.")
+                              help="Number of predictions (default: %(default)s) computed for each neural network model."
+                              " If used with -t AlphaFold3, -p is the number of seeds used. Each seed will have m"
+                              " samples predicted. The number of sample set m is set in the AlphaFold3_params.json file."
+                              " In total, with -p n, you will have m*n predictions computed.")
   run_optional.add_argument("-b", "--batch_size", dest="batch_size", type=int, default=25,
-                          help="Number of predictions per batch (default: 25). For AlphaFold3, it corresponds to "
-                          "number of seeds should not be higher than -p.")
+                              help="Number of predictions per batch (default: %(default)s). For AlphaFold3, it corresponds to"
+                              " number of seeds should not be higher than -p.")
   run_optional.add_argument("-j", "--jobid", dest="jobid", 
-                          help="Jobid of an alignment job to wait for inference, skips the alignments.")
+                            help="Jobid of an alignment job to wait for inference, skips the alignments.")
   run_optional.add_argument("-o", "--only_msas", dest="only_msas", action="store_true",
-                          help="Only compute alignments, the first step of MassiveFold. "
-                          "Overwrite MSAs directory by forcing re-computation.")
+                              help="Only compute alignments, the first step of MassiveFold."
+                              " Overwrite MSAs directory by forcing re-computation.")
   run_optional.add_argument("-c", "--calibrate", dest="calibrate", action="store_true",
-                          help="Calibrate --batch_size value. Searches from the previous runs for the same 'fasta' "
-                          "path given in --sequence and uses the longest prediction time found to compute the maximal "
-                          "number of predictions per batch. This maximal number depends on the total time given by "
-                          "--wall_time.")
+                              help="Calibrate --batch_size value. Searches from the previous runs for the same 'fasta'"
+                              " path given in --sequence and uses the longest prediction time found to compute the maximal"
+                              " number of predictions per batch. This maximal number depends on the total time given by"
+                              " --wall_time.")
   run_optional.add_argument("-C", "--calibration_from", dest="calibration_from",
-                          help="Path of a previous run to calibrate the batch size from (see --calibrate).")
+                              help="Path of a previous run to calibrate the batch size from (see --calibrate).")
   run_optional.add_argument("-w", "--wall_time", dest="wall_time", type=float, default=20,
-                          help="Total time in hour (default: 20) available for calibration computations.")
+                              help="Total time in hour (default: %(default)s) available for calibration computations.")
   run_optional.add_argument("-m", "--msas_precomputed", dest="msas_precomputed", 
-                          help="Path to directory that contains computed msas.")
+                              help="Path to directory that contains computed msas.")
   run_optional.add_argument("-n", "--top_n_model", dest="top_n_model",
-                          help="Uses the n neural network models with best ranking confidence from this run's path.")
+                              help="Uses the n neural network models with best ranking confidence from this run's path.")
   run_optional.add_argument("-a", "--recompute_msas", dest="recompute_msas", action="store_true",
-                          help="Purges previous alignment step and recomputes msas.")
+                              help="Purges previous alignment step and recomputes msas.")
   run_optional.add_argument(
     "--scheduler",
     dest="scheduler",
     default="auto",
     choices=["auto", "slurm", "local"],
-    help="Scheduler selector (default: auto)",
+    help="Scheduler selector (default: %(default)s)",
   )
 
 def add_install_arguments(install_parser):
@@ -63,70 +63,71 @@ def add_install_arguments(install_parser):
   install_parser.add_argument("--alphafold3-db", dest="alphafold3_databases", default="", help="Path to AlphaFold3 database.")
   install_parser.add_argument("--colabfold-db", dest="colabfold_databases", default="", help="Path to ColabFold database.")
   install_parser.add_argument("--install-path", dest="install_path", default="massivefold_runs",
-                              help="Where to install MassiveFold files.")
+                                help="Where to install MassiveFold files.")
   install_parser.add_argument("--no-env", dest="no_env", action="store_true",
-                             help="No environments installation but only files and parameters. At least one of --alphafold-db "
-                             "or --colabfold-db is required with this option.")
+                                help="No environments installation but only files and parameters. At least one of --alphafold-db"
+                                " or --colabfold-db is required with this option.")
   install_parser.add_argument("--only-envs", dest="only_envs", action="store_true",
-                              help="Only install the environments (other arguments are not used.")
+                                help="Only install the environments (other arguments are not used.")
 
 def add_screening_arguments(screening_parser):
   # required arguments
   screening_required = screening_parser.add_argument_group("Required arguments")
   screening_required.add_argument("-s", "--sequence", dest="sequence", required=True,
-                                help="Path of the fasta file containing sequence(s) used for screening.")
+                                    help="Path of the fasta file containing sequence(s) used for screening.")
   screening_required.add_argument("-l", "--ligands", dest="ligands", required=True,
-                                help="Csv file containing the list of ligands to use for screening.")
+                                    help="Csv file containing the list of ligands to use for screening.")
   screening_required.add_argument("-f", "--parameters", dest="parameters", required=True,
-                                help="Json file's path containing the parameters used for the screening.")
+                                    help="Json file's path containing the parameters used for the screening.")
 
   # optional arguments
   screening_optional = screening_parser.add_argument_group("Optional arguments")
   screening_optional.add_argument("-p", "--predictions_per_model", dest="predictions_per_model", type=int, default=1,
-                                help="Number of seed used. Each seed will have 5 samples predicted. In total, "
-                                "with -p n, you will have 5n predictions computed.")
+                                    help="(default: %(default)s) Number of seed used with AlphaFold3."
+                                    " Each seed will have 5 samples predicted. In total, with -p n,"
+                                    " you will have 5n predictions computed (5 predictions with default params).")
   screening_optional.add_argument("-m", "--msas_precomputed", dest="msas_precomputed",
-                                help="Path to directory that contains computed msas.")
+                                    help="Path to directory that contains computed msas.")
   screening_optional.add_argument("-o", "--only_msas", dest="only_msas", action="store_true",
-                                help="Only compute alignments, the first step of MassiveFold.")
+                                    help="Only compute alignments, the first step of MassiveFold.")
   screening_optional.add_argument("-j", "--jobid", dest="jobid",
-                                help="Jobid of an alignment job to wait for inference, skips the alignments.")
+                                    help="Jobid of an alignment job to wait for inference, skips the alignments.")
   screening_optional.add_argument(
     "--scheduler",
     dest="scheduler",
     default="auto",
     choices=["auto", "slurm", "local"],
-    help="Scheduler selector (default: auto)",
+    help="Scheduler selector (default: %(default)s)",
   )
 
 def add_ppi_arguments(ppi_parser):
   # required arguments
   ppi_required = ppi_parser.add_argument_group('Required arguments')
   ppi_required.add_argument("--receptors", dest="receptors", required=True,
-                                help="Path to CSV file containing fasta file paths to proteic sequence(s) used as receptors.")
+                              help="Path to CSV file containing fasta file paths to proteic sequence(s) used as receptors.")
   ppi_required.add_argument("--ligands", dest="ligands", required=True,
-                                help="Path to CSV file containing fasta file paths to proteic sequence(s) used as ligands.")
+                              help="Path to CSV file containing fasta file paths to proteic sequence(s) used as ligands.")
   ppi_required.add_argument("-f", "--parameters", dest="parameters", required=True,
-                                help="Json file's path containing the parameters used for the screening.")
+                              help="Json file's path containing the parameters used for the screening.")
   # optional arguments
   ppi_optional = ppi_parser.add_argument_group('Optional arguments')
   ppi_optional.add_argument("--context", dest="context",
-                                help="Path to CSV file containing molecules that are used as context (substrate, ions, ...) in the PPI simulations.")
+                              help="Path to CSV file containing molecules that are used as context (substrate, ions, ...) in the PPI simulations.")
   ppi_optional.add_argument("-p", "--predictions_per_model", dest="predictions_per_model", type=int, default=1,
-                                help="Number of seed used. Each seed will have 5 samples predicted. In total, "
-                                "with -p n, you will have 5n predictions computed.")
+                              help="Number of predictions to generate. For AlphaFold3, this sets the number of seeds."
+                              " For AlphaFold2, it sets the number of predictions per model (default: %(default)s)")
   ppi_optional.add_argument("-m", "--msas_precomputed", dest="msas_precomputed",
-                                help="Path to directory that contains computed msas.")
+                              help="Path to directory that contains computed msas.")
   ppi_optional.add_argument("-o", "--only_msas", dest="only_msas", action="store_true",
-                                help="Only compute alignments, the first step of MassiveFold.")
+                              help="Only compute alignments, the first step of MassiveFold.")
   ppi_optional.add_argument("-j", "--jobid", dest="jobid",
-                                help="Jobid of an alignment job to wait for inference, skips the alignments.")
+                              help="Jobid of an alignment job to wait for inference, skips the alignments.")
   ppi_optional.add_argument(
     "--scheduler",
     dest="scheduler",
     default="auto",
     choices=["auto", "slurm", "local"],
-    help="Scheduler selector (default: auto)",
+    help="Scheduler selector (default: auto) (default: %(default)s)",
   )
 
 def build_parser():
