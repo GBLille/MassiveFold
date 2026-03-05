@@ -85,20 +85,24 @@ massivefold run -s input/H1140.fasta -r af3_default -p 5 -f AlphaFold3_params.js
 
 ### Screening a receptor with ligands
 
+To screen a single proteic receptor with multiple ligands, launch:
 ```bash
 massivefold screen -s <receptor_fasta_file> -l <ligand_list_csv> -f <AlphaFold3_params.json>
 ```
+Here the default value of -p which is the number of seed (for AF3) or prediction per model (for AF2) is 1.  
 See documentation for [further details](docs/usage.md#ligand-screening)
 
 ### Discover PPI between receptors and ligands
 
-To launch a PPI discovery round, run:
+To launch a PPI discovery round between a set of proteic (or DNA or RNA) receptors and a set of proteic (or DNA or RNA) ligands, run:
 
 ```bash
 massivefold ppi --receptors <receptor_list> --ligands <ligand_list> -f <AlphaFold3_params.json>
 ```
-See documentation for [further details](docs/usage.md#ppi-screening)
+You can also screen each potential PPI (receptor-ligand pair) with a defined list of small molecules by using `--context <ligand_list_csv>` (same usage as [screening](#screening-a-receptor-with-ligands)).
 
+Here the default value of -p which is the number of seed (for AF3) or prediction per model (for AF2) is 1.  
+See documentation for [further details](docs/usage.md#ppi-screening).
 ## massivefold_plots: output representation
 
 Additionally to the configuration of the plots parameters inside MassiveFold JSON param file, the plot module can also be used on an already produced MassiveFold (or AlphaFold2) output to evaluate visually its predictions.  

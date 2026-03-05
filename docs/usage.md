@@ -92,13 +92,10 @@ For more help and list of required and facultative parameters, run:
 ```bash
 massivefold run -h
 ```
-Here is the help message given by this command:
-
-```txt
 usage: massivefold run [-h] -s SEQUENCE -r RUN_NAME -f PARAMETERS [-p PREDICTIONS_PER_MODEL] [-b BATCH_SIZE] [-j JOBID] [-o] [-c] [-C CALIBRATION_FROM] [-w WALL_TIME] [-m MSAS_PRECOMPUTED]
                        [-n TOP_N_MODEL] [-a] [--scheduler {auto,slurm,local}]
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
 
 Required arguments:
@@ -131,7 +128,6 @@ Optional arguments:
   -a, --recompute_msas  Purges previous alignment step and recomputes msas.
   --scheduler {auto,slurm,local}
                         Scheduler selector (default: auto)
-
 ```
 
 ### Inference workflow
@@ -401,8 +397,18 @@ massivefold screen -h
 ### Format of the csv containing the ligands
 
 This csv has 4 columns: `id`, `smiles`, `ccdCode` and `IUPAC`.  
-Each row is a ligand to use for the screening round. "id" designates the name of the ligand, it can simply be the number of the ligand  in the list.   
+Each row is a ligand to use for the screening round. "id" designates the name of the ligand, it can simply be the number of the ligand  in the list or a more detailed name for convenience.  
 For the ligand sequence, use either `smiles`, `ccdCode` or `IUPAC` but not two at the same time, respectively in the SMILES format or the Chemical Compound Dictionnary code format (ccdCode) found at https://www.ebi.ac.uk/pdbe-srv/pdbechem/.
+
+The format should be as follow:
+
+| id       | smiles                   | ccdCode | IUPAC                  |
+|----------|--------------------------|---------|------------------------|
+| 1        |                          |         | Gal(1-4)GlcNAc(1-2)Man |
+| 2        |                          | BGC     |                        |
+| 3        |                          | OLA     |                        |
+| aspirin  | CC(=O)OC1=CC=CC=C1C(=O)O |         |                        |
+| glycerol |                          | GOL     |                        |
 
 ### Gathering the outputs
 
@@ -415,26 +421,29 @@ See this [section](#multiple-runs-gathering).
 To launch a PPI discovery round, run:
 
 ```bash
-massivefold ppi --receptors <receptor_list> --ligands <ligand_list> -f <AlphaFold3_params.json>
+massivefold ppi --receptors <receptor_list> --ligands <ligand_list> -f <tool_params.json>
 ```
-
+ 
 Run -h for help, as usual:
 ```bash
 massivefold ppi -h
 ```
+Additionally, a screening round (see [ligand screening](#ligand-screening)) can be applied on every PPI receptor-ligand pair by using the parameter `--context <ligand_csv>` (with the same format as [seen before](#format-of-the-csv-containing-the-ligands)).  
+No need to change specify the `fasta_chains` field of the parameter file passed with `-f`, it will be automatically assigned in the PPI pipeline.
 
-The `--receptors <receptor_list>` and `--ligands <ligand_list>` contain fasta paths for protein, DNA or RNA sequence(s).  
+### Format of the csv for receptors and ligands
+
+The `--receptors <receptor_list>` and `--ligands <ligand_list>` contain the absolute paths of the protein, DNA or RNA sequence(s) fasta files.  
 This file is a CSV, with each line being a receptor (if passed to `--receptors`)  
 or a ligand (if passed to `--ligands`) in this format:  
-protein | DNA | RNA
---|--|--|
-./path/to/prot1.fasta | ||
-./path/to/prot2.fasta | ||
-./path/to/prot3.fasta | ||
-./path/to/prot4.fasta | |./path/to/rna1.fasta|
-./path/to/prot5.fasta |  | |
-./path/to/prot6.fasta| | | 
-| | ./path/to/dna1.fasta | |
-| | | ./path/to/rna2.fasta|
+| protein              | DNA                 | RNA                 |
+|----------------------|---------------------|---------------------|
+| /path/to/prot1.fasta |                     |                     |
+| /path/to/prot2.fasta |                     |                     |
+| /path/to/prot3.fasta |                     |                     |
+| /path/to/prot4.fasta |                     | /path/to/rna1.fasta |
+| /path/to/prot5.fasta |                     |                     |
+| /path/to/prot6.fasta |                     |                     |
+|                      | /path/to/dna1.fasta |                     |
+|                      |                     | /path/to/rna2.fasta |
 
-Additionally, a screening round (see [ligand screening](#ligand-screening)) can be applied on every PPI receptor-ligand pair by using the parameter `--context <ligand_csv>` (with the same format as [seen before](#format-of-the-csv-containing-the-ligands)).
