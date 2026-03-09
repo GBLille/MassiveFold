@@ -65,7 +65,7 @@ Then you can set the parameters of the **custom_params** section if necessary an
 
 Activate the conda environment:
 ```bash
-conda activate massivefold
+conda activate massivefold-1.6.1
 ```
 >**N.B.**: on the Jean Zay cluster, simply load the `massivefold` >module. To be able to run on H100 or A100, uncomment the
 >corresponding last lines of the `jobarray.slurm` header. Example >for H100:
@@ -391,7 +391,7 @@ We also provide an `extract_scores.py` script that allows to extract the scores 
 ## Ligand screening
 First, activate the conda environment:
 ```bash
-conda activate massivefold
+conda activate massivefold-1.6.1
 ```
 To launch a screening round, run:
 
@@ -429,7 +429,7 @@ See this [section](#multiple-runs-gathering).
 ## PPI screening 
 First, activate the conda environment:
 ```bash
-conda activate massivefold
+conda activate massivefold-1.6.1
 ```
 To launch a PPI discovery round, run:
 

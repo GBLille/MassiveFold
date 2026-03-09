@@ -17,7 +17,6 @@ def resolve_path(path_value):
 def ordered_massivefold_section(params):
   key_order = [
     "run_massivefold",
-    "run_massivefold_plots",
     "data_dir",
     "uniref_database",
     "jobfile_headers_dir",
@@ -49,7 +48,6 @@ def patch_common_params(params, root_dir, data_dir=None, tool=None):
   elif tool == "AlphaFold3":
     massivefold["run_massivefold"] = "run_alphafold.py"
 
-  massivefold["run_massivefold_plots"] = os.path.abspath(os.path.join(pkg_root, "massivefold_plots.py"))
   if data_dir is not None:
     massivefold["data_dir"] = resolve_path(data_dir)
   massivefold["jobfile_templates_dir"] = os.path.abspath(os.path.join(pkg_root, "parallelization", "templates"))
