@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - bioconda
   - nvidia
+  - nodefaults
 dependencies:
   - colabfold=1.5.5
   - jax=0.4.23
@@ -10,7 +11,7 @@ dependencies:
   - hmmer=3.3.2
   - hhsuite=3.3.0
   - openmm=7.7.0
-  - kalign2
+  - kalign2=2.04
   - cuda-nvcc
   - dm-haiku=0.0.13
   - dm-tree=0.1.8

@@ -6,16 +6,16 @@ install_env () {
   if [[ $env == "massivefold" ]]; then
     echo "Installing MassiveFold environment"
     conda env create -f environment.yml
-    conda activate massivefold-1.6.0
+    conda activate massivefold-1.6.1
     conda config --env --set channel_priority flexible
     python -m pip install -e .
   elif [[ $env == "colabfold" ]]; then
     echo "Installing ColabFold environment"
-    conda activate massivefold-1.6.0 || { echo "massivefold environment is needed and is missing"; exit 1; }
+    conda activate massivefold-1.6.1 || { echo "massivefold environment is needed and is missing"; exit 1; }
     CONDA_OVERRIDE_CUDA="11.8" conda env create -f mf-colabfold.yml
   elif [[ $env == "afmassive" ]]; then
     echo "Installing afmassive environment"
-    conda activate massivefold-1.6.0 || { echo "massivefold environment is needed and is missing"; exit 1; }
+    conda activate massivefold-1.6.1 || { echo "massivefold environment is needed and is missing"; exit 1; }
     CONDA_OVERRIDE_CUDA="11.8" conda env create -f mf-afmassive.yml
     conda activate mf-afmassive-1.1.6
     wget -O "${CONDA_PREFIX}/lib/python3.10/site-packages/alphafold/common/stereo_chemical_props.txt" https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
@@ -24,7 +24,7 @@ install_env () {
     conda deactivate
   elif [[ $env == "alphafold3" ]]; then
     echo "Installing alphafold3 environment"
-    conda activate massivefold-1.6.0 || { echo "massivefold environment is needed and is missing"; exit 1; }
+    conda activate massivefold-1.6.1 || { echo "massivefold environment is needed and is missing"; exit 1; }
     conda env create -f mf-alphafold3.yml
     conda activate mf-alphafold-3.0.1
     build_data
@@ -175,5 +175,5 @@ if [[ $do_not_create_env == "true" ]]; then
   install_cmd+=(--no-env)
 fi
 
-conda activate massivefold-1.6.0
+conda activate massivefold-1.6.1
 "${install_cmd[@]}"
