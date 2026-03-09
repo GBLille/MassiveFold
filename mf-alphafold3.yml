@@ -16,4 +16,4 @@ dependencies:
   - pip
   - pip:
     - git+https://github.com/google-deepmind/alphafold3@v3.0.1
-    - glypy=1.0.17
+    - glypy==1.0.17
