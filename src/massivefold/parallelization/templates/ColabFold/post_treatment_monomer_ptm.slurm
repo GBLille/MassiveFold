@@ -1,7 +1,7 @@
 sequence_name=$sequence_name
 run_name=$run_name
 output=${output_dir}/$${sequence_name}/$${run_name}/
-mf_plots_path=$run_massivefold_plots
+mf_plots_path=massivefold_plots
 scripts_dir=$scripts_dir
 batches_file=${logs_dir}/$${sequence_name}/$${run_name}/$${sequence_name}_$${run_name}_batches.json
 pkl_format=$pkl_format
