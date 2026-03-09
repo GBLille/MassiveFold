@@ -109,6 +109,7 @@ host=$(hostname | cut -c1-8)
 host_is_jeanzay=false
 if [[ "$host" == "jean-zay" ]]; then
   host_is_jeanzay=true
+  do_not_create_env=true
 fi
 
 if [[ $only_create_env == "true" ]]; then
@@ -159,7 +160,6 @@ if [[ $do_not_create_env == "false" ]]; then
 else
   echo "No env asked, install skipped"
 fi
-
 
 install_cmd=(massivefold install --install-path "$install_path")
 if [[ $db_af == "true" ]]; then
