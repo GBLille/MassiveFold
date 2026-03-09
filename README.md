@@ -64,9 +64,12 @@ to keep from the `output` and `log` directories somewhere else.
 ### Running MassiveFold
 Usage section includes the most simple way to run MassiveFold with examples. For more detail on its functioning and other cases, see the [usage documentation](docs/usage.md).
 
-Activate the conda environment, then launch MassiveFold.
+First, activate the conda environment:
 ```bash
 conda activate massivefold
+```
+Then launch MassiveFold:
+```bash
 massivefold run -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> -t <TOOL> 
 ```
 
@@ -84,7 +87,10 @@ massivefold run -s input/H1140.fasta -r af3_default -p 5 -f AlphaFold3_params.js
 ```
 
 ### Screening a receptor with ligands
-
+First, activate the conda environment:
+```bash
+conda activate massivefold
+```
 To screen a single proteic receptor with multiple ligands, launch:
 ```bash
 massivefold screen -s <receptor_fasta_file> -l <ligand_list_csv> -f <AlphaFold3_params.json>
@@ -93,7 +99,10 @@ Here the default value of -p which is the number of seed (for AF3) or prediction
 See documentation for [further details](docs/usage.md#ligand-screening)
 
 ### Discover PPI between receptors and ligands
-
+First, activate the conda environment:
+```bash
+conda activate massivefold
+```
 To launch a PPI discovery round between a set of proteic (or DNA or RNA) receptors and a set of proteic (or DNA or RNA) ligands, run:
 
 ```bash

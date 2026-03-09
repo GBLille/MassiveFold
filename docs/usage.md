@@ -63,17 +63,23 @@ file are proteins.
 Then you can set the parameters of the **custom_params** section if necessary and the 
 [plots section](#massivefold_plots-output-representation).
 
-Activate the conda environment, then launch MassiveFold.
+Activate the conda environment:
 ```bash
 conda activate massivefold
-massivefold run -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> -t <TOOL> 
 ```
-**N.B.**: on the Jean Zay cluster, simply load the `massivefold` module. To be able to run on H100 or A100, uncomment the 
-corresponding last lines of the `jobarray.slurm` header. Example for H100:
+>**N.B.**: on the Jean Zay cluster, simply load the `massivefold` >module. To be able to run on H100 or A100, uncomment the
+>corresponding last lines of the `jobarray.slurm` header. Example >for H100:
+>```bash
+>module purge
+>module load massivefold
+>module load arch/h100
+>```
+
+Then launch MassiveFold:
+```bash
+massivefold run -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> -t <TOOL>
 ```
-module purge
-module load arch/h100
-```
+
 
 Example for AFmassive:
 ```bash
@@ -92,6 +98,7 @@ For more help and list of required and facultative parameters, run:
 ```bash
 massivefold run -h
 ```
+```text
 usage: massivefold run [-h] -s SEQUENCE -r RUN_NAME -f PARAMETERS [-p PREDICTIONS_PER_MODEL] [-b BATCH_SIZE] [-j JOBID] [-o] [-c] [-C CALIBRATION_FROM] [-w WALL_TIME] [-m MSAS_PRECOMPUTED]
                        [-n TOP_N_MODEL] [-a] [--scheduler {auto,slurm,local}]
 
@@ -382,7 +389,10 @@ We also provide an `extract_scores.py` script that allows to extract the scores 
 (notably useful for interrupted runs). Run `python3 extract_scores.py -h` for help.
 
 ## Ligand screening
-
+First, activate the conda environment:
+```bash
+conda activate massivefold
+```
 To launch a screening round, run:
 
 ```bash
@@ -417,7 +427,10 @@ named with the name of the csv file. All the results, notably the scores, can be
 See this [section](#multiple-runs-gathering).
 
 ## PPI screening 
-
+First, activate the conda environment:
+```bash
+conda activate massivefold
+```
 To launch a PPI discovery round, run:
 
 ```bash
