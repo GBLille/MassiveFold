@@ -161,7 +161,7 @@ else
   echo "No env asked, install skipped"
 fi
 
-install_cmd=(massivefold install --install-path "$install_path")
+install_cmd=(python -s -m massivefold.cli install --install-path "$install_path")
 if [[ $db_af == "true" ]]; then
   install_cmd+=(--alphafold-db "$alphafold_databases")
 fi
