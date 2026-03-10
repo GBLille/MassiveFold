@@ -397,7 +397,7 @@ def MF_recycling_parser(log_file, prediction):
   # get recycle nb and its lines from log file
   for line in lines:
     if '--max_recycles=' in line:
-      max_recycles = int(line.split('--max_recycles=')[1].strip())
+      max_recycles = int(line.split('--max_recycles=')[1].strip().split(' ')[0])
     if line.startswith('['):
       logs.append(line.strip())
 
