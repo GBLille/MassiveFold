@@ -39,7 +39,7 @@ def convert_colabfold_fasta(fasta_path:str):
 def create_alphafold3_json(fasta_path: str, adapted_input_dir: str, json_params_path):
   json_params = os.path.realpath(json_params_path)
   assert os.path.exists(json_params) and json_params.endswith('.json'), \
-  "Please provide a valid path to a json file with --json_params"
+    "Please provide a valid path to a json file with --json_params"
   
   all_params = json.load(open(json_params, 'r')) 
   template_dir = all_params['massivefold']['jobfile_templates_dir']
@@ -581,25 +581,59 @@ def ppi_create_input(receptors, ligands, parameters_file):
 
 def get_tool_default_params(param_file):
   tool_params = json.load(open(param_file, 'r'))
-  tool_run_key = [ i for i in tool_params if i.endswith('run') ]
-  return tool_params[tool_run_key]
+  #tool_run_key = [ i for i in tool_params if i.endswith('run') ][0]
+  return tool_params
 
-def get_multirun_runs(multirun_csv):
+def get_multirun_params(user_params, defaults_params):
+  for param in user_params:
+    if param not in defaults_params:
+      possible_params = [ "'" + i + "'" for i in defaults_params ]
+      raise ValueError(
+        f"'{param}' is an unknown param not in:\n" 
+        f"{{{'|'.join(possible_params)}}}"
+      )
+    defaults_params[param] = user_params[param]
+
+  return defaults_params
+
+def get_multirun_runs(multirun_csv, massivefold_params):
   df = pd.read_csv(multirun_csv)
   assert "run_names" in df.columns and "tool" in df.columns, \
     f"Format error in {multirun_csv}"
-  param_dir = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "massivefold",
-    "parallelization",
-  )
-  
+
+  # get tools defaults params
+  param_dir = os.path.dirname(os.path.abspath(__file__))
+  tool_to_code = {
+    "AlphaFold3": "AF3_run",
+    "AFmassive": "AFm_run",
+    "ColabFold": "CF_run"
+  }
   AF3_base_params = get_tool_default_params(os.path.join(param_dir, "AlphaFold3_params.json"))
-  AFm_base_params = get_tool_default_params(os.path.join(param_dir, "AFmassive_params.json"))
+  AFM_base_params = get_tool_default_params(os.path.join(param_dir, "AFmassive_params.json"))
   CF_base_params = get_tool_default_params(os.path.join(param_dir, "ColabFold_params.json"))
-  print(AlphaFold)
-  return df["tool"], df["run_name"], df["parameter_file_content"]
-  
+  param_map = {
+    "AlphaFold3": AF3_base_params,
+    "AFmassive": AFM_base_params,
+    "ColabFold": CF_base_params
+  }
+  # extract user specified run parameters
+  run_params = []
+  non_param_cols = ["tool", "run_names"]
+  run_records = df.to_dict(orient='records')
+  for run in run_records:
+    tool = run["tool"]
+    base_params = copy.deepcopy(param_map)[tool]
+    # get rid of non-params cols
+    for col_name in non_param_cols:
+      run.pop(col_name)
+    base_params[tool_to_code[tool]] = get_multirun_params(run, base_params[tool_to_code[tool]]) 
+    base_params["massivefold"] = massivefold_params
+    run_params.append(base_params)
+  df["parameter_file_content"] = run_params
+  print(df)
+  print(json.dumps(df["parameter_file_content"].tolist()[0], indent=4))
+  return df["tool"].tolist(), df["run_names"].tolist(), df["parameter_file_content"].tolist()
+
 def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
   sequence = os.path.basename(os.path.dirname(os.path.dirname(input_json)))
 

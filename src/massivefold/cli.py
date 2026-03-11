@@ -66,6 +66,8 @@ def add_multirun_arguments(multirun_parser):
                                     help="Path of the fasta file containing sequence(s) used screening.")
   multirun_required.add_argument("--setup", dest="setup", required=True,
                                     help="Csv file containing the list of runs with their parameters.")
+  multirun_required.add_argument("-f", "--parameters", dest="parameters", required=True,
+                              help="Json file's path containing the parameters used for this run.")
 
   # optional arguments
   multirun_optional = multirun_parser.add_argument_group("Optional arguments")
