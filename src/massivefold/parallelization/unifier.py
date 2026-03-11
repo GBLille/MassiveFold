@@ -579,6 +579,27 @@ def ppi_create_input(receptors, ligands, parameters_file):
   print(f"Created {len(df_all_ppi['ppi'].tolist())} PPI input files...")
   return df_all_ppi
 
+def get_tool_default_params(param_file):
+  tool_params = json.load(open(param_file, 'r'))
+  tool_run_key = [ i for i in tool_params if i.endswith('run') ]
+  return tool_params[tool_run_key]
+
+def get_multirun_runs(multirun_csv):
+  df = pd.read_csv(multirun_csv)
+  assert "run_names" in df.columns and "tool" in df.columns, \
+    f"Format error in {multirun_csv}"
+  param_dir = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "massivefold",
+    "parallelization",
+  )
+  
+  AF3_base_params = get_tool_default_params(os.path.join(param_dir, "AlphaFold3_params.json"))
+  AFm_base_params = get_tool_default_params(os.path.join(param_dir, "AFmassive_params.json"))
+  CF_base_params = get_tool_default_params(os.path.join(param_dir, "ColabFold_params.json"))
+  print(AlphaFold)
+  return df["tool"], df["run_name"], df["parameter_file_content"]
+  
 def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
   sequence = os.path.basename(os.path.dirname(os.path.dirname(input_json)))
 
