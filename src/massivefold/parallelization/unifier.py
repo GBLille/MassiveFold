@@ -43,7 +43,13 @@ def create_alphafold3_json(fasta_path: str, adapted_input_dir: str, json_params_
   
   all_params = json.load(open(json_params, 'r')) 
   template_dir = all_params['massivefold']['jobfile_templates_dir']
-  json_template = os.path.realpath(os.path.join(template_dir, "AlphaFold3", "af3_input.json"))
+  json_template = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "templates",
+    "AlphaFold3",
+    "af3_input.json"
+  )
+  #= os.path.realpath(os.path.join(template_dir, "AlphaFold3", "af3_input.json"))
   json_input = json.load(open(json_template, 'r'))
 
   parsed_records = list(SeqIO.parse(fasta_path, "fasta"))
