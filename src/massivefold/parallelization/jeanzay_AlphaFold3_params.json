@@ -1,7 +1,6 @@
 {
     "massivefold": {
         "run_massivefold": "run_alphafold.py",
-        "run_massivefold_plots": "../src/massivefold/massivefold_plots.py",
         "data_dir": "$HOME/af3_datadir",
         "jobfile_headers_dir": "./headers",
         "jobfile_templates_dir": "../src/massivefold/parallelization/templates",
