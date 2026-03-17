@@ -2,27 +2,26 @@ sequence_name=$sequence_name
 run_name=$run_name
 output=${output_dir}/$${sequence_name}/$${run_name}/
 mf_plots_path=massivefold_plots
-scripts_dir=$scripts_dir
 batches_file=${logs_dir}/$${sequence_name}/$${run_name}/$${sequence_name}_$${run_name}_batches.json
 pkl_format=$pkl_format
 
 # adapt colabfold output for massivefold
-echo "$${scripts_dir}/unifier.py
+echo "unifier
   --batches_file $${batches_file}
   --conversion output
   --to_convert $$output
   --tool ColabFold
   "
 
-time $${scripts_dir}/unifier.py \
+time unifier \
   --batches_file $${batches_file} \
   --conversion output \
   --to_convert $$output \
   --tool ColabFold
 
 # rename and move files
-echo "$${scripts_dir}/organize_outputs.py --batches_path $$output"
-time $${scripts_dir}/organize_outputs.py --batches_path $$output
+echo "organize_outputs --batches_path $$output"
+time organize_outputs --batches_path $$output
 
 # plots
 echo "Generating plots"
@@ -50,8 +49,8 @@ else
   echo "$$pkl_format is an invalid value for pkl_format, doing nothing"
 fi
 
-echo "$${scripts_dir}/lighten_output.py $${output} --pickle_size $${pkl_mode}"
-time $${scripts_dir}/lighten_output.py $${output} --pickle_size $${pkl_mode}
+echo "lighten_output $${output} --pickle_size $${pkl_mode}"
+time lighten_output $${output} --pickle_size $${pkl_mode}
 
 date
 

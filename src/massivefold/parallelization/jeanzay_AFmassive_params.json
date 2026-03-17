@@ -8,7 +8,6 @@
         "output_dir": "./output",
         "logs_dir": "./log",
         "input_dir": "./input",
-        "scripts_dir": "../src/massivefold/parallelization",
         "models_to_use": "",
         "pkl_format": "full"
     },

@@ -3,7 +3,6 @@ run_name=$run_name
 fafile=${input_dir}/$${sequence_name}.fasta
 run_massivefold=$run_massivefold
 data_dir=$data_dir
-scripts_dir=$scripts_dir
 
 num_recycle=$num_recycle
 recycle_early_stop_tolerance=$recycle_early_stop_tolerance
@@ -30,9 +29,9 @@ path_to_msas=${output_dir}/$${sequence_name}/msas
 date
 
 batch_file=disc_batches.json
-batch_model=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element model)
-batch_start=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element start)
-batch_end=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element end)
+batch_model=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element model)
+batch_start=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element start)
+batch_end=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element end)
 
 echo $$batch_model
 num_models=$$(echo $$batch_model | cut -d "_" -f 2)

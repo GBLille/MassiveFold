@@ -7,7 +7,6 @@ run_name=$run_name
 output=$output_dir
 fafile=${input_dir}/$${sequence_name}.fasta
 data_dir=$data_dir
-scripts_dir=$scripts_dir
 
 pair_strategy=$pair_strategy
 if [ "$$pair_strategy" = "greedy" ]; then

@@ -2,12 +2,11 @@ sequence_name=$sequence_name
 run_name=$run_name
 output=${output_dir}/$${sequence_name}/$${run_name}/
 mf_plots_path=massivefold_plots
-scripts_dir=$scripts_dir
 pkl_format=$pkl_format
 
 # rename and move files
-echo "time $${scripts_dir}/organize_outputs.py --batches_path $$output"
-time $${scripts_dir}/organize_outputs.py --batches_path $$output
+echo "time organize_outputs --batches_path $$output"
+time organize_outputs --batches_path $$output
 
 # plots
 echo "Generating plots"
@@ -35,8 +34,8 @@ else
   echo "$$pkl_format is an invalid value for pkl_format, doing nothing"
 fi
 
-echo "$${scripts_dir}/lighten_output.py $${output} --pickle_size $${pkl_mode}"
-time $${scripts_dir}/lighten_output.py $${output} --pickle_size $${pkl_mode}
+echo "lighten_output $${output} --pickle_size $${pkl_mode}"
+time lighten_output $${output} --pickle_size $${pkl_mode}
 
 date
 

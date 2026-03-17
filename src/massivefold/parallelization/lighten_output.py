@@ -151,7 +151,7 @@ def lighten_all_pkl(directory, parameters, to_json: bool):
   # delete screening pkls, need a refactor (should be called on each ligand directory instead)
   if os.path.exists(os.path.join(directory, 'screening_inputs')):
     print('AF3 screening detected')
-    if args.pickle_size != "delete":
+    if pickle_size != "delete":
       sys.exit()
     inputs = os.path.join(directory, 'screening_inputs')
     print(f"Remove pickles from directory that inputs in {inputs} have output.")
@@ -214,12 +214,16 @@ def lighten_all_pkl(directory, parameters, to_json: bool):
 
   return pkl_files
 
-if __name__ == '__main__':
+def main():
   args = parser.parse_args()
   directory = args.path_to_output
+  pickle_size = args.pickle_size
+  paramters = args.parameters
+  keep_full_pickles = args.keep_full_pickles
+
   to_json = False # development in progress
 
-  parameters = {
+  default_parameters = {
     "keys": [
         "num_recycles", "predicted_aligned_error", "predicted_lddt",
         "plddt", "ptm", "iptm", "ranking_confidence", "max_predicted_aligned_error"
@@ -237,7 +241,7 @@ if __name__ == '__main__':
     extract_af3_batch_input_msas(directory, af3_batch_files)
 
   # step to lighten (or not) the pickles
-  if args.pickle_size == "full":
+  if pickle_size == "full":
     print("No modification of the pickle files")
     if to_json:
       json_dir = f'{directory}/json_output'
@@ -268,17 +272,22 @@ if __name__ == '__main__':
         print(f"\r|{bar}| {percent:3d}% ({i+1}/{total})", end="", flush=True)
       print()
 
-  elif args.pickle_size in [ "light", "custom" ]:
-    delete_after_lightening = not args.keep_full_pickles
+  elif pickle_size in [ "light", "custom" ]:
+    delete_after_lightening = not keep_full_pickles
     print(f'Extracting pkl from {os.path.abspath(directory)}')
     # read user's custom parameters for the lighter pickles
-    if args.pickle_size == "custom":
-      parameters = json.load(open(args.parameters, "r"))
+    if pickle_size == "custom":
+      used_parameters = json.load(open(parameters, "r"))
       print(f"Using custom parameters:\n{parameters}")
-    pickles = lighten_all_pkl(directory, parameters, to_json=False)
+    else:
+      used_paramters = default_parameters
+    pickles = lighten_all_pkl(directory, used_parameters, to_json=False)
     if delete_after_lightening and pickles != None:
       delete_pickles(pickles, directory)
 
-  elif args.pickle_size == "delete":
+  elif pickle_size == "delete":
     pickles = [ pkl for pkl in os.listdir(directory) if pkl.endswith('.pkl') ]
     delete_pickles(pickles, directory)
+
+if __name__ == '__main__':
+  main(directory)

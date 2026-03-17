@@ -10,7 +10,6 @@ run_name=$run_name
 output=$output_dir
 data_dir=$data_dir
 logs_dir=$logs_dir
-scripts_dir=$scripts_dir
 
 json_path=${input_dir}/alphafold3_json_requests/$${sequence_name}.json
 
@@ -47,14 +46,14 @@ if $${mf_following_msas}; then
   json_params=$json_params
   json_msas=$${output}/$${sequence_name}/msas_alphafold3/msas_alphafold3_data.json
   batches_file=$${logs_dir}/$${sequence_name}/$${run_name}/$${sequence_name}_$${run_name}_batches.json
-  echo "$${scripts_dir}/unifier.py
+  echo "unifier
     --conversion input_inference
     --batches_file $$batches_file
     --json_params $$json_params
     --to_convert $$json_msas
     --tool AlphaFold3"
 
-  $${scripts_dir}/unifier.py \
+  unifier \
     --conversion input_inference \
     --batches_file $$batches_file \
     --json_params $$json_params \
