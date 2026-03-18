@@ -17,9 +17,9 @@ install_env () {
     echo "Installing afmassive environment"
     conda activate massivefold-1.6.1 || { echo "massivefold environment is needed and is missing"; exit 1; }
     CONDA_OVERRIDE_CUDA="11.8" conda env create -f mf-afmassive.yml
-    conda activate mf-afmassive-1.1.6
+    conda activate mf-afmassive-1.1.7
     wget -O "${CONDA_PREFIX}/lib/python3.10/site-packages/alphafold/common/stereo_chemical_props.txt" https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
-    wget -O "${CONDA_PREFIX}/bin/run_AFmassive.py" https://raw.githubusercontent.com/GBLille/AFmassive/v1.1.6/run_AFmassive.py
+    wget -O "${CONDA_PREFIX}/bin/run_AFmassive.py" https://raw.githubusercontent.com/GBLille/AFmassive/v1.1.7/run_AFmassive.py
     chmod +x "${CONDA_PREFIX}/bin/run_AFmassive.py"
     conda deactivate
   elif [[ $env == "alphafold3" ]]; then

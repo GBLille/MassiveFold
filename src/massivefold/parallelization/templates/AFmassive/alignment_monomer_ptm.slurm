@@ -1,5 +1,5 @@
 . $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-afmassive-1.1.6
+conda activate mf-afmassive-1.1.7
 #
 # variables to adapt: used for alignment
 sequence_name=$sequence_name
