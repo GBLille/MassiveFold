@@ -175,7 +175,7 @@ def af3_resolve_glycan(glycan_str, chain_id):
   iupac_to_ccd = {
     "Gal": "GAL", "a-Gal": "GAL", "b-Gal": "GLB",
     "Glc": "GLC", "a-Glc": "GLC", "b-Glc": "BGC",
-    "Man": "MAN", "a-Man": "BMA", "b-Man": "BMA",
+    "Man": "MAN", "a-Man": "MAN", "b-Man": "BMA",
     "Fuc": "FUC" ,# "a-Fuc": "FCA", "b-Fuc": "FCB", => FCA would be D-Fucose
     "GlcNAc": "NAG", "Glc2NAc": "NAG",
     "GalNAc": "NGA", "Gal2NAc": "NGA",
