@@ -174,10 +174,10 @@ def main():
   batch_0 = os.path.join(batches_path, "batch_0")
   # create ranking json files
   pred_batch_map = create_global_ranking(batches_path, sequence_name)
-  if os.path.isfile(f"{batches_path}/batch_0/{sequence_name}/ranking_iptm.json"):
-    create_global_ranking(batches_path, sequence_name, 'iptm')
-  if os.path.isfile(f"{batches_path}/batch_0/{sequence_name}/ranking_ptm.json"):
-    create_global_ranking(batches_path, sequence_name, 'ptm')
+  metrics = ["iptm", "actifptm", "ptm"]
+  for metric in metrics:
+    if os.path.isfile(f"{batches_path}/batch_0/{sequence_name}/ranking_{metric}.json"):
+      create_global_ranking(batches_path, sequence_name, metric)
 
   # organize output directory
   move_and_rename(batches_path, pred_batch_map, sequence_name)

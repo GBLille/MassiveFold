@@ -724,7 +724,7 @@ _ptm_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pdb"
   return new_names
 
 def create_colabfold_ranking(predictions_to_rank:pd.core.frame.DataFrame, output_path:str, preset:str):
-  metrics = ['ptm', 'iptm', 'iptm+ptm'] if preset == 'multimer' else ['plddts', 'ptm']
+  metrics = ['ptm', 'iptm', 'actifptm', 'iptm+ptm'] if preset == 'multimer' else ['plddts', 'ptm']
   
   for metric in metrics:
     try:
@@ -742,7 +742,7 @@ def create_colabfold_ranking(predictions_to_rank:pd.core.frame.DataFrame, output
     ranking_file_name = f"{output_path}/ranking_{metric_name}.json"
     scores_dict = df.set_index('prediction').to_dict(orient='dict')[metric]
     if metric != 'iptm+ptm':
-      scores_dict = {key: value.item() for key, value in scores_dict.items()}
+      scores_dict = {key: value if isinstance(value, float) else value.item() for key, value in scores_dict.items()}
     order = df['prediction'].to_list()
     
     with open(ranking_file_name, 'w') as json_scores:
@@ -767,20 +767,25 @@ def rank_colabfold_predictions(output_path:str, pdb_files:list, new_pdb_names:li
   jobname = [ name for name in os.listdir(output_path) if name.endswith('a3m') ]
   jobname = jobname[0].split('.')[0]
 
-  pickle_files = map(lambda x: x.replace("_unrelaxed_", "_all_").replace('.pdb', '.pickle'), pdb_files)
+  pickle_files = list(map(lambda x: x.replace("_unrelaxed_", "_all_").replace('.pdb', '.pickle'), pdb_files))
+  json_files = list(map(lambda x: x.replace("_all_", "_scores_").replace('.pickle', '.json'), pickle_files))
   all_preds = pd.DataFrame()
 
-  for pickle_name, pdb_name in zip(list(pickle_files), new_pdb_names):
+  for pickle_name, json_name, pdb_name in zip(pickle_files, json_files, new_pdb_names):
     if not os.path.exists(f"{output_path}/{pickle_name}"):
       raise FileNotFoundError(f"{output_path}/{pickle_name}")
     pred_name = f"model_{pdb_name.split('_model_')[1].split('.')[0]}"
-    with open(f"{output_path}/{pickle_name}", 'rb') as pickle_scores:
-      scores = pickle.load(pickle_scores)
-    content = {"prediction": pred_name, "ptm": scores["ptm"]}
-    if "iptm" in scores:
-      content.update({"iptm": scores["iptm"], 'iptm+ptm': 0.8 * scores['iptm'] + 0.2 * scores['ptm']})
-    if "mean_plddt" in scores:
-      content.update({"plddts": scores["mean_plddt"]})
+
+    # open score files (json & pickle)
+    scores1 = pickle.load(open(f"{output_path}/{pickle_name}", 'rb'))
+    scores2 = json.load(open(f"{output_path}/{json_name}", 'r'))
+    content = {"prediction": pred_name, "ptm": scores1["ptm"]}
+    if "iptm" in scores1:
+      content.update({"iptm": scores1["iptm"], 'iptm+ptm': 0.8 * scores1['iptm'] + 0.2 * scores1['ptm']})
+    if "actifptm" in scores2:
+      content.update({"actifptm": scores2["actifptm"]})
+    if "mean_plddt" in scores1:
+      content.update({"plddts": scores1["mean_plddt"]})
     new_pred = pd.DataFrame([content])
     all_preds = pd.concat([all_preds, new_pred], ignore_index=True)
   
