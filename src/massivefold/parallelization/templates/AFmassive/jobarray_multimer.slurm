@@ -1,5 +1,3 @@
-. $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-afmassive-1.1.7
 
 date
 
@@ -10,7 +8,6 @@ fafile=${input_dir}/$${sequence_name}.fasta
 run_massivefold=$run_massivefold
 data_dir=$data_dir
 max_template_date=$max_template_date
-#max_template_date=2023-07-31
 uniref_database=$uniref_database
 
 if [ -z "$$uniref_database" ]; then
@@ -55,6 +52,9 @@ batch_start=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches
 batch_end=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path} --element end)
 
 echo Model used is $$batch_model, batch computed between prediction $$batch_start and $$batch_end
+
+. $$(conda info --base)/etc/profile.d/conda.sh
+conda activate mf-afmassive-1.1.7
 
 echo "$${run_massivefold}
     --fasta_paths=$${fafile}

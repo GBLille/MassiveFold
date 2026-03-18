@@ -1,8 +1,4 @@
 
-. $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-colabfold-1.5.5
-#conda activate mf-colabfold
-
 sequence_name=$sequence_name
 run_name=$run_name
 fafile=${input_dir}/$${sequence_name}.fasta
@@ -52,6 +48,9 @@ echo "Batch random seed: $$random_seed"
 num_recycle=$num_recycle
 recycle_early_stop_tolerance=$recycle_early_stop_tolerance
 stop_at_score=$stop_at_score
+
+. $$(conda info --base)/etc/profile.d/conda.sh
+conda activate mf-colabfold-1.5.5
 
 echo "colabfold_batch
   $${path_to_msas}

@@ -46,7 +46,9 @@ echo "predictions computed in the batch: $$num_seeds"
 random_seed=$$(shuf -i 0-1000000 -n 1)
 echo "Batch random seed: $$random_seed"
 
-echo "
+. $$(conda info --base)/etc/profile.d/conda.sh
+conda activate mf-colabfold-1.5.5
+
 time colabfold_batch
   $${path_to_msas}
   ../output/$${name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID}
@@ -62,8 +64,8 @@ time colabfold_batch \
   $${path_to_msas} \
   ../output/$${name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID} \
   --data /shared/databases2/2024-01-18/params/ \
-  --random-seed $$random_seed \
   --save-all \
+  --random-seed $$random_seed \
   --num-seeds $$num_seeds \
   --model-type $$model_type \
   --model-order $$num_models \

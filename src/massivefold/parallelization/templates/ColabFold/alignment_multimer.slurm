@@ -1,5 +1,3 @@
-. $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-colabfold-1.5.5
 
 # variables to adapt: used for alignment
 sequence_name=$sequence_name
@@ -23,6 +21,9 @@ fafile=${input_dir}/converted_for_colabfold/$${sequence_name}.fasta
 msas_output="$${output}/$${sequence_name}/msas_colabfold/"
 
 date
+
+. $$(conda info --base)/etc/profile.d/conda.sh
+conda activate mf-colabfold-1.5.5
 
 echo "colabfold_search
   $${fafile}

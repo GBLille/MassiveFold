@@ -1,6 +1,4 @@
-. $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-afmassive-1.1.7
-#
+
 # variables to adapt: used for alignment
 sequence_name=$sequence_name
 run_name=$run_name
@@ -9,7 +7,6 @@ output=$output_dir
 fafile=${input_dir}/$${sequence_name}.fasta
 data_dir=$data_dir
 max_template_date=$max_template_date
-#max_template_date=2023-07-31
 uniref_database=$uniref_database
 
 if [ -z "$$uniref_database" ]; then
@@ -25,6 +22,9 @@ mgnify_max_hits=501
 uniprot_max_hits=50000
 uniref_max_hits=10000
 use_gpu_relax=false
+
+. $$(conda info --base)/etc/profile.d/conda.sh
+conda activate mf-afmassive-1.1.7
 
 echo "$${run_massivefold}
     --alignments_only=$${alignments_only} 
