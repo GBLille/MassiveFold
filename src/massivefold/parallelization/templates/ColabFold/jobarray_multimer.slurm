@@ -50,7 +50,7 @@ recycle_early_stop_tolerance=$recycle_early_stop_tolerance
 stop_at_score=$stop_at_score
 
 . $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-colabfold-1.5.5
+conda activate mf-colabfold-1.6.1
 
 echo "colabfold_batch
   $${path_to_msas}
@@ -65,8 +65,10 @@ echo "colabfold_batch
   --num-recycle $$num_recycle
   --recycle-early-stop-tolerance $$recycle_early_stop_tolerance
   --stop-at-score $$stop_at_score
+  --calc-extra-ptm
   $$use_dropout
-  $$disable_cluster_profile"
+  $$disable_cluster_profile
+  "
 
 time colabfold_batch \
   $${path_to_msas} \
@@ -81,6 +83,7 @@ time colabfold_batch \
   --num-recycle $$num_recycle \
   --recycle-early-stop-tolerance $$recycle_early_stop_tolerance \
   --stop-at-score $$stop_at_score \
+  --calc-extra-ptm \
   $$use_dropout \
   $$disable_cluster_profile
 

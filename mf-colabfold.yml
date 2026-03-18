@@ -1,22 +1,17 @@
-name: mf-colabfold-1.5.5
+name: mf-colabfold-1.6.1
 channels:
   - bioconda
   - conda-forge
-  - nvidia
   - nodefaults
 dependencies:
-  - colabfold=1.5.5
-  - jax=0.4.23
-  - jaxlib=*=cuda*
-  - cuda-nvcc
-  - dm-haiku=0.0.13
-  - dm-tree=0.1.8
+  - python=3.13
   - pip
+  - kalign2=2.04
+  - hhsuite=3.3.0
+  - mmseqs2=18.8cc5c
   - pip:
-      - absl-py==1.0.0
-      - biopython==1.79
-      - matplotlib==3.7.2
-      - numpy==1.24.3
-      - pandas==2.0.3
-      - seaborn==0.13.2
-      - scipy==1.15.2
+      - colabfold[alphafold,openmm]==1.6.1
+      - alphafold-colabfold==2.3.13
+      - jax[cuda]==0.5.3
+      - jaxlib==0.5.3
+      - openmm[cuda12]==8.4.0.post2
