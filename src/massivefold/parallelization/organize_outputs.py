@@ -20,7 +20,12 @@ def create_global_ranking(all_batches_path, jobname, ranking_type="debug"):
     if batch.startswith('batch'):
       ranking_path = os.path.join(all_batches_path, batch, jobname, f'ranking_{ranking_type}.json')
       with open(ranking_path, 'r') as local_ranking_file:
-        local_rank = json.load(local_ranking_file)
+        try:
+          local_rank = json.load(local_ranking_file)
+        except Exception as e:
+          print(f"Borken file: {ranking_path}")
+          print(e)
+          sys.exit()
         if not ranking_key_score:
           ranking_key_score = list(local_rank.keys())[0]
       map_pred_batch.update({pred: batch for pred in local_rank['order']})

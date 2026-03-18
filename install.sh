@@ -1,34 +1,38 @@
 #!/bin/bash
 
+mf_version=1.6.2
+mf_afm_version=1.1.8
+mf_cf_version=1.5.5
+mf_af3_version=3.0.1
 install_env () {
   env=$1
   source "$(conda info --base)/etc/profile.d/conda.sh"
   if [[ $env == "massivefold" ]]; then
     echo "Installing MassiveFold environment"
     conda env create -f environment.yml
-    conda activate massivefold-1.6.2
+    conda activate massivefold-${mf_version}
     conda config --env --set channel_priority flexible
     python -m pip install -e .
   elif [[ $env == "colabfold" ]]; then
     echo "Installing ColabFold environment"
-    conda activate massivefold-1.6.2 || { echo "massivefold environment is needed and is missing"; exit 1; }
+    conda activate massivefold-${mf_version} || { echo "massivefold environment is needed and is missing"; exit 1; }
     CONDA_OVERRIDE_CUDA="11.8" conda env create -f mf-colabfold.yml
   elif [[ $env == "afmassive" ]]; then
     echo "Installing afmassive environment"
-    conda activate massivefold-1.6.2 || { echo "massivefold environment is needed and is missing"; exit 1; }
+    conda activate massivefold-${mf_version} || { echo "massivefold environment is needed and is missing"; exit 1; }
     CONDA_OVERRIDE_CUDA="11.8" conda env create -f mf-afmassive.yml
-    conda activate mf-afmassive-1.1.7
+    conda activate mf-afmassive-${mf_afm_version}
     wget -O "${CONDA_PREFIX}/lib/python3.10/site-packages/alphafold/common/stereo_chemical_props.txt" https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
-    wget -O "${CONDA_PREFIX}/bin/run_AFmassive.py" https://raw.githubusercontent.com/GBLille/AFmassive/v1.1.7/run_AFmassive.py
+    wget -O "${CONDA_PREFIX}/bin/run_AFmassive.py" https://raw.githubusercontent.com/GBLille/AFmassive/v${mf_afm_version}/run_AFmassive.py
     chmod +x "${CONDA_PREFIX}/bin/run_AFmassive.py"
     conda deactivate
   elif [[ $env == "alphafold3" ]]; then
     echo "Installing alphafold3 environment"
-    conda activate massivefold-1.6.2 || { echo "massivefold environment is needed and is missing"; exit 1; }
+    conda activate massivefold-${mf_version} || { echo "massivefold environment is needed and is missing"; exit 1; }
     conda env create -f mf-alphafold3.yml
-    conda activate mf-alphafold-3.0.1
+    conda activate mf-alphafold-${mf_af3_version}
     build_data
-    wget -O "${CONDA_PREFIX}/bin/run_alphafold.py" https://raw.githubusercontent.com/google-deepmind/alphafold3/v3.0.1/run_alphafold.py
+    wget -O "${CONDA_PREFIX}/bin/run_alphafold.py" https://raw.githubusercontent.com/google-deepmind/alphafold3/v${mf_af3_version}/run_alphafold.py
     sed -i '1i #!/usr/bin/env python' "${CONDA_PREFIX}/bin/run_alphafold.py"
     chmod +x "${CONDA_PREFIX}/bin/run_alphafold.py"
     conda deactivate
@@ -175,5 +179,5 @@ if [[ $do_not_create_env == "true" ]]; then
   install_cmd+=(--no-env)
 fi
 
-conda activate massivefold-1.6.2
+conda activate massivefold-${mf_version}
 "${install_cmd[@]}"
