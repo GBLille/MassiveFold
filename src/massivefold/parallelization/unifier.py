@@ -871,10 +871,8 @@ def create_colabfold_confidences(output_path, pdbs, renamed_pdbs):
     json_file = pdb.replace('_unrelaxed_', '_scores_').replace('.pdb', '.json')
     json_path = os.path.join(output_path, json_file)
     renamed_json = os.path.join(confidence_path, renamed_pdbs[pdb].replace('.pdb', '.json'))
-    print(json_path)
     confidences_content = format_colabfold_confidences(json_path)
     json.dump(confidences_content, open(renamed_json, 'w'), indent=1)
-    #cp(json_path, renamed_json)
 
 def convert_colabfold_output(output_path:str, pred_shift:int, to_convert: str):
   json = [ file for file in os.listdir(output_path) if file.endswith('.json') and 'scores' in file ]
