@@ -70,18 +70,20 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
     # Move confidence files (chain iptm etc)
     confidence_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, 'confidences')
     if os.path.exists(confidence_path):
+      pred_name = pred_new_name.split('.')[0]
+      json_confidence = pred_name + '.json'
       old_confidence_path = os.path.join(
         all_batches_path,
         pred_batch_map[prediction],
         jobname,
         'confidences',
-        f"{pred_new_name.replace('.cif', '.json')}") 
+        json_confidence)
       global_confidence_path = os.path.join(all_batches_path, 'confidences')
       if not os.path.exists(global_confidence_path):
-        os.makedirs(global_confidence_path)
+        os.makedirs(global_confidence_path, exist_ok=True)
       new_confidence_path = os.path.join(global_confidence_path, f"ranked_{i}_{pred_new_name.replace('.cif', '.json')}")
       try:
-        mv(old_confidence_path, new_confidence_path)
+        cp(old_confidence_path, new_confidence_path)
       except FileNotFoundError as e:
         print(e)
         print(f"{pred_batch_map[prediction]}/confidences/{pred_new_name.replace('.cif', '.json')} not found")
@@ -90,7 +92,7 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
     old_pdb_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pred_new_name) 
     new_pdb_path = os.path.join(all_batches_path, f"ranked_{i}_{pred_new_name}")
     try:
-      mv(old_pdb_path, new_pdb_path)
+      cp(old_pdb_path, new_pdb_path)
     except FileNotFoundError as e:
       print(e)
       print(f"{pred_batch_map[prediction]}/ranked_{i}_{pred_new_name} does not exist, probably score < --min_score.")
@@ -100,7 +102,7 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname):
     old_pkl_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pkl_name)
     new_pkl_path = os.path.join(all_batches_path, pkl_name)
     try:
-      mv(old_pkl_path, new_pkl_path)
+      cp(old_pkl_path, new_pkl_path)
     except FileNotFoundError:
       print(f"{pred_batch_map[prediction]}/result_{prediction}.pkl does not exist, probably score < --min_score.")
 
@@ -121,7 +123,7 @@ def main():
     batch_0_name = json.load(open(os.path.join(batches_path, "af3_batch_0.json"), 'r'))["name"]
     batch_0 = os.path.join(batches_path, batch_0_name)
     try:
-      mv(os.path.join(batch_0, "TERMS_OF_USE.md"), batches_path)
+      cp(os.path.join(batch_0, "TERMS_OF_USE.md"), batches_path)
     except:
       pass
     batches_files = [
@@ -150,9 +152,9 @@ def main():
         unranked_predictions = [ pred for pred in os.listdir(single_batch) if pred.startswith('af3_seed') and pred.endswith('.cif')]
         for unranked_pred in unranked_predictions:
           os.remove(os.path.join(single_batch, unranked_pred))
-      os.makedirs(os.path.join(batches_path, 'screening_inputs'))
+      os.makedirs(os.path.join(batches_path, 'screening_inputs'), exist_ok=True)
       for batch_file in batches_files:
-        mv(os.path.join(batches_path, batch_file), os.path.join(batches_path, 'screening_inputs', batch_file))
+        cp(os.path.join(batches_path, batch_file), os.path.join(batches_path, 'screening_inputs', batch_file))
       sys.exit()
 
     for batch in all_batches:
@@ -169,7 +171,7 @@ def main():
         cp(os.path.join(confidence_path, confidence_file), new_confidence_path)
       for file in output_files: 
         new_file = os.path.join(new_location, os.path.basename(file))
-        mv(file, new_file)
+        cp(file, new_file)
 
   batch_0 = os.path.join(batches_path, "batch_0")
   # create ranking json files
