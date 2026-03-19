@@ -826,7 +826,43 @@ def convert_output(tool, batches_file: str, to_convert: str):
 
 def format_colabfold_confidences(path_to_json):
   content = json.load(open(path_to_json, 'r'))
-  return content
+  to_keep = [ 'pairwise_actifptm', 'pairwise_iptm', 'per_chain_ptm', 'actifptm', 'ptm', 'iptm' ]
+  content = { i: content[i] for i in content if i in to_keep }
+
+  new_content = {}
+  for key in content:
+    if key.startswith('pairwise_'):
+      score = key.replace('pairwise_', '')
+      score_keys = list(content[key].keys())
+      chain_pairs = [ sorted(i.split('-')) for i in score_keys ]
+      all_chains = sorted(list(set([item for pair in chain_pairs for item in pair])))
+
+      new_key = f"chain_pair_{score}"
+      chains_scores = []
+      for i, chain1 in enumerate(all_chains):
+        chain_scores = []
+        for chain2 in all_chains:
+          # iptm or actifptm between same chain is pTM
+          if chain1 == chain2:
+            score_to_add = content["per_chain_ptm"][chain1]
+          # find score between chains
+          else:
+            pair = sorted([chain1, chain2])
+            sorted_pair, reverse_pair = '-'.join(pair), '-'.join(pair[::-1])
+            # look at both ways in case only A-B or B-C is there
+            score_to_add = content[key][reverse_pair] if reverse_pair in content[key] else content[key][sorted_pair]
+          chain_scores.append(score_to_add)
+        chains_scores.append(chain_scores)
+      new_content[new_key] = chains_scores
+    elif key.startswith('per_chain'):
+      score = key.replace('per_chain', '')
+      chains = sorted(list(content[key].keys()))
+      new_key = f"chain_{score}"
+      new_content[new_key] = [ content[key][metric] for metric in content[key] ]
+    else:
+      new_content[key] = content[key]
+
+  return new_content
 
 def create_colabfold_confidences(output_path, pdbs, renamed_pdbs):
   confidence_path = os.path.join(output_path, 'confidences')
@@ -835,8 +871,9 @@ def create_colabfold_confidences(output_path, pdbs, renamed_pdbs):
     json_file = pdb.replace('_unrelaxed_', '_scores_').replace('.pdb', '.json')
     json_path = os.path.join(output_path, json_file)
     renamed_json = os.path.join(confidence_path, renamed_pdbs[pdb].replace('.pdb', '.json'))
+    print(json_path)
     confidences_content = format_colabfold_confidences(json_path)
-    json.dump(confidences_content, open(renamed_json, 'w'))
+    json.dump(confidences_content, open(renamed_json, 'w'), indent=1)
     #cp(json_path, renamed_json)
 
 def convert_colabfold_output(output_path:str, pred_shift:int, to_convert: str):
