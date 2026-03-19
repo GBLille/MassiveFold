@@ -747,7 +747,7 @@ def move_output(output_path:str, batch):
     source = os.path.join(batch_path, element)
     destination = os.path.join(destination_path, element)
     if os.path.isdir(source):
-      copytree(source, destination)
+      copytree(source, destination, dirs_exist_ok=True)
     else:
       cp(source, destination)
 
@@ -824,6 +824,10 @@ def convert_output(tool, batches_file: str, to_convert: str):
     print(f"Batch not completed: {' - '.join(not_working)}")
     print(f"{' - '.join(error)}")
 
+def format_colabfold_confidences(path_to_json):
+  content = json.load(open(path_to_json, 'r'))
+  return content
+
 def create_colabfold_confidences(output_path, pdbs, renamed_pdbs):
   confidence_path = os.path.join(output_path, 'confidences')
   os.makedirs(confidence_path, exist_ok=True)
@@ -831,7 +835,9 @@ def create_colabfold_confidences(output_path, pdbs, renamed_pdbs):
     json_file = pdb.replace('_unrelaxed_', '_scores_').replace('.pdb', '.json')
     json_path = os.path.join(output_path, json_file)
     renamed_json = os.path.join(confidence_path, renamed_pdbs[pdb].replace('.pdb', '.json'))
-    cp(json_path, renamed_json)
+    confidences_content = format_colabfold_confidences(json_path)
+    json.dump(confidences_content, open(renamed_json, 'w'))
+    #cp(json_path, renamed_json)
 
 def convert_colabfold_output(output_path:str, pred_shift:int, to_convert: str):
   json = [ file for file in os.listdir(output_path) if file.endswith('.json') and 'scores' in file ]
