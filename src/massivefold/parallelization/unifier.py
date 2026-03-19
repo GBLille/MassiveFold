@@ -179,7 +179,7 @@ def af3_resolve_glycan(glycan_str, chain_id):
   state = {
     'ccdCodes': [],
     'bondedAtomPairs': [],
-    'entity': chain_id,
+    'entity': chaig_id,
     'residue_counter': [1],
     'map_code': iupac_to_ccd
   }
@@ -837,10 +837,13 @@ def format_colabfold_confidences(path_to_json):
       chain_pairs = [ sorted(i.split('-')) for i in score_keys ]
       all_chains = sorted(list(set([item for pair in chain_pairs for item in pair])))
 
-      new_key = f"chain_pair_{score}"
-      chains_scores = []
+      chain_pair_key = f"chain_pair_{score}"
+      per_chain_key = f"per_chain_{score}"
+      chains_pair = []
+      per_chain = []
       for i, chain1 in enumerate(all_chains):
-        chain_scores = []
+        per_chain_score = []
+        chain_pair_scores = []
         for chain2 in all_chains:
           # iptm or actifptm between same chain is pTM
           if chain1 == chain2:
@@ -851,11 +854,15 @@ def format_colabfold_confidences(path_to_json):
             sorted_pair, reverse_pair = '-'.join(pair), '-'.join(pair[::-1])
             # look at both ways in case only A-B or B-C is there
             score_to_add = content[key][reverse_pair] if reverse_pair in content[key] else content[key][sorted_pair]
-          chain_scores.append(score_to_add)
-        chains_scores.append(chain_scores)
-      new_content[new_key] = chains_scores
-    elif key.startswith('per_chain'):
-      score = key.replace('per_chain', '')
+            # per chain score is score mean with all other chains
+            per_chain_score.append(score_to_add)
+          chain_pair_scores.append(score_to_add)
+        chains_pair.append(chain_pair_scores)
+        per_chain.append(np.mean(per_chain_score))
+      new_content[chain_pair_key] = chains_pair
+      new_content[per_chain_key] = per_chain
+    elif key.startswith('per_chain_'):
+      score = key.replace('per_chain_', '')
       chains = sorted(list(content[key].keys()))
       new_key = f"chain_{score}"
       new_content[new_key] = [ content[key][metric] for metric in content[key] ]
