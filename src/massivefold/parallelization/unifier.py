@@ -829,46 +829,58 @@ def format_colabfold_confidences(path_to_json):
   to_keep = [ 'pairwise_actifptm', 'pairwise_iptm', 'per_chain_ptm', 'actifptm', 'ptm', 'iptm' ]
   content = { i: content[i] for i in content if i in to_keep }
 
-  new_content = {}
-  for key in content:
-    if key.startswith('pairwise_'):
-      score = key.replace('pairwise_', '')
-      score_keys = list(content[key].keys())
-      chain_pairs = [ sorted(i.split('-')) for i in score_keys ]
-      all_chains = sorted(list(set([item for pair in chain_pairs for item in pair])))
+  pairwise_keys = [ i for i in content if i.startswith('pairwise_') ]
+  per_chain_keys = [ i for i in content if i.startswith('per_chain_') ]
+  other_keys = [
+    i for i in content
+    if i not in pairwise_keys and i not in per_chain_keys
+  ]
 
-      chain_pair_key = f"chain_pair_{score}"
-      per_chain_key = f"per_chain_{score}"
-      chains_pair = []
-      per_chain = []
-      for i, chain1 in enumerate(all_chains):
-        per_chain_score = []
-        chain_pair_scores = []
-        for chain2 in all_chains:
-          # iptm or actifptm between same chain is pTM
-          if chain1 == chain2:
-            score_to_add = content["per_chain_ptm"][chain1]
-          # find score between chains
-          else:
-            pair = sorted([chain1, chain2])
-            sorted_pair, reverse_pair = '-'.join(pair), '-'.join(pair[::-1])
-            # look at both ways in case only A-B or B-C is there
-            score_to_add = content[key][reverse_pair] if reverse_pair in content[key] else content[key][sorted_pair]
-            # per chain score is score mean with all other chains
-            per_chain_score.append(score_to_add)
-          chain_pair_scores.append(score_to_add)
-        chains_pair.append(chain_pair_scores)
-        per_chain.append(np.mean(per_chain_score))
-      new_content[chain_pair_key] = chains_pair
-      new_content[per_chain_key] = per_chain
-    elif key.startswith('per_chain_'):
-      score = key.replace('per_chain_', '')
-      chains = sorted(list(content[key].keys()))
-      new_key = f"chain_{score}"
-      new_content[new_key] = [ content[key][metric] for metric in content[key] ]
-    else:
-      new_content[key] = content[key]
+  chain_pairs_content = {}
+  per_chains_content = {}
+  other_content = {}
 
+  for key in pairwise_keys:
+    score = key.replace('pairwise_', '')
+    score_keys = list(content[key].keys())
+    chain_pairs = [ sorted(i.split('-')) for i in score_keys ]
+    all_chains = sorted(list(set([item for pair in chain_pairs for item in pair])))
+
+    chain_pair_key = f"chain_pair_{score}"
+    per_chain_key = f"chain_{score}"
+    chains_pair = []
+    per_chain = []
+    for i, chain1 in enumerate(all_chains):
+      per_chain_score = []
+      chain_pair_scores = []
+      for chain2 in all_chains:
+        # iptm or actifptm between same chain is pTM
+        if chain1 == chain2:
+          score_to_add = content["per_chain_ptm"][chain1]
+        # find score between chains
+        else:
+          pair = sorted([chain1, chain2])
+          sorted_pair, reverse_pair = '-'.join(pair), '-'.join(pair[::-1])
+          # look at both ways in case only A-B or B-C is there
+          score_to_add = content[key][reverse_pair] if reverse_pair in content[key] else content[key][sorted_pair]
+          # per chain score is score mean with all other chains
+          per_chain_score.append(score_to_add)
+        chain_pair_scores.append(score_to_add)
+      chains_pair.append(chain_pair_scores)
+      per_chain.append(np.mean(per_chain_score))
+    chain_pairs_content[chain_pair_key] = chains_pair
+    per_chains_content[per_chain_key] = per_chain
+
+  for key in per_chain_keys:
+    score = key.replace('per_chain_', '')
+    new_key = f"chain_{score}"
+    chains = sorted(list(content[key].keys()))
+    per_chains_content[new_key] = [ content[key][chain] for chain in chains ]
+
+  for key in other_keys:
+    other_content[key] = content[key]
+
+  new_content = chain_pairs_content | per_chains_content | other_content
   return new_content
 
 def create_colabfold_confidences(output_path, pdbs, renamed_pdbs):
