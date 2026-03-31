@@ -280,7 +280,7 @@ def main():
       used_parameters = json.load(open(parameters, "r"))
       print(f"Using custom parameters:\n{parameters}")
     else:
-      used_paramters = default_parameters
+      used_parameters = default_parameters
     pickles = lighten_all_pkl(directory, used_parameters, to_json=False)
     if delete_after_lightening and pickles != None:
       delete_pickles(pickles, directory)
@@ -290,4 +290,4 @@ def main():
     delete_pickles(pickles, directory)
 
 if __name__ == '__main__':
-  main(directory)
+  main()
