@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mf_version=
+mf_version=-1.7.0
 mf_afm_version=1.1.8
 mf_cf_version=1.6.1
 mf_af3_version=3.0.1
