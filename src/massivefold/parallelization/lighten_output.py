@@ -81,7 +81,7 @@ def extract_af3_batch_input_msas(directory: str, json_files: list):
       templates = data["sequences"][seq_ind][entity]["templates"]
       for n, template in enumerate(templates):
         # ignore if templates are already indexed
-        if templates[n]["mmcifPath"] and not templates[n]["mmcif"]:
+        if "mmcifPath" in templates[n] and templates[n]["mmcifPath"] and not templates[n]["mmcif"]:
           continue
         data["sequences"][seq_ind][entity]["templates"][n]["mmcif"] = ""
         path_of_mmcif = os.path.abspath(msas_templates_paths[f"{entity}_{entity_count[entity]}"]["templates"][n])
