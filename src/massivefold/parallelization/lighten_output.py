@@ -80,6 +80,9 @@ def extract_af3_batch_input_msas(directory: str, json_files: list):
         continue
       templates = data["sequences"][seq_ind][entity]["templates"]
       for n, template in enumerate(templates):
+        # ignore if templates are already indexed
+        if templates[n]["mmcifPath"] and not templates[n]["mmcif"]:
+          continue
         data["sequences"][seq_ind][entity]["templates"][n]["mmcif"] = ""
         path_of_mmcif = os.path.abspath(msas_templates_paths[f"{entity}_{entity_count[entity]}"]["templates"][n])
         data["sequences"][seq_ind][entity]["templates"][n]["mmcifPath"] = path_of_mmcif
@@ -236,7 +239,7 @@ def pickles_to_json(directory):
     print(f"\r|{bar}| {percent:3d}% ({i+1}/{total})", end="", flush=True)
   print()
 
-def lighten_output(directory, pickle_size, keep_full_pickles, path_to_params):
+def lighten_output(directory, pickle_size, keep_full_pickles, path_to_params, to_json=False):
   default_parameters = {
     "keys": [
         "num_recycles", "predicted_aligned_error", "predicted_lddt",
@@ -307,7 +310,7 @@ def main():
   target_dirs = detect_directories(output_directory)
 
   for directory in target_dirs:
-    lighten_output(directory, pickle_size, keep_full_pickles, parameters)
+    lighten_output(directory, pickle_size, keep_full_pickles, parameters, to_json=False)
 
 if __name__ == '__main__':
   main()
