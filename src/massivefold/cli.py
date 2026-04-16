@@ -30,6 +30,9 @@ def add_run_arguments(run_parser):
   run_optional.add_argument("-b", "--batch_size", dest="batch_size", type=int, default=25,
                               help="Number of predictions per batch (default: %(default)s). For AlphaFold3, it corresponds to"
                               " number of seeds should not be higher than -p.")
+  run_optional.add_argument("-u", "--use_user_request_file", dest="use_user_request_file", action="store_true",
+                              help="Skip the step copying msas file into af3_batch_n.json and uses the ones"
+                              " already present in the directory instead.")
   run_optional.add_argument("-j", "--jobid", dest="jobid", 
                             help="Jobid of an alignment job to wait for inference, skips the alignments.")
   run_optional.add_argument("-o", "--only_msas", dest="only_msas", action="store_true",
