@@ -20,15 +20,18 @@ parser.add_argument('--include_pickles', help="If specified, include the .pkl pi
 " files in the gathered results stored in <OUTPUT_PATH>", required=False, action='store_true')
 parser.add_argument('--include_rank', help="Include a ranking (ambiguous for ties resolving) on 0.8 x iptm + 0.2 x ptm" 
 " in the name of the ranked files, also provides a mapping from original files to the gathered files.", required=False, action='store_true')
+parser.add_argument('--numbered_prefix', help="Word prefixing each structure name followed by a identifying number in the following format:"
+" <PREFIX>_<N>_<STRUCTURE_NAME> (e.g. Model_6_afm_basic_model_1_multimer_v3_pred_1.pdb for --numbered_prefix Model)" ,required=False)
 
 def global_rank_to_json(ranking, output_path):
   map_pred_run = dict(zip(list(ranking["parameters"] + "_" + ranking["model_name"]), list(ranking['parameters'])))
   info = ['global_rank', 'parameters', 'file', "model_name"]
   for metric in ranking.columns:
-    if metric in info:
+    if ranking[metric].dtype.name not in ["float32", "float64"]:
       continue
 
     ranking_type = metric
+    print(ranking_type)
     if metric == 'iptm+ptm' or metric == 'ranking_score':
       ranking_type = "debug"
     df = ranking[~ranking[metric].isna()].copy()
@@ -123,7 +126,15 @@ def rank_all(all_runs_path, all_runs, output_path, ranking_type="debug"):
   
   return ranked_per_run
 
-def move_and_rename(all_runs_path, run_names, output_path, ranking, do_include_pickles, do_include_rank):
+def move_and_rename(
+    all_runs_path,
+    run_names,
+    output_path,
+    ranking,
+    do_include_pickles,
+    do_include_rank):
+
+  output_folder = os.path.basename(output_path)
   score_key = ranking.columns[1]
   global_rank_order = ranking.to_dict(orient="records")
   models, runs, predictions, scores, mapped_names = [], [], [], [], []
@@ -152,11 +163,13 @@ def move_and_rename(all_runs_path, run_names, output_path, ranking, do_include_p
 
     if do_include_rank:
       pdb_file = f"ranked_{global_rank - 1}_" + pdb_file
-      models.append(global_rank)
-      runs.append(run_name)
-      predictions.append(os.path.basename(old_pdb_path))
-      scores.append(ranking_score)
-      mapped_names.append(os.path.basename(pdb_file))
+    if "prefix" in ranking:
+      pdb_file = f"{prediction["prefix"]}_{pdb_file}"
+    models.append(global_rank)
+    runs.append(run_name)
+    predictions.append(os.path.basename(old_pdb_path))
+    scores.append(ranking_score)
+    mapped_names.append(os.path.basename(pdb_file))
 
     new_pdb_path = os.path.join(output_path, pdb_file)
     cp(old_pdb_path, new_pdb_path)
@@ -174,10 +187,18 @@ def move_and_rename(all_runs_path, run_names, output_path, ranking, do_include_p
       except:
         pass
 
-  if do_include_rank:
-    mapping = {"model": models, "run": runs, "prediction": predictions, score_key: scores, "mapped_name": mapped_names}
-    pd.DataFrame(mapping).to_csv(os.path.join(output_path, 'map.csv'), index=False)
+  mapping = pd.DataFrame(
+      {"model": models, "run": runs, "prediction": predictions, score_key: scores, "mapped_name": mapped_names}
+  )
+  ranking_to_keep = [ "parameters", "file" ]
+  ranking_to_keep.extend(ranking.select_dtypes(include=['float64', 'float32']).columns.tolist())
 
+  to_merge = ranking[ranking_to_keep]
+  to_merge = to_merge.drop(columns=[i for i in to_merge if i in mapping.columns])
+
+  mapping = mapping.merge(to_merge, left_on=["run", "prediction"], right_on=["parameters", "file"])
+
+  mapping.to_csv(os.path.join(output_path, f'ranking_{output_folder}.csv'), index=False)
 def create_symlink_without_ranked(all_runs_path, runs):
   for run in runs:
     path = os.path.join(all_runs_path, run)
@@ -305,10 +326,13 @@ def main():
       + whole_prediction_ranking["model_name"] + whole_prediction_ranking["extension"]
     )
     if args.include_rank:
-        whole_prediction_ranking[folder] = 'ranked_' + \
-          (whole_prediction_ranking["global_rank"] - 1).astype(str) + '_' + \
-          whole_prediction_ranking[folder]
+      whole_prediction_ranking[folder] = 'ranked_' + \
+        (whole_prediction_ranking["global_rank"] - 1).astype(str) + '_' + \
+        whole_prediction_ranking[folder]
     whole_prediction_ranking = whole_prediction_ranking.drop(columns={"extension"})
+    if args.numbered_prefix:
+      whole_prediction_ranking["prefix"] = args.numbered_prefix + '_' + (whole_prediction_ranking.index + 1).astype(str)
+      print(whole_prediction_ranking)
 
   assert not whole_prediction_ranking.empty
   other_csv = [ csv for csv in os.listdir(runs_path) if csv.endswith('.csv') and csv != "ranking.csv"]
@@ -324,7 +348,6 @@ def main():
       whole_prediction_ranking = whole_prediction_ranking.drop(columns={"Models", "extension"})
       break
 
-  print(whole_prediction_ranking)
   whole_prediction_ranking.to_csv(os.path.join(runs_path, 'ranking.csv'), index=None)
   whole_prediction_ranking.to_csv(os.path.join(output_path, 'ranking.csv'), index=None)
 
