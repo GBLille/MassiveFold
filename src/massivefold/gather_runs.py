@@ -164,7 +164,7 @@ def move_and_rename(
     if do_include_rank:
       pdb_file = f"ranked_{global_rank - 1}_" + pdb_file
     if "prefix" in ranking:
-      pdb_file = f"{prediction["prefix"]}_{pdb_file}"
+      pdb_file = f"{prediction['prefix']}_{pdb_file}"
     models.append(global_rank)
     runs.append(run_name)
     predictions.append(os.path.basename(old_pdb_path))
