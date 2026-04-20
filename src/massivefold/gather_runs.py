@@ -98,7 +98,7 @@ def rank_all(all_runs_path, all_runs, output_path, ranking_type="debug"):
   all_models = pd.DataFrame()
   os.makedirs(output_path, exist_ok=True)
 
-  ranked_per_run = {}
+  #ranked_per_run = {}
   for run in runs:
     single_run_models = pd.DataFrame()
     ranking_path = os.path.join(run, f'ranking_debug.json')
@@ -121,10 +121,11 @@ def rank_all(all_runs_path, all_runs, output_path, ranking_type="debug"):
     parameter_set = os.path.basename(os.path.normpath(run))
     single_run_models['parameters'] = parameter_set
     single_run_models["model_name"] = model_names
-    ranked_per_run[os.path.basename(run)] = single_run_models
-    #all_models = pd.concat([all_models, single_run_models], axis=0)
-  
-  return ranked_per_run
+    #ranked_per_run[os.path.basename(run)] = single_run_models
+    all_models = pd.concat([all_models, single_run_models], axis=0)
+
+  #return ranked_per_run
+  return all_models
 
 def move_and_rename(
     all_runs_path,
@@ -196,7 +197,7 @@ def move_and_rename(
   to_merge = ranking[ranking_to_keep]
   to_merge = to_merge.drop(columns=[i for i in to_merge if i in mapping.columns])
 
-  mapping = mapping.merge(to_merge, left_on=["run", "prediction"], right_on=["parameters", "file"])
+  mapping = mapping.merge(to_merge, left_on=["run", "prediction"], right_on=["parameters", "file"]).drop(columns=["parameters", "file"])
 
   mapping.to_csv(os.path.join(output_path, f'ranking_{output_folder}.csv'), index=False)
 def create_symlink_without_ranked(all_runs_path, runs):
@@ -241,55 +242,62 @@ def check_all_runs(all_runs_path, ignored_directories, ranking_type='debug'):
   return considered_runs
 
 def create_global_ranking(runs, runs_path, output_path, ranking_types):
-  all_metrics_ranking = []
+  all_metrics_ranking = None
   for i, ranking_type in enumerate(ranking_types):
     try:
-      ranking_per_run = rank_all(runs_path, runs, output_path, ranking_type) 
-      all_metrics_ranking.append(ranking_per_run)
+      ranking_per_run = rank_all(runs_path, runs, output_path, ranking_type)
+      if all_metrics_ranking is None:
+        all_metrics_ranking = ranking_per_run.copy()
+      else:
+        all_metrics_ranking = all_metrics_ranking.merge(
+          rank_all(runs_path, runs, output_path, ranking_type),
+          on=["file", "parameters", "model_name"]
+        )
     except FileNotFoundError as e:
       print(f"No ranking for {ranking_type} metric.")
-  all_run_names = [ list(metric.keys()) for metric in all_metrics_ranking ]
-  run_names_homogeneity = [ run_names == list(all_metrics_ranking[0].keys()) for run_names in all_run_names ]
-  assert all(run_names_homogeneity), \
-  f"Not the same runs found: {', '.join([str(i) for i in all_run_names])}"
-  run_names = list(all_metrics_ranking[0].keys())
 
-  columns_to_merge_on = ['file', 'parameters', 'model_name']
-  score_keys = []
-  all_runs_ranking = pd.DataFrame()
-  for run in run_names:
-    run_ranking = all_metrics_ranking[0][run]
-    run_key_score = [ col for col in run_ranking.columns if col not in columns_to_merge_on ][0]
-    for i in range(1, len(all_metrics_ranking)):
-      run_ranking = run_ranking.merge(all_metrics_ranking[i][run], on=columns_to_merge_on, how='left')
-    if run_key_score == "ranking_score":
-      run_key_score = "af3_ranking_score"
+  run_names = all_metrics_ranking["parameters"].unique().tolist()
 
-      if "iptm" in run_ranking.columns:
-        run_ranking["iptm+ptm"] = 0.8*run_ranking["iptm"] + 0.2*run_ranking["ptm"]
+  if "iptm" in all_metrics_ranking:
+    all_metrics_ranking["iptm+ptm"] = 0.8*all_metrics_ranking["iptm"] + 0.2*all_metrics_ranking["ptm"]
+  if "ranking_score" in all_metrics_ranking:
+    all_metrics_ranking = all_metrics_ranking.rename(columns={"ranking_score": "af3_ranking_score"})
 
-      run_ranking = run_ranking.rename(columns={"ranking_score": "af3_ranking_score"})
-    all_runs_ranking = pd.concat([all_runs_ranking, run_ranking], axis=0)
-    score_keys.append(run_key_score)
+  non_metrics_columns = ['file', 'parameters', 'model_name']
+  score_keys = [ i for i in all_metrics_ranking if i not in non_metrics_columns ]
+  common_score_keys = all_metrics_ranking[score_keys].dropna(axis=1).columns.tolist()
 
-  if len(set(score_keys)) == 1:
-    common_key_score = list(set(score_keys))[0]
-    ordering_score = common_key_score
-  elif "af3_ranking_score" in score_keys and "iptm+ptm" in score_keys:
+  if len(set(common_score_keys)) == 1:
+    ordering_score = [ common_score_keys ]
+  elif "iptm+ptm" in score_keys:
     common_key_score = "iptm+ptm"
-    ordering_score = [common_key_score, 'af3_ranking_score']
-  elif "af3_ranking_score" in score_keys and "plddts" in score_keys:
+    order_priority = ["iptm+ptm", "iptm", "ptm"]
+    remaining = [ i for i in score_keys if i not in order_priority ]
+    ordering_score = order_priority + remaining
+  elif "ptm" in score_keys or "plddts" in score_keys:
+    common_key_score = "ptm"
     #common_key_score = "plddts"
-    common_key_score = "ptm" #temporary fix before ranking on plddts is implemented for af3
-    ordering_score = [common_key_score, 'af3_ranking_score']
+    order_priority = ["ptm"]
+    remaining = [ i for i in score_keys if i not in order_priority ]
+    ordering_score = order_priority + remaining
   else:
-    raise ValueError(f"ranking_debug.json in some runs uses different metrics: {score_keys}")
+    raise ValueError(f"Something went wrong in ranking_debug.json")
 
-  all_runs_ranking = all_runs_ranking.sort_values(ordering_score, ascending=False, ignore_index=True)
-  all_runs_ranking["global_rank"] = all_runs_ranking[common_key_score].rank(ascending=False, method='min').astype(int)
+  scores_to_order = [ i for i in ordering_score if i in common_score_keys ]
+  all_runs_ranking = all_metrics_ranking.sort_values(
+    scores_to_order, ascending=False, ignore_index=True
+  )
+  all_runs_ranking["global_rank"] = (
+      all_runs_ranking.reset_index()
+      .groupby(scores_to_order)["index"]
+      .transform("min") + 1
+  ).astype(int)
+
   columns_order = ['global_rank', common_key_score, 'parameters', 'file', "model_name"]
-  columns_order.extend([col for col in all_runs_ranking.columns if col not in columns_order])
+  ordering_score.remove(common_key_score)
+  columns_order.extend(ordering_score)
   whole_prediction_ranking = all_runs_ranking[columns_order]
+  print(whole_prediction_ranking)
   return whole_prediction_ranking
 
 def main():
