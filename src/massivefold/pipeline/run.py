@@ -364,7 +364,7 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
   only_msas = args.only_msas
   force_msas_computation = args.recompute_msas or args.only_msas
   wait_for_jobid = args.jobid
-  use_user_request_file = args.use_user_request_file
+  use_user_request_file = getattr(args, "use_user_request_file", False)
 
   if not os.path.isfile(sequence_file):
     sequence_name = sequence_name_from_path(sequence_file)
