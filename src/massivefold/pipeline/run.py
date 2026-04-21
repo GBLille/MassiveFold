@@ -34,7 +34,7 @@ def sequence_name_from_path(sequence_file):
     return base[:-6]
   return os.path.splitext(base)[0]
 
-def next_run_name(output_dir, sequence_name, run_name, force_name):
+def next_run_name(output_dir, sequence_name, run_name, force_name=False):
   if force_name:
     print(f"Using the prepared {run_name} run")
     return run_name
