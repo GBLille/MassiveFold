@@ -728,6 +728,7 @@ def get_multirun_runs(multirun_json):
 
     resolved_runs.append({
       "name": run_name,
+      "tool": tool,
       "parameters": resolved_params,
       "args": run_args,
     })

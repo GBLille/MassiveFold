@@ -2,10 +2,12 @@
 
 from argparse import Namespace
 import copy
+from functools import partial
 import json
 import os
 
 from .run import run_pipeline
+from .run import sequence_name_from_path
 from massivefold.parallelization.unifier import get_multirun_runs
 
 def run_item_args(args, run_name, run_args, parameters_file):
@@ -43,14 +45,57 @@ def run_item_args(args, run_name, run_args, parameters_file):
     scheduler=args.scheduler,
   )
 
+def submit_job_with_alignment_capture(
+  submit_job,
+  expected_name,
+  captured,
+  jobfile_content,
+  job_name=None,
+  dependency_id=None,
+  array_size=None,
+):
+  job_id = submit_job(
+    jobfile_content,
+    job_name=job_name,
+    dependency_id=dependency_id,
+    array_size=array_size,
+  )
+  if job_name == expected_name:
+    captured["alignment_id"] = job_id
+  return job_id
+
+def scheduler_with_alignment_capture(scheduler, sequence_name, tool):
+  captured = {"alignment_id": None}
+  wrapped = dict(scheduler)
+  wrapped["submit_job"] = partial(
+    submit_job_with_alignment_capture,
+    scheduler["submit_job"],
+    f"alignment-{sequence_name}-{tool}",
+    captured,
+  )
+  return wrapped, captured
+
 def multirun_pipeline_internal(args, forwarded_args, scheduler):
   setup_json = args.setup
   runs = get_multirun_runs(setup_json)
 
   status = 0
+  alignment_jobs = {}
   setup_dir = os.path.dirname(os.path.abspath(setup_json))
   for run in runs:
     sequence_parameters = copy.deepcopy(run["parameters"])
+    run_args = copy.deepcopy(run["args"])
+    shared_alignment_id = alignment_jobs.get(run["tool"])
+    if shared_alignment_id:
+      if run_args.get("only_msas", False):
+        print(
+          f"Alignment for {run['tool']} already submitted as job {shared_alignment_id}, "
+          f"skipping duplicate only_msas run {run['name']}."
+        )
+        continue
+      if "jobid" not in run_args:
+        run_args["jobid"] = shared_alignment_id
+
     file_id = os.urandom(6).hex()
     internal_parameters_file = os.path.join(
       setup_dir,
@@ -58,17 +103,27 @@ def multirun_pipeline_internal(args, forwarded_args, scheduler):
     )
     try:
       json.dump(sequence_parameters, open(internal_parameters_file, 'w'), indent=4)
+      run_scheduler = scheduler
+      alignment_capture = None
+      if scheduler.get("supports_external_dependency", False):
+        run_scheduler, alignment_capture = scheduler_with_alignment_capture(
+          scheduler,
+          sequence_name_from_path(args.sequence),
+          run["tool"],
+        )
       pipeline_args = run_item_args(
         args,
         run["name"],
-        run["args"],
+        run_args,
         internal_parameters_file
       )
       run_status = run_pipeline(
         pipeline_args,
         forwarded_args,
-        scheduler
+        run_scheduler
       )
+      if alignment_capture and alignment_capture["alignment_id"] and run["tool"] not in alignment_jobs:
+        alignment_jobs[run["tool"]] = alignment_capture["alignment_id"]
       status = max(status, run_status)
     finally:
       if os.path.exists(internal_parameters_file):
