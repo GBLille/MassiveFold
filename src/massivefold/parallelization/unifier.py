@@ -586,59 +586,124 @@ def ppi_create_input(receptors, ligands, parameters_file):
   return df_all_ppi
 
 def get_tool_default_params(param_file):
-  tool_params = json.load(open(param_file, 'r'))
+  resolved_path = os.path.abspath(param_file)
+  candidate = os.path.join(
+    os.path.dirname(resolved_path),
+    "site_defaults",
+    os.path.basename(resolved_path)
+  )
+  if os.path.exists(candidate):
+    resolved_path = candidate
+  tool_params = json.load(open(resolved_path, 'r'))
   #tool_run_key = [ i for i in tool_params if i.endswith('run') ][0]
   return tool_params
 
-def get_multirun_params(user_params, defaults_params):
-  for param in user_params:
-    if param not in defaults_params:
-      possible_params = [ "'" + i + "'" for i in defaults_params ]
-      raise ValueError(
-        f"'{param}' is an unknown param not in:\n" 
-        f"{{{'|'.join(possible_params)}}}"
-      )
-    defaults_params[param] = user_params[param]
+def get_multirun_tool(run_name, run_definition):
+  tool_keys = [ key for key in run_definition if key.endswith("_run") ]
+  if len(tool_keys) != 1:
+    raise ValueError(
+      f"Run '{run_name}' should contain exactly one of "
+      "'AF3_run', 'AFM_run', 'CF_run'."
+    )
 
-  return defaults_params
+  tool_key = tool_keys[0]
+  reduced_tool = tool_key.replace("_run", "")
+  if reduced_tool == "AF3":
+    tool = "AlphaFold3"
+  elif reduced_tool == "AFM":
+    tool = "AFmassive"
+  elif reduced_tool == "CF":
+    tool = "ColabFold"
+  else:
+    raise ValueError(
+      f"Run '{run_name}' uses unsupported tool key '{tool_key}'. "
+      "Expected one of 'AF3_run', 'AFM_run', 'CF_run'."
+    )
 
-def get_multirun_runs(multirun_csv, massivefold_params):
-  df = pd.read_csv(multirun_csv)
-  assert "run_names" in df.columns and "tool" in df.columns, \
-    f"Format error in {multirun_csv}"
+  return tool, tool_key
 
-  # get tools defaults params
+def get_multirun_runs(multirun_json):
+  multirun_setup = json.load(open(multirun_json, 'r'))
+  if not isinstance(multirun_setup, dict):
+    raise ValueError(f"Format error in {multirun_json}: root should be a JSON object.")
+
+  allowed_top_keys = {"runs", "massivefold", "custom_params"}
+  unknown_top_keys = [ key for key in multirun_setup if key not in allowed_top_keys ]
+  if unknown_top_keys:
+    raise ValueError(
+      f"Unknown top-level key(s) in {multirun_json}: {', '.join(unknown_top_keys)}"
+    )
+
+  if "runs" not in multirun_setup or not isinstance(multirun_setup["runs"], dict) \
+      or not multirun_setup["runs"]:
+    raise ValueError(f"Format error in {multirun_json}: 'runs' should be a non-empty object.")
+
+  required_sections = ["massivefold", "custom_params"]
+  missing_sections = [ section for section in required_sections if section not in multirun_setup ]
+  if missing_sections:
+    raise ValueError(
+      "Format error: missing required top-level key(s) "
+      f"{', '.join(missing_sections)}."
+    )
+  if not isinstance(multirun_setup["massivefold"], dict):
+    raise ValueError("Section 'massivefold' should be a JSON object.")
+  if not isinstance(multirun_setup["custom_params"], dict):
+    raise ValueError("Section 'custom_params' should be a JSON object.")
+
+  resolved_runs = []
   param_dir = os.path.dirname(os.path.abspath(__file__))
-  tool_to_code = {
-    "AlphaFold3": "AF3_run",
-    "AFmassive": "AFm_run",
-    "ColabFold": "CF_run"
-  }
-  AF3_base_params = get_tool_default_params(os.path.join(param_dir, "AlphaFold3_params.json"))
-  AFM_base_params = get_tool_default_params(os.path.join(param_dir, "AFmassive_params.json"))
-  CF_base_params = get_tool_default_params(os.path.join(param_dir, "ColabFold_params.json"))
-  param_map = {
-    "AlphaFold3": AF3_base_params,
-    "AFmassive": AFM_base_params,
-    "ColabFold": CF_base_params
-  }
-  # extract user specified run parameters
-  run_params = []
-  non_param_cols = ["tool", "run_names"]
-  run_records = df.to_dict(orient='records')
-  for run in run_records:
-    tool = run["tool"]
-    base_params = copy.deepcopy(param_map)[tool]
-    # get rid of non-params cols
-    for col_name in non_param_cols:
-      run.pop(col_name)
-    base_params[tool_to_code[tool]] = get_multirun_params(run, base_params[tool_to_code[tool]]) 
-    base_params["massivefold"] = massivefold_params
-    run_params.append(base_params)
-  df["parameter_file_content"] = run_params
-  print(df)
-  print(json.dumps(df["parameter_file_content"].tolist()[0], indent=4))
-  return df["tool"].tolist(), df["run_names"].tolist(), df["parameter_file_content"].tolist()
+  for run_name, run_definition in multirun_setup["runs"].items():
+    if not isinstance(run_definition, dict):
+      raise ValueError(f"Run '{run_name}' should be a JSON object.")
+
+    tool, tool_key = get_multirun_tool(run_name, run_definition)
+    allowed_run_keys = {"args", tool_key}
+    unknown_run_keys = [ key for key in run_definition if key not in allowed_run_keys ]
+    if unknown_run_keys:
+      raise ValueError(
+        f"Unknown key(s) for run '{run_name}': {', '.join(unknown_run_keys)}"
+      )
+
+    run_defaults = get_tool_default_params(
+      os.path.join(param_dir, f"{tool}_params.json")
+    )
+    shared_massivefold = copy.deepcopy(run_defaults.get("massivefold", {}))
+    for param, value in multirun_setup["massivefold"].items():
+      shared_massivefold[param] = value
+
+    shared_custom_params = copy.deepcopy(run_defaults.get("custom_params", {}))
+    for param, value in multirun_setup["custom_params"].items():
+      shared_custom_params[param] = value
+
+    shared_plots = copy.deepcopy(run_defaults.get("plots", {}))
+    resolved_params = {
+      "massivefold": copy.deepcopy(shared_massivefold),
+      "custom_params": copy.deepcopy(shared_custom_params),
+      tool_key: copy.deepcopy(run_defaults[tool_key]),
+      "plots": copy.deepcopy(shared_plots),
+    }
+    if not isinstance(run_definition[tool_key], dict):
+      raise ValueError(f"Section '{tool_key}' should be a JSON object.")
+    for param, value in run_definition[tool_key].items():
+      if param not in resolved_params[tool_key]:
+        possible_params = [ "'" + i + "'" for i in resolved_params[tool_key] ]
+        raise ValueError(
+          f"'{param}' is an unknown param not in:\n"
+          f"{{{'|'.join(possible_params)}}}"
+        )
+      resolved_params[tool_key][param] = value
+
+    run_args = copy.deepcopy(run_definition.get("args", {}))
+    if not isinstance(run_args, dict):
+      raise ValueError(f"Run '{run_name}' field 'args' should be a JSON object.")
+
+    resolved_runs.append({
+      "name": run_name,
+      "parameters": resolved_params,
+      "args": run_args,
+    })
+
+  return resolved_runs
 
 def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
   sequence = os.path.basename(os.path.dirname(os.path.dirname(input_json)))

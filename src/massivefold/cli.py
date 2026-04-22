@@ -63,24 +63,12 @@ def add_multirun_arguments(multirun_parser):
   # required arguments
   multirun_required = multirun_parser.add_argument_group("Required arguments")
   multirun_required.add_argument("-s", "--sequence", dest="sequence", required=True,
-                                    help="Path of the fasta file containing sequence(s) used screening.")
+                                    help="Path of the fasta file containing sequence(s) used for all runs.")
   multirun_required.add_argument("--setup", dest="setup", required=True,
-                                    help="Csv file containing the list of runs with their parameters.")
-  multirun_required.add_argument("-f", "--parameters", dest="parameters", required=True,
-                              help="Json file's path containing the parameters used for this run.")
+                                    help="Json file describing shared multirun overrides and per-run definitions.")
 
   # optional arguments
   multirun_optional = multirun_parser.add_argument_group("Optional arguments")
-  multirun_optional.add_argument("-p", "--predictions_per_model", dest="predictions_per_model", type=int, default=1,
-                                    help="(default: %(default)s) Number of seed used with AlphaFold3."
-                                    " Each seed will have 5 samples predicted. In total, with -p n,"
-                                    " you will have 5n predictions computed (5 predictions with default params).")
-  multirun_optional.add_argument("-m", "--msas_precomputed", dest="msas_precomputed",
-                                    help="Path to directory that contains computed msas.")
-  multirun_optional.add_argument("-o", "--only_msas", dest="only_msas", action="store_true",
-                                    help="Only compute alignments, the first step of MassiveFold.")
-  multirun_optional.add_argument("-j", "--jobid", dest="jobid",
-                                    help="Jobid of an alignment job to wait for inference, skips the alignments.")
   multirun_optional.add_argument(
     "--scheduler",
     dest="scheduler",
