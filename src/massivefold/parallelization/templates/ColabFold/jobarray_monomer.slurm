@@ -3,7 +3,6 @@ run_name=$run_name
 fafile=${input_dir}/$${sequence_name}.fasta
 run_massivefold=$run_massivefold
 data_dir=$data_dir
-scripts_dir=$scripts_dir
 
 num_recycle=$num_recycle
 recycle_early_stop_tolerance=$recycle_early_stop_tolerance
@@ -12,6 +11,11 @@ max_extra_seq=$max_extra_seq
 stop_at_score=$stop_at_score
 BOOL_disable_cluster_profile=$disable_cluster_profile
 BOOL_use_dropout=$use_dropout
+BOOL_templates=$use_templates
+if $$BOOL_templates; then
+  echo "Parameter --templates set"
+  templates="--templates"
+fi
 if $$BOOl_disable_cluster_profile; then
   echo "Parameter --disable-cluster-profile set"
   disable_cluster_profile="--disable-cluster-profile"
@@ -26,13 +30,14 @@ output_path="$${output_dir}/$${sequence_name}/$${run_name}/batch_$${SLURM_ARRAY_
 echo output_path is $$output_path
 mkdir -vp $${output_path}/$${sequence_name}
 path_to_msas=${output_dir}/$${sequence_name}/msas
+path_to_hit_file=$$(ls $${path_to_msas}/*.m8)
 
 date
 
 batch_file=disc_batches.json
-batch_model=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element model)
-batch_start=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element start)
-batch_end=$$(./get_batch.py --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element end)
+batch_model=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element model)
+batch_start=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element start)
+batch_end=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element end)
 
 echo $$batch_model
 num_models=$$(echo $$batch_model | cut -d "_" -f 2)
@@ -47,7 +52,9 @@ echo "predictions computed in the batch: $$num_seeds"
 random_seed=$$(shuf -i 0-1000000 -n 1)
 echo "Batch random seed: $$random_seed"
 
-echo "
+. $$(conda info --base)/etc/profile.d/conda.sh
+conda activate mf-colabfold-1.6.1
+
 time colabfold_batch
   $${path_to_msas}
   ../output/$${name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID}
@@ -63,8 +70,8 @@ time colabfold_batch \
   $${path_to_msas} \
   ../output/$${name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID} \
   --data /shared/databases2/2024-01-18/params/ \
-  --random-seed $$random_seed \
   --save-all \
+  --random-seed $$random_seed \
   --num-seeds $$num_seeds \
   --model-type $$model_type \
   --model-order $$num_models \

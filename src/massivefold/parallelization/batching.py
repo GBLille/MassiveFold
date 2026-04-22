@@ -39,6 +39,14 @@ def batches_per_ligand(ligands, preds_per_model):
   multiple_types = []
 
   batches = {}
+  possible_keys = ["smiles", "ccdCode", "IUPAC"]
+  key_presence = [ i in df.columns.tolist() for i in possible_keys ]
+  if not any(key_presence):
+    raise ValueErro(f'At least one of {'|'.join(possible_keys)} should be present in {ligands}')
+  for key, present in zip(possible_keys, key_presence):
+    if not present:
+      df[key] = np.nan
+  print(df)
   for i, (id, smiles, ccdcode, iupac) in enumerate(zip(df['id'], df["smiles"], df["ccdCode"], df["IUPAC"])):
     smiles = "" if pd.isna(smiles) else smiles
     ccdcode = "" if pd.isna(ccdcode) else ccdcode

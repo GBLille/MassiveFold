@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "massivefold"
-version = "1.6.1"
+version = "1.7.0"
 description = "MassiveFold CLI"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -13,6 +13,10 @@ requires-python = ">=3.9"
 massivefold = "massivefold.cli:main"
 massivefold_plots = "massivefold.massivefold_plots:cli"
 gather = "massivefold.gather_runs:main"
+get_batch = "massivefold.parallelization.get_batch:main"
+unifier = "massivefold.parallelization.unifier:main"
+organize_outputs = "massivefold.parallelization.organize_outputs:main"
+lighten_output = "massivefold.parallelization.lighten_output:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

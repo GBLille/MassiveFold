@@ -34,7 +34,10 @@ def sequence_name_from_path(sequence_file):
     return base[:-6]
   return os.path.splitext(base)[0]
 
-def next_run_name(output_dir, sequence_name, run_name):
+def next_run_name(output_dir, sequence_name, run_name, force_name=False):
+  if force_name:
+    print(f"Using the prepared {run_name} run")
+    return run_name
   target = os.path.join(output_dir, sequence_name, run_name)
   if not os.path.isdir(target):
     return run_name
@@ -361,6 +364,7 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
   only_msas = args.only_msas
   force_msas_computation = args.recompute_msas or args.only_msas
   wait_for_jobid = args.jobid
+  use_user_request_file = getattr(args, "use_user_request_file", False)
 
   if not os.path.isfile(sequence_file):
     sequence_name = sequence_name_from_path(sequence_file)
@@ -389,7 +393,7 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
     return 1
 
   sequence_name = sequence_name_from_path(sequence_file)
-  run_name = next_run_name(output_dir, sequence_name, run_name)
+  run_name = next_run_name(output_dir, sequence_name, run_name, force_name=use_user_request_file)
 
   if not calibration and not calibration_path:
     print("No calibration for the batch size.")
@@ -512,13 +516,12 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
       destination = os.path.join(output_dir, sequence_name, "msas")
       safe_symlink(source, destination)
 
-    elif tool == "AlphaFold3" and not waiting_for_alignment:
+    elif tool == "AlphaFold3" and not waiting_for_alignment and not use_user_request_file:
       prepare_af3_inference_input(
         os.path.join(msas_precomputed, "msas_alphafold3_data.json"),
         parameters_file,
         batches_file,
       )
-
     shutil.copy2(parameters_file, output_run_dir)
 
   jobarray_jobfile_content = build_jobfile(

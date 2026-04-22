@@ -47,7 +47,8 @@ Installation with:
 ```bash
 Usage:
 ------
-On Jean Zay cluster:
+On Jean Zay cluster or any cluster where MassiveFold is already installed with `module`:
+  module load massivefold
   ./install.sh [--install-path str]
 Otherwise:
   ./install.sh [--only-envs] || --alphafold-db str --alphafold3-db str --colabfold-db str [--no-env] [--install-path str]

@@ -80,6 +80,9 @@ def extract_af3_batch_input_msas(directory: str, json_files: list):
         continue
       templates = data["sequences"][seq_ind][entity]["templates"]
       for n, template in enumerate(templates):
+        # ignore if templates are already indexed
+        if "mmcifPath" in templates[n] and templates[n]["mmcifPath"] and not templates[n]["mmcif"]:
+          continue
         data["sequences"][seq_ind][entity]["templates"][n]["mmcif"] = ""
         path_of_mmcif = os.path.abspath(msas_templates_paths[f"{entity}_{entity_count[entity]}"]["templates"][n])
         data["sequences"][seq_ind][entity]["templates"][n]["mmcifPath"] = path_of_mmcif
@@ -151,7 +154,7 @@ def lighten_all_pkl(directory, parameters, to_json: bool):
   # delete screening pkls, need a refactor (should be called on each ligand directory instead)
   if os.path.exists(os.path.join(directory, 'screening_inputs')):
     print('AF3 screening detected')
-    if args.pickle_size != "delete":
+    if pickle_size != "delete":
       sys.exit()
     inputs = os.path.join(directory, 'screening_inputs')
     print(f"Remove pickles from directory that inputs in {inputs} have output.")
@@ -182,13 +185,6 @@ def lighten_all_pkl(directory, parameters, to_json: bool):
     if os.path.isdir(json_dir):
       shutil.rmtree(json_dir)
     os.mkdir(json_dir)
-  """
-  try:
-    os.mkdir(f'{directory}/light_pkl')
-  except OSError as error:
-    shutil.rmtree(f'{directory}/light_pkl')
-    os.mkdir(f'{directory}/light_pkl')
-  """
   total = len(pkl_files)
   for i, pkl in enumerate(pkl_files):
     pkl_content = lighten_single_pkl(pkl, directory, parameters)
@@ -214,12 +210,37 @@ def lighten_all_pkl(directory, parameters, to_json: bool):
 
   return pkl_files
 
-if __name__ == '__main__':
-  args = parser.parse_args()
-  directory = args.path_to_output
-  to_json = False # development in progress
+def pickles_to_json(directory):
+  json_dir = f'{directory}/json_output'
+  if os.path.isdir(json_dir):
+    shutil.rmtree(json_dir)
+  os.mkdir(json_dir)
+  print(f"Converting the full pickle files to json at {json_dir}")
+  pkl_files = [ file for file in os.listdir(directory) if (file.startswith('result') and file.endswith('.pkl')) ]
+  total = len(pkl_files)
+  for i, pkl in enumerate(pkl_files):
+    pkl_content = pickle.load(open(f"{directory}/{pkl}", 'rb'))
+    jsonified = {}
+    for key in pkl_content:
+      if isinstance(pkl_content[key], np.ndarray):
+        jsonified[key] = pkl_content[key].tolist()
+      elif isinstance(pkl_content[key], np.float64):
+        jsonified[key] = float(pkl_content[key])
+      else:
+        jsonified[key] = pkl_content[key]
+        print(jsonified[key])
 
-  parameters = {
+    json.dump(jsonified, open(f"{json_dir}/{pkl.replace('.pkl', '.json')}", 'w'), indent=4)
+    bar_length = 50
+    progress = (i + 1) / total
+    filled = int(progress * bar_length)
+    bar = "█" * filled + "-" * (bar_length - filled)
+    percent = int(progress * 100)
+    print(f"\r|{bar}| {percent:3d}% ({i+1}/{total})", end="", flush=True)
+  print()
+
+def lighten_output(directory, pickle_size, keep_full_pickles, path_to_params, to_json=False):
+  default_parameters = {
     "keys": [
         "num_recycles", "predicted_aligned_error", "predicted_lddt",
         "plddt", "ptm", "iptm", "ranking_confidence", "max_predicted_aligned_error"
@@ -237,48 +258,59 @@ if __name__ == '__main__':
     extract_af3_batch_input_msas(directory, af3_batch_files)
 
   # step to lighten (or not) the pickles
-  if args.pickle_size == "full":
+  if pickle_size == "full":
     print("No modification of the pickle files")
     if to_json:
-      json_dir = f'{directory}/json_output'
-      if os.path.isdir(json_dir):
-        shutil.rmtree(json_dir)
-      os.mkdir(json_dir)
-      print(f"Converting the full pickle files to json at {json_dir}")
-      pkl_files = [ file for file in os.listdir(directory) if (file.startswith('result') and file.endswith('.pkl')) ]
-      total = len(pkl_files)
-      for i, pkl in enumerate(pkl_files):
-        pkl_content = pickle.load(open(f"{directory}/{pkl}", 'rb'))
-        jsonified = {}
-        for key in pkl_content:
-          if isinstance(pkl_content[key], np.ndarray):
-            jsonified[key] = pkl_content[key].tolist()
-          elif isinstance(pkl_content[key], np.float64):
-            jsonified[key] = float(pkl_content[key])
-          else:
-            jsonified[key] = pkl_content[key]
-            print(jsonified[key])
+      pickles_to_json(directory)
 
-        json.dump(jsonified, open(f"{json_dir}/{pkl.replace('.pkl', '.json')}", 'w'), indent=4)
-        bar_length = 50
-        progress = (i + 1) / total
-        filled = int(progress * bar_length)
-        bar = "█" * filled + "-" * (bar_length - filled)
-        percent = int(progress * 100)
-        print(f"\r|{bar}| {percent:3d}% ({i+1}/{total})", end="", flush=True)
-      print()
-
-  elif args.pickle_size in [ "light", "custom" ]:
-    delete_after_lightening = not args.keep_full_pickles
+  elif pickle_size in [ "light", "custom" ]:
+    delete_after_lightening = not keep_full_pickles
     print(f'Extracting pkl from {os.path.abspath(directory)}')
     # read user's custom parameters for the lighter pickles
-    if args.pickle_size == "custom":
-      parameters = json.load(open(args.parameters, "r"))
-      print(f"Using custom parameters:\n{parameters}")
-    pickles = lighten_all_pkl(directory, parameters, to_json=False)
+    if pickle_size == "custom":
+      used_parameters = json.load(open(path_to_params, "r"))
+      print(f"Using custom parameters:\n{path_to_params}")
+    else:
+      used_parameters = default_parameters
+    pickles = lighten_all_pkl(directory, used_parameters, to_json=False)
     if delete_after_lightening and pickles != None:
       delete_pickles(pickles, directory)
 
-  elif args.pickle_size == "delete":
+  elif pickle_size == "delete":
     pickles = [ pkl for pkl in os.listdir(directory) if pkl.endswith('.pkl') ]
     delete_pickles(pickles, directory)
+
+def detect_directories(directory):
+  rankings = [ i for i in os.listdir(directory) if i.startswith('ranking_') and i.endswith('.json') ]
+  screening_inputs = os.path.join(directory, "screening_inputs")
+  if rankings:
+    return [directory]
+  elif os.path.isdir(screening_inputs):
+    subdirs = [
+      os.path.join(directory, subdir)
+      for subdir in os.listdir(directory)
+      if os.path.isdir(os.path.join(directory, subdir))
+    ]
+    valid_output = []
+    for subdir in subdirs:
+      valid_output.extend(detect_directories(subdir))
+    return valid_output
+  else:
+    return []
+
+def main():
+  args = parser.parse_args()
+  output_directory = args.path_to_output
+  pickle_size = args.pickle_size
+  parameters = args.parameters
+  keep_full_pickles = args.keep_full_pickles
+
+  to_json = False
+
+  target_dirs = detect_directories(output_directory)
+
+  for directory in target_dirs:
+    lighten_output(directory, pickle_size, keep_full_pickles, parameters, to_json=False)
+
+if __name__ == '__main__':
+  main()

@@ -55,7 +55,7 @@ It details these steps of the MassiveFold installation:
 
 ## Uninstallation
 
-To uninstall MassiveFold, remove the three conda environments (`massivefold-1.6.1`, `mf-afmassive-1.1.5`, `mf-colabfold-1.5.5` and 
+To uninstall MassiveFold, remove the three conda environments (`massivefold`, `mf-afmassive-1.1.8`, `mf-colabfold-1.6.1` and 
 `mf-alphafold-3.0.1`) and remove the `MassiveFold` folder you cloned. Make sure you copy all the files and folders you want 
 to keep from the `output` and `log` directories somewhere else. 
 
@@ -66,7 +66,7 @@ Usage section includes the most simple way to run MassiveFold with examples. For
 
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.6.1
+conda activate massivefold
 ```
 Then launch MassiveFold:
 ```bash
@@ -89,7 +89,7 @@ massivefold run -s input/H1140.fasta -r af3_default -p 5 -f AlphaFold3_params.js
 ### Screening a receptor with ligands
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.6.1
+conda activate massivefold
 ```
 To screen a single proteic receptor with multiple ligands, launch:
 ```bash
@@ -101,7 +101,7 @@ See documentation for [further details](docs/usage.md#ligand-screening)
 ### Discover PPI between receptors and ligands
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.6.1
+conda activate massivefold
 ```
 To launch a PPI discovery round between a set of proteic (or DNA or RNA) receptors and a set of proteic (or DNA or RNA) ligands, run:
 

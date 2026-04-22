@@ -6,6 +6,12 @@ import json
 from shutil import copy as cp, rmtree as rm, move as mv
 import sys
 
+parser = argparse.ArgumentParser()
+parser.add_argument(
+  '--batches_path',
+  default='',
+  help='Path of all batches containing the ranking files to add in the global ranking.')
+
 def create_global_ranking(all_batches_path, jobname, ranking_type="debug"):
   map_pred_batch = {}
   whole_ranking = {}
@@ -14,7 +20,12 @@ def create_global_ranking(all_batches_path, jobname, ranking_type="debug"):
     if batch.startswith('batch'):
       ranking_path = os.path.join(all_batches_path, batch, jobname, f'ranking_{ranking_type}.json')
       with open(ranking_path, 'r') as local_ranking_file:
-        local_rank = json.load(local_ranking_file)
+        try:
+          local_rank = json.load(local_ranking_file)
+        except Exception as e:
+          print(f"Borken file: {ranking_path}")
+          print(e)
+          sys.exit()
         if not ranking_key_score:
           ranking_key_score = list(local_rank.keys())[0]
       map_pred_batch.update({pred: batch for pred in local_rank['order']})
@@ -98,8 +109,10 @@ def remove_batch_dirs(all_batches_path):
   for batch_dir in batch_dirs:
     rm(os.path.join(all_batches_path, batch_dir))
 
-def main(batches_path):
-  batches_path = os.path.normpath(batches_path)
+def main():
+  args = parser.parse_args()
+  batches_path = os.path.normpath(args.batches_path)
+
   sequence_name = os.path.basename(os.path.dirname(batches_path))
   run_name = os.path.basename(batches_path)
 
@@ -171,11 +184,4 @@ def main(batches_path):
   remove_batch_dirs(batches_path)
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser()
-  parser.add_argument(
-    '--batches_path',
-    default='',
-    help='Path of all batches containing the ranking files to add in the global ranking.')
-
-  parsed = parser.parse_args()
-  main(parsed.batches_path)
+  main()

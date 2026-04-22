@@ -355,7 +355,7 @@ def MF_cf_recycling_parser(log_file, prediction, cf_name_map):
   logs = []
   for line in lines:
     if "--num-recycle" in line:
-      max_recycles = int(line.split('--num-recycle')[1].strip())
+      max_recycles = int(line.split('--num-recycle')[1].strip().split(' ')[0])
     if "recycle=" in line:
       recycle_line = line.split(' ')
       for i, elem in enumerate(recycle_line):
@@ -397,7 +397,7 @@ def MF_recycling_parser(log_file, prediction):
   # get recycle nb and its lines from log file
   for line in lines:
     if '--max_recycles=' in line:
-      max_recycles = int(line.split('--max_recycles=')[1].strip())
+      max_recycles = int(line.split('--max_recycles=')[1].strip().split(' ')[0])
     if line.startswith('['):
       logs.append(line.strip())
 

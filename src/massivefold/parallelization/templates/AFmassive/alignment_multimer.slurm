@@ -1,5 +1,3 @@
-. $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-afmassive-1.1.6
 
 # variables to adapt: used for alignment
 sequence_name=$sequence_name
@@ -16,8 +14,6 @@ if [ -z "$$uniref_database" ]; then
 fi
 
 max_template_date=$max_template_date
-#max_template_date=2023-07-31
-
 model_preset=multimer
 alignments_only=true
 db_preset=full_dbs
@@ -26,6 +22,9 @@ mgnify_max_hits=501
 uniprot_max_hits=50000
 uniref_max_hits=10000
 use_gpu_relax=false
+
+. $$(conda info --base)/etc/profile.d/conda.sh
+conda activate mf-afmassive-1.1.8
 
 echo "$${run_massivefold}
     --alignments_only=$${alignments_only} 

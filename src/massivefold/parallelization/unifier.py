@@ -16,6 +16,35 @@ import string
 import random
 import numpy as np
 
+parser = argparse.ArgumentParser()
+parser.add_argument(
+  '--conversion',
+  default=None,
+  choices=['input', 'input_inference', 'output', 'output_singular'],
+  help="What to convert. 'input' to get the fasta format of colabfold from a traditionnal multichain pdb. 'output' to transform colabfold output to the alphafold one.")
+parser.add_argument(
+  '--to_convert',
+  default='',
+  help='Path of the fasta file (for --conversion=input) or output directory (for --conversion=output)To convert')
+parser.add_argument(
+  '--tool',
+  default=None,
+  choices=['AFmassive', 'ColabFold', 'AlphaFold3'],
+  help='Chose the tool from which the input/output should be unified.')
+parser.add_argument(
+  '--json_params',
+  default='',
+  help="Set json file path for input parameters. Necessary when using '--tool AlphaFold3' coupled with '--conversion input'")
+parser.add_argument(
+  '--batches_file',
+  default='',
+  help='Path to batches file. If --conversion=output, this file is necessary.')
+parser.add_argument(
+  '--do_rename',
+  action=argparse.BooleanOptionalAction,
+  default=True,
+  help='To rename file or not')
+
 def convert_colabfold_fasta(fasta_path:str):
   records = list(SeqIO.parse(fasta_path, "fasta"))
   fasta_dir = os.path.dirname(fasta_path)
@@ -152,7 +181,7 @@ def af3_resolve_glycan(glycan_str, chain_id):
   iupac_to_ccd = {
     "Gal": "GAL", "a-Gal": "GAL", "b-Gal": "GLB",
     "Glc": "GLC", "a-Glc": "GLC", "b-Glc": "BGC",
-    "Man": "MAN", "a-Man": "BMA", "b-Man": "BMA",
+    "Man": "MAN", "a-Man": "MAN", "b-Man": "BMA",
     "Fuc": "FUC" ,# "a-Fuc": "FCA", "b-Fuc": "FCB", => FCA would be D-Fucose
     "GlcNAc": "NAG", "Glc2NAc": "NAG",
     "GalNAc": "NGA", "Gal2NAc": "NGA",
@@ -1061,7 +1090,15 @@ def af3_extract_plddts_create_pkl(df, output_dir):
   updated_df = pd.DataFrame(pred_list)
   return updated_df
 
-def main(conversion, to_convert, tool, json_params, batches_file, do_rename):
+def main():
+  args = parser.parse_args()
+  conversion = args.conversion
+  to_convert = args.to_convert
+  tool = args.tool
+  json_params = args.json_params
+  batches_file = args.batches_file
+  do_rename = args.do_rename
+
   assert conversion and to_convert, \
   'Parameter --conversion and --to_convert are mandatory.'
   assert tool, "Please specify the tool used for prediction."
@@ -1107,40 +1144,4 @@ def main(conversion, to_convert, tool, json_params, batches_file, do_rename):
       convert_alphafold3_output(to_convert, 0)
 
 if __name__ == "__main__": 
-  parser = argparse.ArgumentParser()
-  parser.add_argument(
-    '--conversion',
-    default=None,
-    choices=['input', 'input_inference', 'output', 'output_singular'],
-    help="What to convert. 'input' to get the fasta format of colabfold from a traditionnal multichain pdb. 'output' to transform colabfold output to the alphafold one.")
-  parser.add_argument(
-    '--to_convert',
-    default='',
-    help='Path of the fasta file (for --conversion=input) or output directory (for --conversion=output)To convert')
-  parser.add_argument(
-    '--tool',
-    default=None,
-    choices=['AFmassive', 'ColabFold', 'AlphaFold3'],
-    help='Chose the tool from which the input/output should be unified.')
-  parser.add_argument(
-    '--json_params',
-    default='',
-    help="Set json file path for input parameters. Necessary when using '--tool AlphaFold3' coupled with '--conversion input'")
-  parser.add_argument(
-    '--batches_file',
-    default='',
-    help='Path to batches file. If --conversion=output, this file is necessary.')
-  parser.add_argument(
-    '--do_rename',
-    action=argparse.BooleanOptionalAction,
-    default=True,
-    help='To rename file or not')
-  parsed = parser.parse_args()
-  main(
-    parsed.conversion,
-    parsed.to_convert,
-    parsed.tool,
-    parsed.json_params,
-    parsed.batches_file,
-    parsed.do_rename
-  )
+  main()
