@@ -1,0 +1,33 @@
+{
+  "massivefold": {
+    "jobfile_headers_dir": "./headers",
+    "output_dir": "./output",
+    "logs_dir": "./log",
+    "input_dir": "./input"
+  },
+  "custom_params": {
+  },
+  "runs": {
+    "af3_woPaired": {
+      "args": {"predictions_per_model": 2, "batch_size": 1},
+      "AF3_run": {
+        "fasta_chains": [ "protein", "protein"],
+        "pairedMsa": "false"
+      }
+    },
+    "af3_woUnpaired": {
+      "args": {"predictions_per_model": 2, "batch_size": 1},
+      "AF3_run": {
+        "fasta_chains": ["protein", "protein"],
+        "unpairedMsa": "false"
+      }
+    },
+    "afm_dropout_woTemplates": {
+      "args": {"predictions_per_model": 1},
+      "AFM_run": {
+        "dropout": "true",
+        "templates": "false"
+      }
+    }
+  }
+}
