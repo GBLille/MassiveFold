@@ -3,7 +3,8 @@
     "jobfile_headers_dir": "./headers",
     "output_dir": "./output",
     "logs_dir": "./log",
-    "input_dir": "./input"
+    "input_dir": "./input",
+    "pkl_format": "light"
   },
   "custom_params": {
   },
