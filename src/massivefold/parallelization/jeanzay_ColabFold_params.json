@@ -1,5 +1,6 @@
 {
     "massivefold": {
+        "run_massivefold": "colabfold_batch",
         "run_massivefold_plots": "../src/massivefold/massivefold_plots.py",
         "data_dir": "$DSDIR/ColabFold/230517",
         "jobfile_headers_dir": "./headers",

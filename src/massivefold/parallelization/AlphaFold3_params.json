@@ -1,5 +1,6 @@
 {
     "massivefold": {
+        "run_massivefold": "run_alphafold.py",
         "pkl_format": "full"
     },
     "custom_params": {},

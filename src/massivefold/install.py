@@ -9,6 +9,18 @@ import socket
 def package_root():
   return os.path.dirname(os.path.abspath(__file__))
 
+def site_defaults_root():
+  return os.path.join(package_root(), "parallelization", "site_defaults")
+
+def tool_param_name(tool, host_is_jeanzay=False):
+  base_name = f"{tool}_params.json"
+  if host_is_jeanzay:
+    return f"jeanzay_{base_name}"
+  return base_name
+
+def site_default_path(tool):
+  return os.path.join(site_defaults_root(), tool_param_name(tool))
+
 def resolve_path(path_value):
   if "$" in path_value:
     return path_value
@@ -39,19 +51,18 @@ def ordered_massivefold_section(params):
   params["massivefold"] = ordered
   return params
 
-def patch_common_params(params, root_dir, data_dir=None, tool=None):
+def patch_cluster_params(params, data_dir=None):
   pkg_root = package_root()
   massivefold = params.setdefault("massivefold", {})
-
-  if tool == "AFmassive":
-    massivefold["run_massivefold"] = "run_AFmassive.py"
-  elif tool == "AlphaFold3":
-    massivefold["run_massivefold"] = "run_alphafold.py"
 
   if data_dir is not None:
     massivefold["data_dir"] = resolve_path(data_dir)
   massivefold["jobfile_templates_dir"] = os.path.abspath(os.path.join(pkg_root, "parallelization", "templates"))
   massivefold["scripts_dir"] = os.path.abspath(os.path.join(pkg_root, "parallelization"))
+  return ordered_massivefold_section(params)
+
+def patch_workspace_params(params, root_dir):
+  massivefold = params.setdefault("massivefold", {})
   massivefold["jobfile_headers_dir"] = os.path.abspath(os.path.join(root_dir, "headers"))
   massivefold["output_dir"] = os.path.abspath(os.path.join(root_dir, "output"))
   massivefold["logs_dir"] = os.path.abspath(os.path.join(root_dir, "log"))
@@ -90,29 +101,53 @@ def copy_headers(root_dir):
     if name.endswith(".slurm"):
       shutil.copy2(os.path.join(source, name), os.path.join(destination, name))
 
-def build_param_file(tool, source_name, destination, root_dir, data_dir=None):
-  params = read_json(os.path.join(package_root(), "parallelization", source_name))
-  params = patch_common_params(params, root_dir, data_dir=data_dir, tool=tool)
+def configure_site_defaults(host_is_jeanzay, alphafold_db=None, alphafold3_db=None, colabfold_db=None):
+  os.makedirs(site_defaults_root(), exist_ok=True)
+  data_dirs = {
+    "AFmassive": alphafold_db,
+    "AlphaFold3": alphafold3_db,
+    "ColabFold": colabfold_db,
+  }
+  for tool, data_dir in data_dirs.items():
+    params = read_json(os.path.join(
+      package_root(),
+      "parallelization",
+      tool_param_name(tool, host_is_jeanzay)
+    ))
+    params = patch_cluster_params(params, data_dir=data_dir)
+    write_json(site_default_path(tool), params)
+
+def preferred_param_source(tool, host_is_jeanzay=False):
+  candidate = site_default_path(tool)
+  if os.path.exists(candidate):
+    return candidate
+  return os.path.join(package_root(), "parallelization", tool_param_name(tool, host_is_jeanzay))
+
+def build_param_file(tool, destination, root_dir, data_dir=None, host_is_jeanzay=False):
+  params = read_json(preferred_param_source(tool, host_is_jeanzay))
+  if not os.path.exists(site_default_path(tool)):
+    params = patch_cluster_params(params, data_dir=data_dir)
+  params = patch_workspace_params(params, root_dir)
   write_json(destination, params)
 
 def install_jeanzay(root_dir):
   build_param_file(
     "AFmassive",
-    "jeanzay_AFmassive_params.json",
     os.path.join(root_dir, "AFmassive_params.json"),
     root_dir,
+    host_is_jeanzay=True,
   )
   build_param_file(
     "AlphaFold3",
-    "jeanzay_AlphaFold3_params.json",
     os.path.join(root_dir, "AlphaFold3_params.json"),
     root_dir,
+    host_is_jeanzay=True,
   )
   build_param_file(
     "ColabFold",
-    "jeanzay_ColabFold_params.json",
     os.path.join(root_dir, "ColabFold_params.json"),
     root_dir,
+    host_is_jeanzay=True,
   )
 
   headers = os.path.join(root_dir, "headers")
@@ -131,7 +166,6 @@ def install_standard(root_dir, alphafold_db=None, alphafold3_db=None, colabfold_
   if alphafold_db:
     build_param_file(
       "AFmassive",
-      "AFmassive_params.json",
       os.path.join(root_dir, "AFmassive_params.json"),
       root_dir,
       data_dir=alphafold_db,
@@ -139,7 +173,6 @@ def install_standard(root_dir, alphafold_db=None, alphafold3_db=None, colabfold_
   if alphafold3_db:
     build_param_file(
       "AlphaFold3",
-      "AlphaFold3_params.json",
       os.path.join(root_dir, "AlphaFold3_params.json"),
       root_dir,
       data_dir=alphafold3_db,
@@ -147,7 +180,6 @@ def install_standard(root_dir, alphafold_db=None, alphafold3_db=None, colabfold_
   if colabfold_db:
     build_param_file(
       "ColabFold",
-      "ColabFold_params.json",
       os.path.join(root_dir, "ColabFold_params.json"),
       root_dir,
       data_dir=colabfold_db,
@@ -178,15 +210,22 @@ def is_jeanzay_host():
   return socket.gethostname()[:8] == "jean-zay"
 
 def install_workspace(args):
-  if args.only_envs:
-    print("Skipping file architecture creation because --only-envs is set.")
-    return 0
-
   host_is_jeanzay = is_jeanzay_host()
   error = validate_db_paths(args, host_is_jeanzay)
   if error:
     print(error)
     return 1
+
+  configure_site_defaults(
+    host_is_jeanzay,
+    alphafold_db=args.alphafold_databases,
+    alphafold3_db=args.alphafold3_databases,
+    colabfold_db=args.colabfold_databases,
+  )
+
+  if args.only_envs:
+    print("Configured internal MassiveFold defaults and skipped workspace file creation because --only-envs is set.")
+    return 0
 
   root_dir = install_root(args.install_path)
   create_tree(root_dir)

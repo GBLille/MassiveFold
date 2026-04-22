@@ -1,5 +1,6 @@
 {
     "massivefold": {
+        "run_massivefold": "run_AFmassive.py",
         "uniref_database": "",
         "models_to_use": "",
         "pkl_format":"full"
