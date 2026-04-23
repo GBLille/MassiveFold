@@ -32,7 +32,7 @@ echo "colabfold_search
   $${data_dir}
   $${msas_output}
   --pairing_strategy $${pairing_strategy}
-  --use-templates $${use_template}
+  --use-templates 1
   --db2 $${pdb_db_templates}"
 
 
@@ -41,7 +41,7 @@ time colabfold_search \
   $${data_dir} \
   $${msas_output} \
   --pairing_strategy $${pairing_strategy} \
-  --use-templates $${use_template} \
+  --use-templates 1 \
   --db2 $${pdb_db_templates}
 
 date
