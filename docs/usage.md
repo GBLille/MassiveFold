@@ -205,7 +205,6 @@ The **massivefold** section designates the whole run parameters.
 "massivefold": 
 {
     "run_massivefold": "run_AFmassive.py",
-    "run_massivefold_plots": "../massivefold/massivefold_plots.py",
     "data_dir": "$DSDIR/Alphafold-2024-04",
     "uniref_database": "",
     "jobfile_headers_dir": "./headers",

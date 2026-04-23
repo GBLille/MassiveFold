@@ -5,6 +5,7 @@ import argparse
 import sys
 
 from massivefold.pipeline import run_pipeline
+from massivefold.pipeline import multirun_pipeline
 from massivefold.pipeline import screening_pipeline
 from massivefold.pipeline import ppi_pipeline
 from massivefold.install import install_workspace
@@ -54,6 +55,24 @@ def add_run_arguments(run_parser):
   run_optional.add_argument("-a", "--recompute_msas", dest="recompute_msas", action="store_true",
                               help="Purges previous alignment step and recomputes msas.")
   run_optional.add_argument(
+    "--scheduler",
+    dest="scheduler",
+    default="auto",
+    choices=["auto", "slurm", "local"],
+    help="Scheduler selector (default: %(default)s)",
+  )
+
+def add_multirun_arguments(multirun_parser):
+  # required arguments
+  multirun_required = multirun_parser.add_argument_group("Required arguments")
+  multirun_required.add_argument("-s", "--sequence", dest="sequence", required=True,
+                                    help="Path of the fasta file containing sequence(s) used for all runs.")
+  multirun_required.add_argument("--setup", dest="setup", required=True,
+                                    help="Json file describing shared multirun overrides and per-run definitions.")
+
+  # optional arguments
+  multirun_optional = multirun_parser.add_argument_group("Optional arguments")
+  multirun_optional.add_argument(
     "--scheduler",
     dest="scheduler",
     default="auto",
@@ -140,6 +159,9 @@ def build_parser():
   run_parser = subparsers.add_parser("run", help="Run MassiveFold")
   add_run_arguments(run_parser)
 
+  multirun_parser = subparsers.add_parser("multirun", help="Run MassiveFold")
+  add_multirun_arguments(multirun_parser)
+
   screening_parser = subparsers.add_parser("screen", help="Run MassiveFold screening")
   add_screening_arguments(screening_parser)
 
@@ -155,6 +177,14 @@ def dispatch_run(args, forwarded_args, scheduler):
   print(f"Selected scheduler: {scheduler['name']}")
   try:
     return run_pipeline(args, forwarded_args, scheduler)
+  except RuntimeError as error:
+    print(error)
+    return 1
+
+def dispatch_multirun(args, forwarded_args, scheduler):
+  print(f"Selected scheduler: {scheduler['name']}")
+  try:
+    return multirun_pipeline(args, forwarded_args, scheduler)
   except RuntimeError as error:
     print(error)
     return 1
@@ -194,13 +224,15 @@ def main(argv=None):
     parser.print_help()
     return 0
 
-  if args.command in ["run", "screen", "ppi"]:
+  if args.command in ["run", "multirun", "screen", "ppi"]:
     scheduler, status = resolve_selected_scheduler(args)
     if status != 0:
       return status
 
     if args.command == "run":
       return dispatch_run(args, unknown, scheduler)
+    if args.command == "multirun":
+      return dispatch_multirun(args, unknown, scheduler)
     elif args.command == "screen":
       return dispatch_screen(args, unknown, scheduler)
     elif args.command == "ppi":
