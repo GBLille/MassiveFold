@@ -370,15 +370,11 @@ the second is glycosylated twice (same glycan on residues 74 and 84).
 ### Relaxation
 
 Because the relaxation takes time and resources to compute and that the MassiveFold process splits the predictions in 
-many batches, the “use_gpu_relax” and “models_to_relax” parameters are set to “false” and “none” respectively. Indeed, 
-if the relaxation is activated during the process, it will be run per batches, before the final ranking, resulting in 
+many batches, the `use_gpu_relax` and `models_to_relax` parameters are set to 'false' and 'none' respectively. Indeed, 
+if the relaxation is activated during the process, it runs per batches, before the final ranking, resulting in 
 relaxed structures that wouldn't necessarily be the best predictions. Instead, we recommend to use the `colabfold_relax` 
-program provided in the `mf-colabfold` conda environment and developed by the ColabFold team, once all the predicted 
-structures are produced and ranked. It allows to relax only selected PDB structures.  
-For help, type:  
-```bash
-colabfold_relax -h
-```
+program provided in the `mf-colabfold` conda environment and developed by the ColabFold team on selected structures, once 
+all the predictions are produced and ranked (run `colabfold_relax -h` for help).
 
 ### Multiple runs gathering
 
