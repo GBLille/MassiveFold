@@ -1,7 +1,5 @@
 
- pdb_db_templates=pdb100_230517
 # variables to adapt: used for alignment
-use_templates=$templates
 sequence_name=$sequence_name
 run_name=$run_name
 output=$output_dir
@@ -31,17 +29,12 @@ echo "colabfold_search
   $${fafile}
   $${data_dir}
   $${msas_output}
-  --pairing_strategy $${pairing_strategy}
-  --use-templates $${use_template}
-  --db2 $${pdb_db_templates}"
-
+  --pairing_strategy $${pairing_strategy}"
 
 time colabfold_search \
   $${fafile} \
   $${data_dir} \
   $${msas_output} \
-  --pairing_strategy $${pairing_strategy} \
-  --use-templates $${use_template} \
-  --db2 $${pdb_db_templates}
+  --pairing_strategy $${pairing_strategy}
 
 date

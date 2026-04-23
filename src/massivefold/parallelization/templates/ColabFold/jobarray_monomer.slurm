@@ -11,11 +11,6 @@ max_extra_seq=$max_extra_seq
 stop_at_score=$stop_at_score
 BOOL_disable_cluster_profile=$disable_cluster_profile
 BOOL_use_dropout=$use_dropout
-BOOL_templates=$use_templates
-if $$BOOL_templates; then
-  echo "Parameter --templates set"
-  templates="--templates"
-fi
 if $$BOOl_disable_cluster_profile; then
   echo "Parameter --disable-cluster-profile set"
   disable_cluster_profile="--disable-cluster-profile"
@@ -30,7 +25,6 @@ output_path="$${output_dir}/$${sequence_name}/$${run_name}/batch_$${SLURM_ARRAY_
 echo output_path is $$output_path
 mkdir -vp $${output_path}/$${sequence_name}
 path_to_msas=${output_dir}/$${sequence_name}/msas
-path_to_hit_file=$$(ls $${path_to_msas}/*.m8)
 
 date
 
