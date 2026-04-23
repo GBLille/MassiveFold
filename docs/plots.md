@@ -1,6 +1,6 @@
 ## massivefold_plots: output representation
 
-MassiveFold plotting module can also be used on a MassiveFold output to evaluate visually its predictions.  
+MassiveFold plotting module can also be used on a MassiveFold output to evaluate visually its predictions (run 'massivefold_plots -h` for help).  
 
 Here is an example of a basic command you can run:
 ```bash

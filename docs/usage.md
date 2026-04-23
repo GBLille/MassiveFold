@@ -65,7 +65,7 @@ Then you can set the parameters of the **custom_params** section if necessary an
 
 Activate the conda environment:
 ```bash
-conda activate massivefold-1.7.1
+conda activate massivefold
 ```
 >**N.B.**: on the Jean Zay cluster, simply load the `massivefold` >module. To be able to run on H100 or A100, uncomment the
 >corresponding last lines of the `jobarray.slurm` header. Example >for H100:
@@ -388,10 +388,14 @@ gathers all the results and ranks them all. Run `gather -h` for help.
 We also provide an `extract_scores.py` script that allows to extract the scores from pickle files and create rankings
 (notably useful for interrupted runs). Run `python3 extract_scores.py -h` for help.
 
+### Lightening pickles
+
+To reduce the size of the pickle files, the `pkl_format` parameter can be set to 'light', as described in the [parameters](#parameters) section. However if this parameter was set to 'full', it is still possible to run the `lighten_ouput` command as a second step on the output to reduce the size of the pickles (run `lighten_ouput -h` for help).  
+
 ## Ligand screening
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.7.1
+conda activate massivefold
 ```
 To launch a screening round, run:
 
@@ -429,7 +433,7 @@ See this [section](#multiple-runs-gathering).
 ## PPI screening 
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.7.1
+conda activate massivefold
 ```
 To launch a PPI discovery round, run:
 
