@@ -656,7 +656,7 @@ def get_multirun_runs(multirun_json):
   if not isinstance(multirun_setup, dict):
     raise ValueError(f"Format error in {multirun_json}: root should be a JSON object.")
 
-  allowed_top_keys = {"runs", "massivefold", "custom_params"}
+  allowed_top_keys = {"runs", "massivefold", "custom_params", "plots"}
   unknown_top_keys = [ key for key in multirun_setup if key not in allowed_top_keys ]
   if unknown_top_keys:
     raise ValueError(
@@ -678,6 +678,8 @@ def get_multirun_runs(multirun_json):
     raise ValueError("Section 'massivefold' should be a JSON object.")
   if not isinstance(multirun_setup["custom_params"], dict):
     raise ValueError("Section 'custom_params' should be a JSON object.")
+  if "plots" in multirun_setup and not isinstance(multirun_setup["plots"], dict):
+    raise ValueError("Section 'plots' should be a JSON object.")
 
   resolved_runs = []
   param_dir = os.path.dirname(os.path.abspath(__file__))
@@ -705,6 +707,15 @@ def get_multirun_runs(multirun_json):
       shared_custom_params[param] = value
 
     shared_plots = copy.deepcopy(run_defaults.get("plots", {}))
+    for param, value in multirun_setup.get("plots", {}).items():
+      if param not in shared_plots:
+        possible_params = [ "'" + i + "'" for i in shared_plots ]
+        raise ValueError(
+          f"'{param}' is an unknown plot param not in:\n"
+          f"{{{'|'.join(possible_params)}}}"
+        )
+      shared_plots[param] = value
+
     resolved_params = {
       "massivefold": copy.deepcopy(shared_massivefold),
       "custom_params": copy.deepcopy(shared_custom_params),
