@@ -30,7 +30,7 @@ output_path="$${output_dir}/$${sequence_name}/$${run_name}/batch_$${SLURM_ARRAY_
 echo output_path is $$output_path
 mkdir -vp $${output_path}/$${sequence_name}
 path_to_msas=${output_dir}/$${sequence_name}/msas
-path_to_hit_file=$$(ls $${path_to_msas}/*.m8)
+path_to_hit_file=$$(ls $${path_to_msas}/*_pdb100_230517.m8)
 
 date
 

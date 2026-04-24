@@ -28,7 +28,7 @@ output_path="$${output_dir}/$${sequence_name}/$${run_name}/"
 echo output_path is $$output_path
 mkdir -vp $${output_path}/
 path_to_msas=${output_dir}/$${sequence_name}/msas_colabfold
-path_to_hit_file=$$(ls $${path_to_msas}/*.m8)
+path_to_hit_file=$$(ls $${path_to_msas}/*_pdb100_230517.m8)
 
 date
 
