@@ -1,7 +1,6 @@
 
  pdb_db_templates=pdb100_230517
 # variables to adapt: used for alignment
-use_templates=$templates
 sequence_name=$sequence_name
 run_name=$run_name
 output=$output_dir

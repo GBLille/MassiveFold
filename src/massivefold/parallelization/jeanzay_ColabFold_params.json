@@ -19,6 +19,7 @@
         "jeanzay_jobarray_time": "19:59:59"
     },
     "CF_run": {
+        "templates": "true",
         "pair_strategy": "greedy",
         "use_dropout": "false",
         "num_recycle": "20",

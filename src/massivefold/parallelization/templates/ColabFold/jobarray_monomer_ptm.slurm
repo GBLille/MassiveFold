@@ -91,7 +91,7 @@ time colabfold_batch \
   --stop-at-score $$stop_at_score \
   --pdb-hit-file $${path_to_hit_file} \
   --local-pdb-path $${data_dir}/pdb/divided/ \
-  $$temlpates \
+  $$templates \
   $$use_dropout \
   $$disable_cluster_profile
 
