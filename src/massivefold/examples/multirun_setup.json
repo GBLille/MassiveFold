@@ -30,5 +30,9 @@
         "templates": "false"
       }
     }
+  },
+  "plots": {
+    "MF_plots_top_n_predictions": "10",
+    "MF_plots_chosen_plots": "DM_plddt_PAE,CF_PAEs"
   }
 }
