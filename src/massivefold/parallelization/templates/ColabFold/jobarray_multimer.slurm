@@ -9,6 +9,11 @@ recycle_early_stop_tolerance=$recycle_early_stop_tolerance
 stop_at_score=$stop_at_score
 BOOL_disable_cluster_profile=$disable_cluster_profile
 BOOL_use_dropout=$use_dropout
+BOOL_templates=$templates
+if $$BOOL_templates; then
+  echo "Parameter --templates set"
+  templates="--templates"
+fi
 if $$BOOL_disable_cluster_profile; then
   echo "Parameter --disable-cluster-profile set"
   disable_cluster_profile="--disable-cluster-profile"
@@ -23,6 +28,7 @@ output_path="$${output_dir}/$${sequence_name}/$${run_name}/"
 echo output_path is $$output_path
 mkdir -vp $${output_path}/
 path_to_msas=${output_dir}/$${sequence_name}/msas_colabfold
+path_to_hit_file=$$(ls $${path_to_msas}/*_pdb100_230517.m8)
 
 date
 
@@ -66,6 +72,9 @@ echo "colabfold_batch
   --recycle-early-stop-tolerance $$recycle_early_stop_tolerance
   --stop-at-score $$stop_at_score
   --calc-extra-ptm
+  --pdb-hit-file $${path_to_hit_file}
+  --local-pdb-path $${data_dir}/pdb/divided/
+  $$templates
   $$use_dropout
   $$disable_cluster_profile
   "
@@ -84,6 +93,9 @@ time colabfold_batch \
   --recycle-early-stop-tolerance $$recycle_early_stop_tolerance \
   --stop-at-score $$stop_at_score \
   --calc-extra-ptm \
+  --pdb-hit-file $${path_to_hit_file} \
+  --local-pdb-path $${data_dir}/pdb/divided/ \
+  $$templates \
   $$use_dropout \
   $$disable_cluster_profile
 

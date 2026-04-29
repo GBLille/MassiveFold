@@ -169,16 +169,27 @@ def alignment_is_needed(tool, output_dir, sequence_name, force_msas_computation,
     return not os.path.isdir(os.path.join(output_dir, sequence_name, "msas_colabfold"))
   return False
 
-def has_valid_msas(tool, msas_precomputed):
+def has_valid_msas(tool, msas_precomputed, require_cf_templates=False):
   if not msas_precomputed:
-    return False
+    return (False, "Precomputed MSAs")
   if tool == "AFmassive":
-    return os.path.isdir(os.path.join(msas_precomputed, "msas"))
+    return (os.path.isdir(os.path.join(msas_precomputed, "msas")), "`msas` directory")
   if tool == "ColabFold":
-    return os.path.isdir(os.path.join(msas_precomputed, "msas_colabfold"))
+    msas_dir = os.path.join(msas_precomputed, "msas_colabfold")
+    is_msas_dir = os.path.isdir(msas_dir)
+    if not require_cf_templates:
+      return (is_msas_dir, f"{msas_dir} dir")
+    else:
+      return (
+          is_msas_dir and any([ i.endswith('.m8') for i in os.listdir(msas_dir) ]),
+          f".m8 template file (run alignment step again to correct) or {msas_dir}"
+      )
   if tool == "AlphaFold3":
-    return os.path.isfile(os.path.join(msas_precomputed, "msas_alphafold3_data.json"))
-  return False
+    return (
+        os.path.isfile(os.path.join(msas_precomputed, "msas_alphafold3_data.json")),
+        "`msas_alphafold3_data.json`"
+    )
+  return (False, f'Tool {tool} is not supported')
 
 def safe_symlink(source, destination):
   if os.path.islink(destination):
@@ -471,6 +482,8 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
     using_jobid = True
     waiting_for_alignment = True
 
+  use_cf_templates = (tool == "ColabFold" and parameters["CF_run"]["templates"] == "true")
+  msas_valid, msas_status = has_valid_msas(tool, msas_precomputed, use_cf_templates)
   if alignment_is_needed(
     tool,
     output_dir,
@@ -498,14 +511,11 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
       move_generated_files_to_logs(sequence_name, run_name, logs_run_dir)
       print("Only run sequence alignment.")
       return 0
-
   elif waiting_for_alignment:
     print(f"Running inference with dependency on jobid {alignment_id}")
-
-  elif not has_valid_msas(tool, msas_precomputed):
-    print(f"Directory {msas_precomputed} does not exits or does not contain msas.")
+  elif not msas_valid:
+    print(f"Alignment component missing: {msas_status}")
     return 1
-
   else:
     print(f"{msas_precomputed} are valid.")
     output_run_dir = os.path.join(output_dir, sequence_name, run_name)
