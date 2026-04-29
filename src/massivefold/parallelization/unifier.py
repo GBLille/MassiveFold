@@ -1020,9 +1020,6 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
   df = df.sort_values(all_score_types, ascending=False, ignore_index=True)
   df['rank'] = df.index
   df["ranked_name"] = "ranked_" + df["rank"].astype(str) + "_" + df["prediction_name"] + ".cif"
-  print(pred_metrics)
-  print(df)
-  sys.exit()
   af3_move_and_rename(df, output_path)
 
 def af3_prediction_metrics(input_dir: str, nature: str):
@@ -1050,8 +1047,8 @@ def plddts_from_cif(cif_filename):
 
 def af3_move_and_rename(df, output_dir):
   pred_list = df.to_dict(orient="records")
-  score_map = { "ranking_score": "debug", "iptm": "iptm", "ptm": "ptm", "mean_plddt": "plddt"  }
-  score_types = ['iptm', 'ptm', 'ranking_score', 'mean_plddt' ]
+  score_map = { "ranking_score": "debug", "iptm": "iptm", "actifptm": "actifptm", "ptm": "ptm", "mean_plddt": "plddt"  }
+  score_types = ['iptm', 'actifptm', 'ptm', 'ranking_score', 'mean_plddt' ]
   score_types = [ i for i in score_types if i in df.columns ]
   all_scores = { score_map[stype]: { stype: {}, "order": [] } for stype in score_types if stype in df.columns  }
 

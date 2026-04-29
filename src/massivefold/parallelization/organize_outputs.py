@@ -176,6 +176,8 @@ def main():
   pred_batch_map = create_global_ranking(batches_path, sequence_name)
   if os.path.isfile(f"{batches_path}/batch_0/{sequence_name}/ranking_iptm.json"):
     create_global_ranking(batches_path, sequence_name, 'iptm')
+  if os.path.isfile(f"{batches_path}/batch_0/{sequence_name}/ranking_actifptm.json"):
+    create_global_ranking(batches_path, sequence_name, 'actifptm')
   if os.path.isfile(f"{batches_path}/batch_0/{sequence_name}/ranking_ptm.json"):
     create_global_ranking(batches_path, sequence_name, 'ptm')
 
