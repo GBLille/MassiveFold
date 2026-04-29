@@ -992,7 +992,7 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
   pred_nb = [ pred*num_samples for pred in seeds_to_0 ]
   samples = [ i%num_samples for i, _ in enumerate(pred_nb) ]
   pred_nb = [ pred + i%num_samples for i, pred in enumerate(pred_nb) ]
-  
+
   df = pd.DataFrame( {
     "pred_nb": pred_nb,
     "original_dir": seed_dirs,
@@ -1003,7 +1003,7 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
   df["pred_nb"] += pred_shift * num_samples
   to_add = {}
   for seed in seed_dirs:
-    pred_metrics = prediction_metrics(seed, "multimer")
+    pred_metrics = af3_prediction_metrics(seed, "multimer")
     for metric in pred_metrics:
       if metric not in to_add:
         to_add[metric] = [pred_metrics[metric]]
@@ -1020,15 +1020,18 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
   df = df.sort_values(all_score_types, ascending=False, ignore_index=True)
   df['rank'] = df.index
   df["ranked_name"] = "ranked_" + df["rank"].astype(str) + "_" + df["prediction_name"] + ".cif"
+  print(pred_metrics)
+  print(df)
+  sys.exit()
   af3_move_and_rename(df, output_path)
 
-def prediction_metrics(input_dir: str, nature: str):
+def af3_prediction_metrics(input_dir: str, nature: str):
   batch_name = os.path.basename(os.path.dirname(input_dir))
   prefix = f"{batch_name}_{os.path.basename(input_dir)}"
   prediction_confs = os.path.join(input_dir, f'{prefix}_summary_confidences.json')
   with open(prediction_confs, 'r') as f:
     data = json.load(f)
-  metrics_possibilities = [ "plddt", "iptm", "ptm" ]#, "chain_pair_iptm" ]
+  metrics_possibilities = [ "actifptm", "plddt", "iptm", "ptm" ]#, "chain_pair_iptm" ]
   metrics = { metric: data[metric] for metric in metrics_possibilities if metric in data and data[metric]}
   return metrics
 
