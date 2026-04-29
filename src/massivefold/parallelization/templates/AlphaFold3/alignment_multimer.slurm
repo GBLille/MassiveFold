@@ -12,7 +12,7 @@ logs_dir=$logs_dir
 json_path=${input_dir}/alphafold3_json_requests/$${sequence_name}.json
 
 . $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-alphafold-3.0.1
+conda activate mf-alphafold-3.0.2
 
 date
 echo "$${run_massivefold}

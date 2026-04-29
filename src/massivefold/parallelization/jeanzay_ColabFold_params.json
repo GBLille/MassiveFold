@@ -1,5 +1,6 @@
 {
     "massivefold": {
+        "run_massivefold": "colabfold_batch",
         "data_dir": "$DSDIR/ColabFold/230517",
         "jobfile_headers_dir": "./headers",
         "jobfile_templates_dir": "../src/massivefold/parallelization/templates",

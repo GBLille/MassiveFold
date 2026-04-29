@@ -18,7 +18,6 @@ set the `uniref_database` parameter in the AFmassive_params.json file to the upd
 "massivefold": 
 {
     "run_massivefold": "run_AFmassive.py",
-    "run_massivefold_plots": "../massivefold/massivefold_plots.py",
     "data_dir": "/path/to/databases/AlphaFold/",
     "uniref_database": "/path/to/databases/AlphaFold/UniRef30_2023_02_hhsuite/UniRef30_2023_02",
     "jobfile_headers_dir": "./headers",

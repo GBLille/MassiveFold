@@ -1,5 +1,6 @@
 {
     "massivefold": {
+        "run_massivefold": "colabfold_batch",
         "models_to_use": "",
         "pkl_format":"full"
     },
