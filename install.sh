@@ -3,7 +3,7 @@
 mf_version=
 mf_afm_version=1.1.8
 mf_cf_version=1.6.1
-mf_af3_version=3.0.1
+mf_af3_version=3.0.2
 install_env () {
   env=$1
   source "$(conda info --base)/etc/profile.d/conda.sh"

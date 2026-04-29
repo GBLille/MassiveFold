@@ -71,7 +71,7 @@ else
 fi
 
 . $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-alphafold-3.0.1
+conda activate mf-alphafold-3.0.2
 
 date
 echo "run_alphafold.py

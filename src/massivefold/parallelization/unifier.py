@@ -975,7 +975,8 @@ def convert_colabfold_output(output_path:str, pred_shift:int, do_rename: bool, t
   rename_colabfold_pkl(pkls, output_path, pred_shift, sep=sep, do_rename=do_rename)
 
 def convert_alphafold3_output(output_path: str, pred_shift: int):
-  df_ranking_scores = pd.read_csv(os.path.join(output_path, "ranking_scores.csv"))
+  batch_name = os.path.basename(output_path)
+  df_ranking_scores = pd.read_csv(os.path.join(output_path, f"{batch_name}_ranking_scores.csv"))
   seed_dirs = [ os.path.join(output_path, seed) for seed in os.listdir(output_path) if seed.startswith('seed-')]
   seed_dirs = sorted(
     seed_dirs,
@@ -1022,7 +1023,9 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
   af3_move_and_rename(df, output_path)
 
 def prediction_metrics(input_dir: str, nature: str):
-  prediction_confs = os.path.join(input_dir, 'summary_confidences.json')
+  batch_name = os.path.basename(os.path.dirname(input_dir))
+  prefix = f"{batch_name}_{os.path.basename(input_dir)}"
+  prediction_confs = os.path.join(input_dir, f'{prefix}_summary_confidences.json')
   with open(prediction_confs, 'r') as f:
     data = json.load(f)
   metrics_possibilities = [ "plddt", "iptm", "ptm" ]#, "chain_pair_iptm" ]
@@ -1051,18 +1054,22 @@ def af3_move_and_rename(df, output_dir):
 
   for pred in pred_list:
 
-    model_cif_name = os.path.join(pred["original_dir"], 'model.cif')
-    new_cif_name = os.path.join(os.path.dirname(pred["original_dir"]), pred["ranked_name"])
+    original_dir = pred["original_dir"]
+    batch_name = os.path.basename(os.path.dirname(original_dir))
+    prefix = f"{batch_name}_{os.path.basename(original_dir)}"
+
+    model_cif_name = os.path.join(original_dir, f'{prefix}_model.cif')
+    new_cif_name = os.path.join(os.path.dirname(original_dir), pred["ranked_name"])
     cp(model_cif_name, new_cif_name)
 
-    path_to_confidence = os.path.join(os.path.dirname(pred["original_dir"]), "confidences")
+    path_to_confidence = os.path.join(os.path.dirname(original_dir), "confidences")
     if not os.path.exists(path_to_confidence):
       os.makedirs(path_to_confidence)
-    model_confidence_file = os.path.join(pred["original_dir"], 'summary_confidences.json')
-    new_confidence_file = os.path.join(os.path.dirname(pred["original_dir"]), "confidences", f'{pred["prediction_name"]}.json')
+    model_confidence_file = os.path.join(original_dir, f'{prefix}_summary_confidences.json')
+    new_confidence_file = os.path.join(os.path.dirname(original_dir), "confidences", f'{pred["prediction_name"]}.json')
     cp(model_confidence_file, new_confidence_file)
 
-    model_no_rank = os.path.join(os.path.dirname(pred["original_dir"]), '_'.join(os.path.basename(new_cif_name).split('_')[2:]))
+    model_no_rank = os.path.join(os.path.dirname(original_dir), '_'.join(os.path.basename(new_cif_name).split('_')[2:]))
     cp(new_cif_name, model_no_rank)
     for stype in score_types:
       all_scores[score_map[stype]][stype][pred["prediction_name"]] = pred[stype]
@@ -1075,17 +1082,21 @@ def af3_move_and_rename(df, output_dir):
 def af3_extract_plddts_create_pkl(df, output_dir):
   pred_list = df.to_dict(orient="records")
   for pred in pred_list:
-    model_cif_name = os.path.join(pred["original_dir"], 'model.cif')
+    original_dir = pred["original_dir"]
+    batch_name = os.path.basename(os.path.dirname(original_dir))
+    prefix = f"{batch_name}_{os.path.basename(original_dir)}"
+
+    model_cif_name = os.path.join(original_dir, f'{prefix}_model.cif')
     pred_plddts = plddts_from_cif(model_cif_name)
     pred["mean_plddt"] = np.mean(pred_plddts)
 
-    json_confidences_name = os.path.join(pred["original_dir"], 'confidences.json')
+    json_confidences_name = os.path.join(original_dir, f'{prefix}_confidences.json')
     json_confidences_file = json.load(open(json_confidences_name, 'r'))
     json_confidences_file["predicted_aligned_error"] = json_confidences_file["pae"]
     json_confidences_file["max_predicted_aligned_error"] = np.max(json_confidences_file["pae"])
     json_confidences_file["plddt"] = pred_plddts
 
-    pkl_name = os.path.join(os.path.dirname(pred["original_dir"]), pred["pkl_name"])
+    pkl_name = os.path.join(os.path.dirname(original_dir), pred["pkl_name"])
     pickle.dump(json_confidences_file, open(pkl_name, 'wb'))
 
   updated_df = pd.DataFrame(pred_list)
