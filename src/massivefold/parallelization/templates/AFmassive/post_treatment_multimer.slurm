@@ -2,7 +2,22 @@ sequence_name=$sequence_name
 run_name=$run_name
 output=${output_dir}/$${sequence_name}/$${run_name}/
 mf_plots_path=massivefold_plots
+batches_file=${logs_dir}/$${sequence_name}/$${run_name}/$${sequence_name}_$${run_name}_batches.json
 pkl_format=$pkl_format
+
+# adapt colabfold output for massivefold
+echo "unifier
+  --batches_file $${batches_file}
+  --conversion output
+  --to_convert $$output
+  --tool AFmassive
+  "
+
+time unifier \
+  --batches_file $${batches_file} \
+  --conversion output \
+  --to_convert $$output \
+  --tool AFmassive
 
 # rename and move files
 echo "time organize_outputs --batches_path $$output"
