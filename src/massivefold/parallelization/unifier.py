@@ -1058,7 +1058,7 @@ def create_afmassive_confidences(output_path, pdbs):
     initial_json_path = os.path.join(output_path, json_file)
     json_content = json.load(open(initial_json_path, 'r'))
 
-    json_confidence_path = os.path.join(confidence_path, json_file)
+    json_confidence_path = os.path.join(confidence_path, json_file.replace('result_', 'unrelaxed_'))
     json.dump(json_content, open(json_confidence_path, 'w'), indent=1)
 
 def convert_afmassive_output(output_path:str):
