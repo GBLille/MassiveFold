@@ -850,7 +850,7 @@ _ptm_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pdb"
 
 def create_colabfold_ranking(predictions_to_rank:pd.core.frame.DataFrame, output_path:str, preset:str):
   metrics = ['ptm', 'iptm', 'actifptm', 'iptm+ptm'] if preset == 'multimer' else ['plddts', 'ptm']
-  
+
   for metric in metrics:
     try:
       df = predictions_to_rank.sort_values(metric, ascending=False)
@@ -957,6 +957,9 @@ def convert_output(tool, batches_file: str, to_convert: str):
       except FileNotFoundError as e:
         not_working.append(batch)
         error.append(str(e))
+    elif tool == "AFmassive":
+      convert_afmassive_output(f"{to_convert}/{batch}")
+
 
   if not_working:
     print(f"Batch not completed: {' - '.join(not_working)}")
@@ -1047,6 +1050,22 @@ def convert_colabfold_output(output_path:str, pred_shift:int, to_convert: str):
   rank_colabfold_predictions(output_path, pdbs, renamed_pdbs.values(), preset=sep)
   create_colabfold_confidences(output_path, pdbs, renamed_pdbs)
   rename_colabfold_pkl(pkls, output_path, pred_shift, sep=sep)
+
+def create_afmassive_confidences(output_path, pdbs):
+  confidence_path = os.path.join(output_path, 'confidences')
+  os.makedirs(confidence_path, exist_ok=True)
+  for pdb in pdbs:
+    json_file = pdb.replace('_unrelaxed_', '_result_').replace('.pdb', '.json')
+
+    initial_json_path = os.path.join(output_path, json_file)
+    json_content = json.load(open(initial_json_path, 'r'))
+
+    json_confidence_path = os.path.join(confidence_path, json_file)
+    json.dump(json_content, open(json_confidence_path, 'w'), indent=1)
+
+def convert_afmassive_output(output_path:str):
+  pdbs = [ file for file in os.listdir(output_path) if file.startswith('unrelaxed_') and file.endswith('.pdb') ]
+  create_afmassive_confidences(output_path, pdbs)
 
 def convert_alphafold3_output(output_path: str, pred_shift: int):
   batch_name = os.path.basename(output_path)
@@ -1218,15 +1237,13 @@ def main():
     convert_output(tool, batches_file, to_convert)
 
   elif conversion == "output_singular":
-    tools = ["ColabFold", "AlphaFold3"]
-    if tool not in tools:
-      print(f"No output standardization for {tool}.")
-      return
     if tool == "ColabFold":
       convert_colabfold_output(to_convert, 0, to_convert)
       move_output(os.path.dirname(os.path.realpath(to_convert)), "batch_0")
     elif tool == "AlphaFold3":
       convert_alphafold3_output(to_convert, 0)
+    elif tool == "AFmassive":
+      convert_afmassive_output(to_convert)
 
 if __name__ == "__main__": 
   main()
