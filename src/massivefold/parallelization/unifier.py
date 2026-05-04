@@ -918,9 +918,6 @@ def rank_colabfold_predictions(output_path:str, pdb_files:list, new_pdb_names:li
   create_colabfold_ranking(all_preds, output_path, preset)
 
 def convert_output(tool, batches_file: str, to_convert: str):
-  if tool not in ["ColabFold", "AlphaFold3"]:
-    print(f"No conversion needed for {tool} output")
-    return
   all_batches_infos = json.load(open(batches_file, 'r'))
 
   if tool == "AlphaFold3":
@@ -958,7 +955,8 @@ def convert_output(tool, batches_file: str, to_convert: str):
         not_working.append(batch)
         error.append(str(e))
     elif tool == "AFmassive":
-      convert_afmassive_output(f"{to_convert}/{batch}")
+      sequence_name = os.path.basename(os.path.dirname(os.path.dirname(to_convert)))
+      convert_afmassive_output(f"{to_convert}/{batch}/{sequence_name}/")
 
 
   if not_working:
@@ -1055,7 +1053,7 @@ def create_afmassive_confidences(output_path, pdbs):
   confidence_path = os.path.join(output_path, 'confidences')
   os.makedirs(confidence_path, exist_ok=True)
   for pdb in pdbs:
-    json_file = pdb.replace('_unrelaxed_', '_result_').replace('.pdb', '.json')
+    json_file = pdb.replace('unrelaxed_', 'result_').replace('.pdb', '.json')
 
     initial_json_path = os.path.join(output_path, json_file)
     json_content = json.load(open(initial_json_path, 'r'))
@@ -1228,10 +1226,6 @@ def main():
     prepare_inference(to_convert, json_params, batches_file, tool)
 
   elif conversion == 'output':
-    tools = ["ColabFold", "AlphaFold3"]
-    if tool not in tools:
-      print(f"No output standardization for {tool}.")
-      return 
     assert batches_file, 'Json batches file (--batches_file) is mandatory for output conversion (--conversion output)'
     print(f"Convert for tool {tool}")
     convert_output(tool, batches_file, to_convert)
