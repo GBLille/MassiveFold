@@ -54,7 +54,7 @@ batch_end=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_p
 echo Model used is $$batch_model, batch computed between prediction $$batch_start and $$batch_end
 
 . $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-afmassive-1.1.8
+conda activate mf-afmassive-1.1.10
 
 echo "$${run_massivefold}
     --fasta_paths=$${fafile}

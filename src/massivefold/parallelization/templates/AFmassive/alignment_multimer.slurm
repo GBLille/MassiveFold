@@ -24,7 +24,7 @@ uniref_max_hits=10000
 use_gpu_relax=false
 
 . $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-afmassive-1.1.8
+conda activate mf-afmassive-1.1.10
 
 echo "$${run_massivefold}
     --alignments_only=$${alignments_only} 

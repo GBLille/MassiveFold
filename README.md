@@ -55,8 +55,8 @@ It details these steps of the MassiveFold installation:
 
 ## Uninstallation
 
-To uninstall MassiveFold, remove the three conda environments (`massivefold`, `mf-afmassive-1.1.8`, `mf-colabfold-1.6.1` and 
-`mf-alphafold-3.0.1`) and remove the `MassiveFold` folder you cloned. Make sure you copy all the files and folders you want 
+To uninstall MassiveFold, remove the three conda environments (`massivefold`, `mf-afmassive-1.1.10`, `mf-colabfold-1.6.1` and 
+`mf-alphafold3-1.1.0`) and remove the `MassiveFold` folder you cloned. Make sure you copy all the files and folders you want 
 to keep from the `output` and `log` directories somewhere else. 
 
 ## Usage

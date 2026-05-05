@@ -1,9 +1,9 @@
 #!/bin/bash
 
-mf_version=
-mf_afm_version=1.1.8
+mf_version=-1.8.0 # prefix it with a -
+mf_afm_version=1.1.10
 mf_cf_version=1.6.1
-mf_af3_version=3.0.2
+mf_af3_version=1.1.0
 install_env () {
   env=$1
   source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -30,9 +30,9 @@ install_env () {
     echo "Installing alphafold3 environment"
     conda activate massivefold${mf_version} || { echo "massivefold environment is needed and is missing"; exit 1; }
     conda env create -f mf-alphafold3.yml
-    conda activate mf-alphafold-${mf_af3_version}
+    conda activate mf-alphafold3-${mf_af3_version}
     build_data
-    wget -O "${CONDA_PREFIX}/bin/run_alphafold.py" https://raw.githubusercontent.com/google-deepmind/alphafold3/v${mf_af3_version}/run_alphafold.py
+    wget -O "${CONDA_PREFIX}/bin/run_alphafold.py" https://raw.githubusercontent.com/GBLille/mf-alphafold3/v${mf_af3_version}/run_alphafold.py
     sed -i '1i #!/usr/bin/env python' "${CONDA_PREFIX}/bin/run_alphafold.py"
     chmod +x "${CONDA_PREFIX}/bin/run_alphafold.py"
     conda deactivate
