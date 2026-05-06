@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import os
 import json
 from shutil import copy as cp, rmtree as rm, move as mv
@@ -39,72 +40,88 @@ def create_global_ranking(all_batches_path, jobname, ranking_type="debug"):
 
   return map_pred_batch
 
+def post_treatment_threads():
+  cpu_count = os.cpu_count() or 1
+  return max(1, min(32, cpu_count * 2))
+
+def copy_prediction_outputs(all_batches_path, pred_batch_map, jobname, rank, prediction):
+  messages = []
+
+  # copy the predictions
+  if os.path.exists(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, f"relaxed_{prediction}.pdb")):
+    pred_new_name = f"relaxed_{prediction}.pdb"
+  elif os.path.exists(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, f"unrelaxed_{prediction}.pdb")):
+    pred_new_name = f"unrelaxed_{prediction}.pdb"
+  else:
+    pred_new_name = f"{prediction}.cif"
+
+  # Move confidence files (chain iptm etc)
+  confidence_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, 'confidences')
+  if os.path.exists(confidence_path):
+    pred_name = pred_new_name.split('.')[0]
+    json_confidence = pred_name + '.json'
+    old_confidence_path = os.path.join(
+      all_batches_path,
+      pred_batch_map[prediction],
+      jobname,
+      'confidences',
+      json_confidence)
+    global_confidence_path = os.path.join(all_batches_path, 'confidences')
+    os.makedirs(global_confidence_path, exist_ok=True)
+    new_confidence_path = os.path.join(global_confidence_path, f"ranked_{rank}_{pred_name}.json")
+    try:
+      cp(old_confidence_path, new_confidence_path)
+    except FileNotFoundError as e:
+      messages.append(str(e))
+      messages.append(f"{pred_batch_map[prediction]}/confidences/{pred_new_name.replace('.cif', '.json')} not found")
+
+  # Move pdb files and rename with rank
+  old_pdb_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pred_new_name)
+  new_pdb_path = os.path.join(all_batches_path, f"ranked_{rank}_{pred_new_name}")
+  try:
+    cp(old_pdb_path, new_pdb_path)
+  except FileNotFoundError as e:
+    messages.append(str(e))
+    messages.append(f"{pred_batch_map[prediction]}/ranked_{rank}_{pred_new_name} does not exist, probably score < --min_score.")
+
+  # Move pkl files
+  pkl_name = f"result_{prediction}.pkl"
+  old_pkl_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pkl_name)
+  new_pkl_path = os.path.join(all_batches_path, pkl_name)
+  try:
+    cp(old_pkl_path, new_pkl_path)
+  except FileNotFoundError:
+    messages.append(f"{pred_batch_map[prediction]}/result_{prediction}.pkl does not exist, probably score < --min_score.")
+
+  return messages
+
 def move_and_rename(all_batches_path, pred_batch_map, jobname):
   with open(os.path.join(all_batches_path, 'ranking_debug.json'), 'r') as rank_file:
     global_rank_order = json.load(rank_file)['order']
-  for i, prediction in enumerate(global_rank_order):
-    # copy the features
-    if i == 0:
-      features = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, "features.pkl")
-      if os.path.isfile(features):
-        cp(features, os.path.join(all_batches_path, "features.pkl"))
-      else:
-        print('Either using colabfold or error encountered while copying features.pkl')
-      files = os.path.join(all_batches_path, pred_batch_map[prediction], jobname)
-      for file in os.listdir(files):
-        if file.endswith('coverage.png'):
-          coverage_plot = os.path.join(files, file)
-          os.mkdir(os.path.join(all_batches_path, "./plots"))
-          cp(coverage_plot, os.path.join(all_batches_path, "./plots/alignment_coverage.png"))
-      else:
-        print('Either not using colabfold, or coverage plot not found')
+  futures = []
+  with ThreadPoolExecutor(max_workers=post_treatment_threads()) as executor:
+    for i, prediction in enumerate(global_rank_order):
+      # copy the features
+      if i == 0:
+        features = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, "features.pkl")
+        if os.path.isfile(features):
+          cp(features, os.path.join(all_batches_path, "features.pkl"))
+        else:
+          print('Either using colabfold or error encountered while copying features.pkl')
+        files = os.path.join(all_batches_path, pred_batch_map[prediction], jobname)
+        for file in os.listdir(files):
+          if file.endswith('coverage.png'):
+            coverage_plot = os.path.join(files, file)
+            os.mkdir(os.path.join(all_batches_path, "./plots"))
+            cp(coverage_plot, os.path.join(all_batches_path, "./plots/alignment_coverage.png"))
+        else:
+          print('Either not using colabfold, or coverage plot not found')
 
-    # copy the predictions
-    if os.path.exists(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, f"relaxed_{prediction}.pdb")):
-      pred_new_name = f"relaxed_{prediction}.pdb"
-    elif os.path.exists(os.path.join(all_batches_path, pred_batch_map[prediction], jobname, f"unrelaxed_{prediction}.pdb")):
-      pred_new_name = f"unrelaxed_{prediction}.pdb"
-    else:
-      pred_new_name = f"{prediction}.cif"
+      futures.append(executor.submit(copy_prediction_outputs, all_batches_path, pred_batch_map, jobname, i, prediction))
 
-    # Move confidence files (chain iptm etc)
-    confidence_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, 'confidences')
-    if os.path.exists(confidence_path):
-      pred_name = pred_new_name.split('.')[0]
-      json_confidence = pred_name + '.json'
-      old_confidence_path = os.path.join(
-        all_batches_path,
-        pred_batch_map[prediction],
-        jobname,
-        'confidences',
-        json_confidence)
-      global_confidence_path = os.path.join(all_batches_path, 'confidences')
-      if not os.path.exists(global_confidence_path):
-        os.makedirs(global_confidence_path, exist_ok=True)
-      new_confidence_path = os.path.join(global_confidence_path, f"ranked_{i}_{pred_name}.json")
-      try:
-        cp(old_confidence_path, new_confidence_path)
-      except FileNotFoundError as e:
-        print(e)
-        print(f"{pred_batch_map[prediction]}/confidences/{pred_new_name.replace('.cif', '.json')} not found")
-
-    # Move pdb files and rename with rank
-    old_pdb_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pred_new_name) 
-    new_pdb_path = os.path.join(all_batches_path, f"ranked_{i}_{pred_new_name}")
-    try:
-      cp(old_pdb_path, new_pdb_path)
-    except FileNotFoundError as e:
-      print(e)
-      print(f"{pred_batch_map[prediction]}/ranked_{i}_{pred_new_name} does not exist, probably score < --min_score.")
-
-    # Move pkl files
-    pkl_name = f"result_{prediction}.pkl"
-    old_pkl_path = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, pkl_name)
-    new_pkl_path = os.path.join(all_batches_path, pkl_name)
-    try:
-      cp(old_pkl_path, new_pkl_path)
-    except FileNotFoundError:
-      print(f"{pred_batch_map[prediction]}/result_{prediction}.pkl does not exist, probably score < --min_score.")
+    for future in futures:
+      for message in future.result():
+        print(message)
 
 def remove_batch_dirs(all_batches_path):
   batch_dirs = [d for d in os.listdir(all_batches_path) if d.startswith('batch')]
