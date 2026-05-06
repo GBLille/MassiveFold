@@ -1,24 +1,13 @@
 
-# These environment variables are suggested by google deepmind at:
-# https://github.com/google-deepmind/alphafold3/blob/main/docs/performance.md#additional-flags
-# work around a known XLA issue causing the compilation time to greatly increase
-export XLA_FLAGS="--xla_gpu_enable_triton_gemm=false"
-# token < 5,120 on aingle A100 (80 GB) or H100 (80 GB)
-export XLA_PYTHON_CLIENT_PREALLOCATE=true
-export XLA_CLIENT_MEM_FRACTION=0.95
-# token > 5120
-: '
-export XLA_PYTHON_CLIENT_PREALLOCATE=false
-export TF_FORCE_UNIFIED_MEMORY=true
-export XLA_CLIENT_MEM_FRACTION=1.5
-#export XLA_CLIENT_MEM_FRACTION=3.2
-'
 sequence_name=$sequence_name
 run_name=$run_name
 num_diffusion_samples=$num_diffusion_samples
 data_dir=$data_dir
 logs_dir=$logs_dir
 max_template_date=$max_template_date
+xla_python_client_preallocate=$xla_python_client_preallocate
+xla_client_mem_fraction=$xla_client_mem_fraction
+tf_force_unified_memory=$tf_force_unified_memory
 
 batch=$$SLURM_ARRAY_TASK_ID
 mf_before_inference=$mf_before_inference
@@ -71,7 +60,7 @@ else
 fi
 
 . $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-alphafold3-1.1.0
+conda activate mf-alphafold3-1.1.1
 
 date
 echo "run_alphafold.py
@@ -82,6 +71,9 @@ echo "run_alphafold.py
   --model_dir $${data_dir}
   --output_dir $${output_path}
   --num_diffusion_samples $${num_diffusion_samples}
+  --xla_python_client_preallocate $${xla_python_client_preallocate}
+  --xla_client_mem_fraction $${xla_client_mem_fraction}
+  --tf_force_unified_memory $${tf_force_unified_memory}
   --jackhmmer_binary_path $$(which jackhmmer)
   --hmmalign_binary_path $$(which hmmalign)
   --hmmbuild_binary_path $$(which hmmbuild)
@@ -95,6 +87,9 @@ time run_alphafold.py \
   --model_dir $${data_dir} \
   --output_dir $${output_path} \
   --num_diffusion_samples $${num_diffusion_samples} \
+  --xla_python_client_preallocate $${xla_python_client_preallocate} \
+  --xla_client_mem_fraction $${xla_client_mem_fraction} \
+  --tf_force_unified_memory $${tf_force_unified_memory} \
   --jackhmmer_binary_path $$(which jackhmmer) \
   --hmmalign_binary_path $$(which hmmalign) \
   --hmmbuild_binary_path $$(which hmmbuild) \

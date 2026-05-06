@@ -1,4 +1,4 @@
-name: mf-alphafold3-1.1.0
+name: mf-alphafold3-1.1.1
 channels:
   - conda-forge
   - bioconda
@@ -15,5 +15,5 @@ dependencies:
   - hmmer=3.4
   - pip
   - pip:
-    - git+https://github.com/GBLille/mf-alphafold3@v1.1.0
+    - git+https://github.com/GBLille/mf-alphafold3@v1.1.1
     - glypy==1.0.17

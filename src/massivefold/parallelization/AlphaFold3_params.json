@@ -13,6 +13,9 @@
             [{"type": "", "sequence": "", "positions": []}]
         ],
         "max_template_date": "2024-11-28",
+        "xla_python_client_preallocate": "true",
+        "xla_client_mem_fraction": "0.95",
+        "tf_force_unified_memory": "false",
         "num_diffusion_samples": "5",
         "unpairedMsa": "true",
         "pairedMsa": "true",
