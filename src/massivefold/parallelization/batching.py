@@ -42,7 +42,7 @@ def batches_per_ligand(ligands, preds_per_model):
   possible_keys = ["smiles", "ccdCode", "IUPAC"]
   key_presence = [ i in df.columns.tolist() for i in possible_keys ]
   if not any(key_presence):
-    raise ValueErro(f'At least one of {'|'.join(possible_keys)} should be present in {ligands}')
+    raise ValueError(f'At least one of {'|'.join(possible_keys)} should be present in {ligands}')
   for key, present in zip(possible_keys, key_presence):
     if not present:
       df[key] = np.nan
