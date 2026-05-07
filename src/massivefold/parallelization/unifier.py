@@ -185,7 +185,7 @@ def af3_resolve_glycan(glycan_str, chain_id):
   state = {
     'ccdCodes': [],
     'bondedAtomPairs': [],
-    'entity': chaig_id,
+    'entity': chain_id,
     'residue_counter': [1],
     'map_code': iupac_to_ccd
   }
