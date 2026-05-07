@@ -147,7 +147,6 @@ def copy_confidence_file(all_runs_path, output_path, run_name, prediction_old_fi
       break
 
   if old_confidence_path is None:
-    print(f"No confidence file found for {prediction_old_file} in {run_name}")
     return
 
   gathered_confidence_path = os.path.join(output_path, "confidences")

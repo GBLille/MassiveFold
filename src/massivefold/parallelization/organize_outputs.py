@@ -12,6 +12,10 @@ parser.add_argument(
   '--batches_path',
   default='',
   help='Path of all batches containing the ranking files to add in the global ranking.')
+parser.add_argument(
+  '--nomultithreading',
+  action='store_true',
+  help='Disable multithreaded prediction, confidence, and pickle copy during post-treatment.')
 
 def create_global_ranking(all_batches_path, jobname, ranking_type="debug"):
   map_pred_batch = {}
@@ -95,33 +99,40 @@ def copy_prediction_outputs(all_batches_path, pred_batch_map, jobname, rank, pre
 
   return messages
 
-def move_and_rename(all_batches_path, pred_batch_map, jobname):
+def print_messages(messages):
+  for message in messages:
+    print(message)
+
+def move_and_rename(all_batches_path, pred_batch_map, jobname, use_multithreading=True):
   with open(os.path.join(all_batches_path, 'ranking_debug.json'), 'r') as rank_file:
     global_rank_order = json.load(rank_file)['order']
-  futures = []
-  with ThreadPoolExecutor(max_workers=post_treatment_threads()) as executor:
+  first_prediction = global_rank_order[0]
+  features = os.path.join(all_batches_path, pred_batch_map[first_prediction], jobname, "features.pkl")
+  if os.path.isfile(features):
+    cp(features, os.path.join(all_batches_path, "features.pkl"))
+  else:
+    print('Either using colabfold or error encountered while copying features.pkl')
+  files = os.path.join(all_batches_path, pred_batch_map[first_prediction], jobname)
+  for file in os.listdir(files):
+    if file.endswith('coverage.png'):
+      coverage_plot = os.path.join(files, file)
+      os.mkdir(os.path.join(all_batches_path, "./plots"))
+      cp(coverage_plot, os.path.join(all_batches_path, "./plots/alignment_coverage.png"))
+  else:
+    print('Either not using colabfold, or coverage plot not found')
+
+  if not use_multithreading:
     for i, prediction in enumerate(global_rank_order):
-      # copy the features
-      if i == 0:
-        features = os.path.join(all_batches_path, pred_batch_map[prediction], jobname, "features.pkl")
-        if os.path.isfile(features):
-          cp(features, os.path.join(all_batches_path, "features.pkl"))
-        else:
-          print('Either using colabfold or error encountered while copying features.pkl')
-        files = os.path.join(all_batches_path, pred_batch_map[prediction], jobname)
-        for file in os.listdir(files):
-          if file.endswith('coverage.png'):
-            coverage_plot = os.path.join(files, file)
-            os.mkdir(os.path.join(all_batches_path, "./plots"))
-            cp(coverage_plot, os.path.join(all_batches_path, "./plots/alignment_coverage.png"))
-        else:
-          print('Either not using colabfold, or coverage plot not found')
+      print_messages(copy_prediction_outputs(all_batches_path, pred_batch_map, jobname, i, prediction))
+    return
 
-      futures.append(executor.submit(copy_prediction_outputs, all_batches_path, pred_batch_map, jobname, i, prediction))
-
+  with ThreadPoolExecutor(max_workers=post_treatment_threads()) as executor:
+    futures = [
+      executor.submit(copy_prediction_outputs, all_batches_path, pred_batch_map, jobname, i, prediction)
+      for i, prediction in enumerate(global_rank_order)
+    ]
     for future in futures:
-      for message in future.result():
-        print(message)
+      print_messages(future.result())
 
 def remove_batch_dirs(all_batches_path):
   batch_dirs = [d for d in os.listdir(all_batches_path) if d.startswith('batch')]
@@ -199,7 +210,7 @@ def main():
       create_global_ranking(batches_path, sequence_name, metric)
 
   # organize output directory
-  move_and_rename(batches_path, pred_batch_map, sequence_name)
+  move_and_rename(batches_path, pred_batch_map, sequence_name, not args.nomultithreading)
   remove_batch_dirs(batches_path)
 
 if __name__ == "__main__":
