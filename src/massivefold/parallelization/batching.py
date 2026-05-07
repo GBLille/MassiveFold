@@ -61,8 +61,9 @@ def batches_per_ligand(ligands, preds_per_model):
       multiple_types.append(i)
 
   if multiple_types:
-    print("For each ligand, put either a smiles, ccdCodes or IUPAC but not more than one, you gave multiple for the following lines:")
-    print(", ".join([ str(i) for i in smiles_and_ccdcode ]))
+    print("For each ligand, use only one of smiles, ccdCode, or IUPAC you gave multiple for the following rows:")
+    offending = df.iloc[sorted(multiple_types)]
+    print(offending.to_string())
     sys.exit()
 
   return batches
