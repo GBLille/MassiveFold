@@ -1120,7 +1120,7 @@ def af3_prediction_metrics(input_dir: str, nature: str):
   with open(prediction_confs, 'r') as f:
     data = json.load(f)
   metrics_possibilities = [ "actifptm", "plddt", "iptm", "ptm" ]#, "chain_pair_iptm" ]
-  metrics = { metric: data[metric] for metric in metrics_possibilities if metric in data and data[metric]}
+  metrics = { metric: data[metric] for metric in metrics_possibilities if metric in data and data[metric] is not None }
   return metrics
 
 def plddts_from_cif(cif_filename):
