@@ -118,8 +118,8 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname, use_multithreadin
       coverage_plot = os.path.join(files, file)
       os.mkdir(os.path.join(all_batches_path, "./plots"))
       cp(coverage_plot, os.path.join(all_batches_path, "./plots/alignment_coverage.png"))
-  else:
-    print('Either not using colabfold, or coverage plot not found')
+    else:
+      print('Either not using colabfold, or coverage plot not found')
 
   if not use_multithreading:
     for i, prediction in enumerate(global_rank_order):
