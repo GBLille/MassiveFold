@@ -20,8 +20,8 @@ time unifier \
   --tool AFmassive
 
 # rename and move files
-echo "time organize_outputs --batches_path $$output"
-time organize_outputs --batches_path $$output
+echo "time organize_outputs --batches_path $$output --nomultithreading"
+time organize_outputs --batches_path $$output --nomultithreading
 
 # plots
 echo "Generating plots"

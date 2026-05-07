@@ -20,8 +20,8 @@ time unifier \
   --tool AlphaFold3
 
 # rename and move files
-echo "organize_outputs --batches_path $$output"
-time organize_outputs --batches_path $$output
+echo "organize_outputs --batches_path $$output --nomultithreading"
+time organize_outputs --batches_path $$output --nomultithreading
 
 # plots
 echo "Generating plots"
