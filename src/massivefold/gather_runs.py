@@ -18,6 +18,8 @@ parser.add_argument('--output_path', help="Path to the output of the runs gather
 parser.add_argument('--only_ranking', help="Skips the run gathering, only output a csv ranking file", required=False, action='store_true')
 parser.add_argument('--include_pickles', help="If specified, include the .pkl pickle" 
 " files in the gathered results stored in <OUTPUT_PATH>", required=False, action='store_true')
+parser.add_argument('--exclude_confidences', help="If specified, exclude the prediction confidence"
+" files from the gathered results stored in <OUTPUT_PATH>/confidences", required=False, action='store_true')
 parser.add_argument('--include_rank', help="Include a ranking (ambiguous for ties resolving) on 0.8 x iptm + 0.2 x ptm" 
 " in the name of the ranked files, also provides a mapping from original files to the gathered files.", required=False, action='store_true')
 parser.add_argument('--numbered_prefix', help="Word prefixing each structure name followed by a identifying number in the following format:"
@@ -127,12 +129,39 @@ def rank_all(all_runs_path, all_runs, output_path, ranking_type="debug"):
   #return ranked_per_run
   return all_models
 
+def copy_confidence_file(all_runs_path, output_path, run_name, prediction_old_file, model_name, gathered_structure_file):
+  confidence_path = os.path.join(all_runs_path, run_name, "confidences")
+  if not os.path.isdir(confidence_path):
+    return
+
+  prediction_stem = os.path.splitext(prediction_old_file)[0]
+  candidate_names = [
+    f"{prediction_stem}.json",
+    f"{model_name}.json"
+  ]
+  old_confidence_path = None
+  for candidate_name in candidate_names:
+    candidate_path = os.path.join(confidence_path, candidate_name)
+    if os.path.isfile(candidate_path):
+      old_confidence_path = candidate_path
+      break
+
+  if old_confidence_path is None:
+    print(f"No confidence file found for {prediction_old_file} in {run_name}")
+    return
+
+  gathered_confidence_path = os.path.join(output_path, "confidences")
+  os.makedirs(gathered_confidence_path, exist_ok=True)
+  gathered_confidence_file = os.path.splitext(gathered_structure_file)[0] + ".json"
+  cp(old_confidence_path, os.path.join(gathered_confidence_path, gathered_confidence_file))
+
 def move_and_rename(
     all_runs_path,
     run_names,
     output_path,
     ranking,
     do_include_pickles,
+    do_exclude_confidences,
     do_include_rank):
 
   output_folder = os.path.basename(output_path)
@@ -174,6 +203,8 @@ def move_and_rename(
 
     new_pdb_path = os.path.join(output_path, pdb_file)
     cp(old_pdb_path, new_pdb_path)
+    if not do_exclude_confidences:
+      copy_confidence_file(all_runs_path, output_path, run_name, prediction_old_file, model_name, pdb_file)
 
     if do_include_pickles:
       prediction_name = prediction["parameters"]  + "_" + prediction["model_name"]
@@ -365,7 +396,17 @@ def main():
     print(f"Gathering {sequence_name}'s runs")
     if args.include_pickles:
       print("Pickle files are also included in the gathering.")
-    move_and_rename(runs_path, pred_run_map, output_path, whole_prediction_ranking, args.include_pickles, args.include_rank)
+    if not args.exclude_confidences:
+      print("Confidence files are also included in the gathering.")
+    move_and_rename(
+      runs_path,
+      pred_run_map,
+      output_path,
+      whole_prediction_ranking,
+      args.include_pickles,
+      args.exclude_confidences,
+      args.include_rank
+    )
   elif os.path.exists(output_path):
     rm(output_path)
   delete_symlinks(runs_path, runs)
