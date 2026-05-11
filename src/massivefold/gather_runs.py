@@ -335,6 +335,7 @@ def main():
   args = parser.parse_args()
   runs_path = args.runs_path
   output_path = args.output_path
+  is_output_path_set = output_path is not None
   if not output_path:
     output_path = os.path.join(runs_path, 'all_pdbs')
   sequence_name = os.path.basename(os.path.realpath(runs_path))
@@ -386,7 +387,14 @@ def main():
       whole_prediction_ranking = whole_prediction_ranking.drop(columns={"Models", "extension"})
       break
 
-  whole_prediction_ranking.to_csv(os.path.join(runs_path, 'ranking.csv'), index=None)
+  output_in_runs_path = os.path.realpath(os.path.dirname(output_path)) == os.path.realpath(runs_path)
+  skip_runs_path_ranking = (
+    not args.only_ranking
+    and is_output_path_set
+    and not output_in_runs_path
+  )
+  if not skip_runs_path_ranking:
+    whole_prediction_ranking.to_csv(os.path.join(runs_path, 'ranking.csv'), index=None)
   whole_prediction_ranking.to_csv(os.path.join(output_path, 'ranking.csv'), index=None)
 
   if not args.only_ranking:
