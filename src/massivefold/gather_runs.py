@@ -6,7 +6,6 @@ import sys
 import argparse
 import numpy as np
 import pandas as pd
-from os import symlink
 from shutil import copy as cp, rmtree as rm
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -46,11 +45,34 @@ def global_rank_to_json(ranking, output_path):
 
   return map_pred_run
 
-def find_single_run_predictions(all_runs_path: str, run_name: str, ordered_names: list):
+def create_prediction_filename_map(all_runs_path, runs):
+  prediction_filename_map = {}
+  for run in runs:
+    path = os.path.join(all_runs_path, run)
+    ranked_preds = [ pred for pred in os.listdir(path) if pred.startswith('ranked_') ]
+    prediction_filename_map[run] = {}
+    for ranked_pred in ranked_preds:
+      unranked_pred = ranked_pred.split('_', 2)[-1]
+      corrected_pred = ranked_pred.replace('relaxed', 'unrelaxed').split('_', 2)[-1] \
+        if '_relaxed' in ranked_pred else unranked_pred
+      aliases = set()
+      for candidate_pred in [unranked_pred, corrected_pred]:
+        candidate_stem = os.path.splitext(candidate_pred)[0]
+        aliases.add(candidate_stem)
+        for relaxation_prefix in ["relaxed_", "unrelaxed_"]:
+          if candidate_stem.startswith(relaxation_prefix):
+            aliases.add(candidate_stem[len(relaxation_prefix):])
+
+      for alias in aliases:
+        prediction_filename_map[run].setdefault(alias, []).append(ranked_pred)
+
+  return prediction_filename_map
+
+def find_single_run_predictions(all_runs_path: str, run_name: str, ordered_names: list, prediction_filename_map=None):
   """
   Given a MassiveFold run directory and the names of this run (ordered by score but
-  without "ranked_{n}_, find the full filenames. In case some of the predictions are
-  not found, interrupt the script while cleaning the symlink that may have been created.
+  without "ranked_{n}_", find the full filenames. In case some of the predictions are
+  not found, interrupt the script.
   """
   # find run's nature (AF2/AF3)
   run_name = os.path.basename(run_name)
@@ -74,12 +96,15 @@ def find_single_run_predictions(all_runs_path: str, run_name: str, ordered_names
   # reconstitute full filenames
   do_not_exist = []
   full_filenames = []
+  run_prediction_map = prediction_filename_map.get(run_name, {}) if prediction_filename_map else {}
   if is_alphafold2:
     all_preds = os.listdir(os.path.join(all_runs_path, run_name))
     for i, pred in enumerate(ordered_names):
       prefix = f"ranked_{str(i)}_"
       suffix = f"{pred}.pdb"
-      matches = [ i for i in all_preds if i.startswith(prefix) and i.endswith(suffix) ]
+      matches = [ mapped_pred for mapped_pred in run_prediction_map.get(pred, []) if mapped_pred.startswith(prefix) ]
+      if not matches:
+        matches = [ i for i in all_preds if i.startswith(prefix) and i.endswith(suffix) ]
       if len(matches) == 0 or len(matches) > 1:
         do_not_exist.append(f"(ranked_{str(i)} => {pred})")
       else:
@@ -94,7 +119,7 @@ def find_single_run_predictions(all_runs_path: str, run_name: str, ordered_names
 
   return full_filenames
 
-def rank_all(all_runs_path, all_runs, output_path, ranking_type="debug"):
+def rank_all(all_runs_path, all_runs, output_path, ranking_type="debug", prediction_filename_map=None):
   runs = [ os.path.join(all_runs_path, run) for run in all_runs ]
 
   all_models = pd.DataFrame()
@@ -113,10 +138,9 @@ def rank_all(all_runs_path, all_runs, output_path, ranking_type="debug"):
     ranking_key_score = list(score_ranking.keys())[0]
     scores = [ score_ranking[ranking_key_score][model] for model in model_names ]
     try:
-      predictions = find_single_run_predictions(all_runs_path, run, model_names)
+      predictions = find_single_run_predictions(all_runs_path, run, model_names, prediction_filename_map)
     except AssertionError as e:
       print(f"Assertion error: {str(e)[:300]}...")
-      delete_symlinks(all_runs_path, all_runs)
       sys.exit()
     single_run_models['file'] = predictions
     single_run_models[ranking_key_score] = scores
@@ -230,29 +254,6 @@ def move_and_rename(
   mapping = mapping.merge(to_merge, left_on=["run", "prediction"], right_on=["parameters", "file"]).drop(columns=["parameters", "file"])
 
   mapping.to_csv(os.path.join(output_path, f'ranking_{output_folder}.csv'), index=False)
-def create_symlink_without_ranked(all_runs_path, runs):
-  for run in runs:
-    path = os.path.join(all_runs_path, run)
-    ranked_preds = [ pred for pred in os.listdir(path) if pred.startswith('ranked_') ]
-    # to remove when unrelaxed is implemented
-    corrected_preds = [ pred.replace('relaxed', 'unrelaxed') if '_relaxed' in pred else pred for pred in ranked_preds ]
-    for pred, corr in zip(ranked_preds, corrected_preds):
-      old_name = os.path.realpath(os.path.join(path, pred))
-      new_name = os.path.join(path, corr.split('_', 2)[-1])
-      try:
-        os.symlink(old_name, new_name)
-      except FileExistsError:
-        pass
-
-def delete_symlinks(all_runs_path, runs):
-  for run in runs:
-    path_run = os.path.join(all_runs_path, run)
-    files = os.listdir(path_run)
-    for symlink in files:
-      symlink_file = os.path.join(path_run, symlink)
-      if os.path.islink(symlink_file):
-        os.remove(symlink_file)
-
 def check_all_runs(all_runs_path, ignored_directories, ranking_type='debug'):
   considered_runs = []
 
@@ -271,16 +272,16 @@ def check_all_runs(all_runs_path, ignored_directories, ranking_type='debug'):
   print(f"These are the {len(considered_runs)} following runs gathered in the output:\n{formated_runs}\n")
   return considered_runs
 
-def create_global_ranking(runs, runs_path, output_path, ranking_types):
+def create_global_ranking(runs, runs_path, output_path, ranking_types, prediction_filename_map=None):
   all_metrics_ranking = None
   for i, ranking_type in enumerate(ranking_types):
     try:
-      ranking_per_run = rank_all(runs_path, runs, output_path, ranking_type)
+      ranking_per_run = rank_all(runs_path, runs, output_path, ranking_type, prediction_filename_map)
       if all_metrics_ranking is None:
         all_metrics_ranking = ranking_per_run.copy()
       else:
         all_metrics_ranking = all_metrics_ranking.merge(
-          rank_all(runs_path, runs, output_path, ranking_type),
+          rank_all(runs_path, runs, output_path, ranking_type, prediction_filename_map),
           on=["file", "parameters", "model_name"]
         )
     except FileNotFoundError as e:
@@ -352,9 +353,8 @@ def main():
 
   runs = check_all_runs(runs_path, ignored_dir)
   assert runs, "There should be at least one run to gather"
-  delete_symlinks(runs_path, runs)
-  create_symlink_without_ranked(runs_path, runs)
-  whole_prediction_ranking = create_global_ranking(runs, runs_path, output_path, ranking_types)
+  prediction_filename_map = create_prediction_filename_map(runs_path, runs)
+  whole_prediction_ranking = create_global_ranking(runs, runs_path, output_path, ranking_types, prediction_filename_map)
   if not args.only_ranking:
     file_index = whole_prediction_ranking.columns.tolist().index("file")
     whole_prediction_ranking["extension"] = '.' + whole_prediction_ranking["file"].str.split('.').str[1]
@@ -408,7 +408,6 @@ def main():
     )
   elif os.path.exists(output_path):
     rm(output_path)
-  delete_symlinks(runs_path, runs)
 
 if __name__ == "__main__":
   main()
