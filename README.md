@@ -112,6 +112,24 @@ You can also screen each potential PPI (receptor-ligand pair) with a defined lis
 
 Here the default value of -p which is the number of seed (for AF3) or prediction per model (for AF2) is 1.  
 See documentation for [further details](docs/usage.md#ppi-screening).
+
+
+### Launch several runs
+First, activate the conda environment:
+```bash
+conda activate massivefold-1.8.0
+```
+To launch multiple runs for a single sequence combination, use `multirun` pipeline, run the following command:
+
+```bash
+massivefold multirun -s <SEQUENCE_PATH> --setup <JSON_SETUP_FILE>
+```
+Example:
+```bash
+massivefold multirun -s input/H1140.fasta --setup ../src/massivefold/examples/multirun_setup.json
+```
+
+
 ## massivefold_plots: output representation
 
 Additionally to the configuration of the plots parameters inside MassiveFold JSON param file, the plot module can also be used on an already produced MassiveFold (or AlphaFold2) output to evaluate visually its predictions.  
