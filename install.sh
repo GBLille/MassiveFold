@@ -12,7 +12,7 @@ install_env () {
     conda env create -f environment.yml
     conda activate massivefold${mf_version}
     conda config --env --set channel_priority flexible
-    python -m pip install -e .
+    python -m pip install .
   elif [[ $env == "colabfold" ]]; then
     echo "Installing ColabFold environment"
     conda activate massivefold${mf_version} || { echo "massivefold environment is needed and is missing"; exit 1; }
