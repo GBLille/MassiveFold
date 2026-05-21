@@ -91,7 +91,7 @@ First, activate the conda environment:
 ```bash
 conda activate massivefold-1.8.0
 ```
-To screen a single proteic receptor with multiple ligands, launch:
+To screen a single protein receptor with multiple ligands, launch:
 ```bash
 massivefold screen -s <receptor_fasta_file> -l <ligand_list_csv> -f <AlphaFold3_params.json>
 ```
@@ -103,7 +103,7 @@ First, activate the conda environment:
 ```bash
 conda activate massivefold-1.8.0
 ```
-To launch a PPI discovery round between a set of proteic (or DNA or RNA) receptors and a set of proteic (or DNA or RNA) ligands, run:
+To launch a PPI discovery round between a set of protein (or DNA or RNA) receptors and a set of protein (or DNA or RNA) ligands, run:
 
 ```bash
 massivefold ppi --receptors <receptor_list> --ligands <ligand_list> -f <AlphaFold3_params.json>
