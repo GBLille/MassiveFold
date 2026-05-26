@@ -111,9 +111,11 @@ def create_tree(root_dir):
   os.makedirs(os.path.join(root_dir, "log"), exist_ok=True)
 
 def copy_examples(root_dir):
-  for name in ("H1140.fasta", "multirun_setup.json"):
+  filenames = ("H1140.fasta", "multirun_setup.json")
+  directories = ("input", "./")
+  for name, directory in zip(filenames, directories):
     source = os.path.join(package_root(), "examples", name)
-    destination = os.path.join(root_dir, "input", name)
+    destination = os.path.join(root_dir, directory, name)
     if os.path.exists(source):
       shutil.copy2(source, destination)
     else:
