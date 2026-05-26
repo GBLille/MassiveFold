@@ -100,10 +100,6 @@ def write_site_default(tool, params, host_is_jeanzay=False):
     os.makedirs(user_dir, exist_ok=True)
     user_path = os.path.join(user_dir, param_name)
     write_json(user_path, params)
-    print(
-      "Note: cannot write package site_defaults "
-      f"({package_path}); using {user_path} instead."
-    )
     return user_path
 
 def install_root(path_value):
