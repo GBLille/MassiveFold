@@ -110,13 +110,14 @@ def create_tree(root_dir):
   os.makedirs(os.path.join(root_dir, "output"), exist_ok=True)
   os.makedirs(os.path.join(root_dir, "log"), exist_ok=True)
 
-def copy_example_fasta(root_dir):
-  source = os.path.join(package_root(), "examples", "H1140.fasta")
-  destination = os.path.join(root_dir, "input", "H1140.fasta")
-  if os.path.exists(source):
-    shutil.copy2(source, destination)
-  else:
-    print(f"Warning: missing packaged example '{source}'.")
+def copy_examples(root_dir):
+  for name in ("H1140.fasta", "multirun_setup.json"):
+    source = os.path.join(package_root(), "examples", name)
+    destination = os.path.join(root_dir, "input", name)
+    if os.path.exists(source):
+      shutil.copy2(source, destination)
+    else:
+      print(f"Warning: missing packaged example '{source}'.")
 
 def copy_headers(root_dir):
   source = os.path.join(package_root(), "parallelization", "headers")
@@ -245,7 +246,7 @@ def install_workspace(args):
 
   root_dir = install_root(args.install_path)
   create_tree(root_dir)
-  copy_example_fasta(root_dir)
+  copy_examples(root_dir)
   copy_headers(root_dir)
 
   if host_is_jeanzay:
