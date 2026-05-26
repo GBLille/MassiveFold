@@ -11,6 +11,8 @@ from shutil import copy as cp, copytree
 import pandas as pd
 import json
 import sys
+
+from massivefold.install import parse_tool_from_param_basename, resolve_site_default_path
 import shutil
 import string
 import random
@@ -610,17 +612,10 @@ def ppi_create_input(receptors, ligands, parameters_file):
   return df_all_ppi
 
 def get_tool_default_params(param_file):
-  resolved_path = os.path.abspath(param_file)
-  candidate = os.path.join(
-    os.path.dirname(resolved_path),
-    "site_defaults",
-    os.path.basename(resolved_path)
-  )
-  if os.path.exists(candidate):
-    resolved_path = candidate
-  tool_params = json.load(open(resolved_path, 'r'))
-  #tool_run_key = [ i for i in tool_params if i.endswith('run') ][0]
-  return tool_params
+  tool, host_is_jeanzay = parse_tool_from_param_basename(os.path.basename(param_file))
+  resolved_path = resolve_site_default_path(tool, host_is_jeanzay)
+  with open(resolved_path, "r", encoding="utf-8") as handle:
+    return json.load(handle)
 
 def get_multirun_tool(run_name, run_definition):
   tool_keys = [ key for key in run_definition if key.endswith("_run") ]

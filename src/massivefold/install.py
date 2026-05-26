@@ -9,18 +9,6 @@ import socket
 def package_root():
   return os.path.dirname(os.path.abspath(__file__))
 
-def site_defaults_root():
-  return os.path.join(package_root(), "parallelization", "site_defaults")
-
-def tool_param_name(tool, host_is_jeanzay=False):
-  base_name = f"{tool}_params.json"
-  if host_is_jeanzay:
-    return f"jeanzay_{base_name}"
-  return base_name
-
-def site_default_path(tool):
-  return os.path.join(site_defaults_root(), tool_param_name(tool))
-
 def resolve_path(path_value):
   if "$" in path_value:
     return path_value
@@ -77,6 +65,47 @@ def write_json(path, payload):
   with open(path, "w", encoding="utf-8") as handle:
     json.dump(payload, handle, indent=4)
 
+def resolve_site_default_path(tool, host_is_jeanzay=False):
+  """Cluster-wide default JSON: user config (if dir exists), else package site_defaults, else template."""
+  param_name = f"jeanzay_{tool}_params.json" if host_is_jeanzay else f"{tool}_params.json"
+  user_root = os.path.join(os.path.expanduser("~"), ".config", "massivefold", "site_defaults")
+  if os.path.isdir(user_root):
+    user_path = os.path.join(user_root, param_name)
+    if os.path.isfile(user_path):
+      return user_path
+  package_path = os.path.join(package_root(), "parallelization", "site_defaults", param_name)
+  if os.path.isfile(package_path):
+    return package_path
+  return os.path.join(package_root(), "parallelization", param_name)
+
+def parse_tool_from_param_basename(basename):
+  host_is_jeanzay = basename.startswith("jeanzay_")
+  if host_is_jeanzay:
+    basename = basename[len("jeanzay_"):]
+  suffix = "_params.json"
+  if not basename.endswith(suffix):
+    raise ValueError(f"Unexpected parameter file name: {basename}")
+  return basename[: -len(suffix)], host_is_jeanzay
+
+def write_site_default(tool, params, host_is_jeanzay=False):
+  param_name = f"jeanzay_{tool}_params.json" if host_is_jeanzay else f"{tool}_params.json"
+  package_dir = os.path.join(package_root(), "parallelization", "site_defaults")
+  package_path = os.path.join(package_dir, param_name)
+  try:
+    os.makedirs(package_dir, exist_ok=True)
+    write_json(package_path, params)
+    return package_path
+  except PermissionError:
+    user_dir = os.path.join(os.path.expanduser("~"), ".config", "massivefold", "site_defaults")
+    os.makedirs(user_dir, exist_ok=True)
+    user_path = os.path.join(user_dir, param_name)
+    write_json(user_path, params)
+    print(
+      "Note: cannot write package site_defaults "
+      f"({package_path}); using {user_path} instead."
+    )
+    return user_path
+
 def install_root(path_value):
   return os.path.abspath(os.path.expanduser(path_value))
 
@@ -102,30 +131,21 @@ def copy_headers(root_dir):
       shutil.copy2(os.path.join(source, name), os.path.join(destination, name))
 
 def configure_site_defaults(host_is_jeanzay, alphafold_db=None, alphafold3_db=None, colabfold_db=None):
-  os.makedirs(site_defaults_root(), exist_ok=True)
   data_dirs = {
     "AFmassive": alphafold_db,
     "AlphaFold3": alphafold3_db,
     "ColabFold": colabfold_db,
   }
   for tool, data_dir in data_dirs.items():
-    params = read_json(os.path.join(
-      package_root(),
-      "parallelization",
-      tool_param_name(tool, host_is_jeanzay)
-    ))
-    params = patch_cluster_params(params, data_dir=data_dir)
-    write_json(site_default_path(tool), params)
-
-def preferred_param_source(tool, host_is_jeanzay=False):
-  candidate = site_default_path(tool)
-  if os.path.exists(candidate):
-    return candidate
-  return os.path.join(package_root(), "parallelization", tool_param_name(tool, host_is_jeanzay))
+    param_name = f"jeanzay_{tool}_params.json" if host_is_jeanzay else f"{tool}_params.json"
+    template_path = os.path.join(package_root(), "parallelization", param_name)
+    params = read_json(template_path)
+    params = patch_cluster_params(params, data_dir=data_dir if data_dir else None)
+    write_site_default(tool, params, host_is_jeanzay)
 
 def build_param_file(tool, destination, root_dir, data_dir=None, host_is_jeanzay=False):
-  params = read_json(preferred_param_source(tool, host_is_jeanzay))
-  if not os.path.exists(site_default_path(tool)):
+  params = read_json(resolve_site_default_path(tool, host_is_jeanzay))
+  if data_dir:
     params = patch_cluster_params(params, data_dir=data_dir)
   params = patch_workspace_params(params, root_dir)
   write_json(destination, params)
