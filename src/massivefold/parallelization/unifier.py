@@ -509,7 +509,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
   return batch_input_json
 
 def ppi_create_base_fasta(file_list, output_dir):
-  fasta_types = ["protein", "DNA", "RNA"]
+  fasta_types = ["protein", "dna", "rna"]
   combined_fasta_dir = os.path.join(output_dir, "combined")
   os.makedirs(combined_fasta_dir, exist_ok=True)
 
@@ -521,7 +521,7 @@ def ppi_create_base_fasta(file_list, output_dir):
     raise ValueError(f"Unsupported interactor file format for {file_list} (expected .csv or .json)")
 
   if not any(fasta_type in interactors.columns for fasta_type in fasta_types):
-    raise ValueError(f'Interactor types in {file_list} should be in {{"protein"|"DNA"|"RNA"}}')
+    raise ValueError(f'Interactor types in {file_list} should be in {{"protein"|"dna"|"rna"}}')
 
   for fasta_type in fasta_types:
     if fasta_type not in interactors.columns:

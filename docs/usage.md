@@ -65,7 +65,7 @@ Then you can set the parameters of the **custom_params** section if necessary an
 
 Activate the conda environment:
 ```bash
-conda activate massivefold-1.8.1
+conda activate massivefold-1.8.2
 ```
 >**N.B.**: on the Jean Zay cluster, simply load the `massivefold` >module. To be able to run on H100 or A100, uncomment the
 >corresponding last lines of the `jobarray.slurm` header. Example >for H100:
@@ -390,7 +390,7 @@ To reduce the size of the pickle files, the `pkl_format` parameter can be set to
 ## Ligand screening
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.8.1
+conda activate massivefold-1.8.2
 ```
 To launch a screening round, run:
 
@@ -428,7 +428,7 @@ See this [section](#multiple-runs-gathering).
 ## PPI screening 
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.8.1
+conda activate massivefold-1.8.2
 ```
 To launch a PPI discovery round, run:
 
@@ -445,10 +445,10 @@ No need to change specify the `fasta_chains` field of the parameter file passed 
 
 ### Format of the csv for receptors and ligands
 
-The `--receptors <receptor_list>` and `--ligands <ligand_list>` contain the absolute paths of the protein, DNA or RNA sequence(s) fasta files.  
+The `--receptors <receptor_list>` and `--ligands <ligand_list>` contain the absolute paths of the protein, dna or rna sequence(s) fasta files.  
 This file is a CSV, with each line being a receptor (if passed to `--receptors`)  
 or a ligand (if passed to `--ligands`) in this format:  
-| protein              | DNA                 | RNA                 |
+| protein              | dna                 | rna                 |
 |----------------------|---------------------|---------------------|
 | /path/to/prot1.fasta |                     |                     |
 | /path/to/prot2.fasta |                     |                     |

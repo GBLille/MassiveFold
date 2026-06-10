@@ -55,7 +55,7 @@ It details these steps of the MassiveFold installation:
 
 ## Uninstallation
 
-To uninstall MassiveFold, remove the three conda environments (`massivefold-1.8.1`, `mf-afmassive-1.1.10`, `mf-colabfold-1.6.1` and 
+To uninstall MassiveFold, remove the three conda environments (`massivefold-1.8.2`, `mf-afmassive-1.1.10`, `mf-colabfold-1.6.1` and 
 `mf-alphafold3-1.1.0`) and remove the `MassiveFold` folder you cloned. Make sure you copy all the files and folders you want 
 to keep from the `output` and `log` directories somewhere else. 
 
@@ -66,7 +66,7 @@ Usage section includes the most simple way to run MassiveFold with examples. For
 
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.8.1
+conda activate massivefold-1.8.2
 ```
 Then launch MassiveFold:
 ```bash
@@ -89,7 +89,7 @@ massivefold run -s input/H1140.fasta -r af3_default -p 5 -f AlphaFold3_params.js
 ### Screening a receptor with ligands
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.8.1
+conda activate massivefold-1.8.2
 ```
 To screen a single protein receptor with multiple ligands, launch:
 ```bash
@@ -101,23 +101,23 @@ See documentation for [further details](docs/usage.md#ligand-screening)
 ### Discover PPI between receptors and ligands
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.8.1
+conda activate massivefold-1.8.2
 ```
-To launch a PPI discovery round between a set of protein (or DNA or RNA) receptors and a set of protein (or DNA or RNA) ligands, run:
+To launch a PPI discovery round between a set of protein (or dna or rna) receptors and a set of protein (or dna or rna) ligands, run:
 
 ```bash
 massivefold ppi --receptors <receptor_list> --ligands <ligand_list> -f <AlphaFold3_params.json>
 ```
 You can also screen each potential PPI (receptor-ligand pair) with a defined list of small molecules by using `--context <ligand_list_csv>` (same usage as [screening](#screening-a-receptor-with-ligands)).
 
-Here the default value of -p which is the number of seed (for AF3) or prediction per model (for AF2) is 1.  
+Here the default value of -p which is the number of seeds (for AF3) or predictions per model (for AF2) is 1.  
 See documentation for [further details](docs/usage.md#ppi-screening).
 
 
 ### Launch several runs
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.8.1
+conda activate massivefold-1.8.2
 ```
 To launch multiple runs for a single sequence combination, use `multirun` pipeline, run the following command:
 

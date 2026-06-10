@@ -27,3 +27,6 @@ export TMPDIR=$$JOBSCRATCH
 #module purge
 #module load arch/a100
 
+#For memory, to activate for very large systems for AFmassive or ColabFold
+#export TF_FORCE_UNIFIED_MEMORY='1'
+#export XLA_PYTHON_CLIENT_MEM_FRACTION='4.0'
