@@ -290,7 +290,7 @@ def create_global_ranking(runs, runs_path, output_path, ranking_types, predictio
       else:
         all_metrics_ranking = all_metrics_ranking.merge(
           rank_all(runs_path, runs, output_path, ranking_type, prediction_filename_map),
-          #on=["file", "parameters", "model_name"]
+          on=["file", "parameters", "model_name"]
         )
     except FileNotFoundError as e:
       print(f"No ranking for {ranking_type} metric.")
