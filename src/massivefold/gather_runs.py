@@ -78,20 +78,28 @@ def find_single_run_predictions(all_runs_path: str, run_name: str, ordered_names
   run_name = os.path.basename(run_name)
   is_alphafold2 = False
   is_alphafold3 = False
+  is_esmfold2 = False
   names_contain_NN_model_names = [
       True if "model" and ("multimer" in pred or "ptm" in pred)
       else False
       for pred in ordered_names
- ]
+  ]
+  names_contain_af3_seed = [ 
+    True if ("af3" in pred) and ("seed" in pred) and ("sample" in pred)
+    else False for pred in ordered_names
+  ]
+  names_contain_esmf2_seed = [ 
+    True if ("esmf2" in pred) and ("seed" in pred)
+    else False for pred in ordered_names
+  ]
   if all(names_contain_NN_model_names):
     is_alphafold2 = True
-  names_contain_seed = [True if "seed" and "sample" in pred else False for pred in ordered_names]
-  if all(names_contain_seed):
+  if all(names_contain_af3_seed):
     is_alphafold3 = True
-  assert not (is_alphafold2 and is_alphafold3), \
-  "Could not determinate if the run was AlphaFold2 or AlphaFold3 based, detected as both."
-  assert is_alphafold2 or is_alphafold3, \
-  "Could not determinate if the run was AlphaFold2 or AlphaFold3 based, detected as neither."
+  if all(names_contain_esmf2_seed):
+    is_esmfold2 = True
+  assert is_alphafold2 or is_alphafold3 or is_esmfold2, \
+  f"Could not determinate if run '{run_name}' was AlphaFold2 or AlphaFold3 based, detected as neither."
 
   # reconstitute full filenames
   do_not_exist = []
@@ -109,7 +117,7 @@ def find_single_run_predictions(all_runs_path: str, run_name: str, ordered_names
         do_not_exist.append(f"(ranked_{str(i)} => {pred})")
       else:
         full_filenames.append(matches[0])
-  elif is_alphafold3:
+  elif is_alphafold3 or is_esmfold2:
     full_filenames = [ f"ranked_{i}_{pred}.cif" for i, pred in enumerate(ordered_names) ]
   
   # check if these reconstituted files exist
@@ -282,7 +290,7 @@ def create_global_ranking(runs, runs_path, output_path, ranking_types, predictio
       else:
         all_metrics_ranking = all_metrics_ranking.merge(
           rank_all(runs_path, runs, output_path, ranking_type, prediction_filename_map),
-          on=["file", "parameters", "model_name"]
+          #on=["file", "parameters", "model_name"]
         )
     except FileNotFoundError as e:
       print(f"No ranking for {ranking_type} metric.")
@@ -299,7 +307,9 @@ def create_global_ranking(runs, runs_path, output_path, ranking_types, predictio
   common_score_keys = all_metrics_ranking[score_keys].dropna(axis=1).columns.tolist()
 
   if len(set(common_score_keys)) == 1:
-    ordering_score = [ common_score_keys ]
+    ordering_score = common_score_keys
+    common_key_score = common_score_keys[0]
+
   elif "iptm+ptm" in score_keys:
     common_key_score = "iptm+ptm"
     order_priority = ["iptm+ptm", "iptm", "ptm"]
@@ -311,6 +321,7 @@ def create_global_ranking(runs, runs_path, output_path, ranking_types, predictio
     order_priority = ["ptm"]
     remaining = [ i for i in score_keys if i not in order_priority ]
     ordering_score = order_priority + remaining
+    print(f"{order_priority=}")
   else:
     raise ValueError(f"Something went wrong in ranking_debug.json")
 
