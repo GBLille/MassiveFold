@@ -68,6 +68,19 @@ def create_prediction_filename_map(all_runs_path, runs):
 
   return prediction_filename_map
 
+def rescue_predictions(predictions, predictions_path, error):
+  preds_in_dir = [ i for i in os.listdir(predictions_path) if i.startswith('ranked_') and (i.endswith('.cif') or i.endswith('.pdb')) ]
+  df = pd.DataFrame({"found": preds_in_dir})
+  df["rank"] = df["found"].str.split('_').str[1]
+  df["pred_name"] = df["found"].str.split('_').str[2:].str.join('_').str.replace('.cif', '').str.replace('.pdb', '')
+
+  original_predictions = pd.DataFrame({"expected": predictions})
+
+  reconstituted = original_predictions.merge(df, left_on='expected', right_on='pred_name')
+  if preds_in_dir and reconstituted[reconstituted["rank"].isna()].shape[0] == 0:
+    return reconstituted["found"].tolist()
+  raise AssertionError(f"{error}")
+
 def find_single_run_predictions(all_runs_path: str, run_name: str, ordered_names: list, prediction_filename_map=None):
   """
   Given a MassiveFold run directory and the names of this run (ordered by score but
@@ -119,11 +132,14 @@ def find_single_run_predictions(all_runs_path: str, run_name: str, ordered_names
         full_filenames.append(matches[0])
   elif is_alphafold3 or is_esmfold2:
     full_filenames = [ f"ranked_{i}_{pred}.cif" for i, pred in enumerate(ordered_names) ]
-  
+
   # check if these reconstituted files exist
   does_file_exist = lambda x: os.path.isfile(os.path.join(all_runs_path, run_name, x))
   do_not_exist.extend([ pred for pred in full_filenames if not does_file_exist(pred) ])
-  assert not do_not_exist, f'Some files ({len(do_not_exist)}) for run {run_name} were not found: {", ".join(do_not_exist)}'
+  try:
+    assert not do_not_exist, f'Some files ({len(do_not_exist)}) for run {run_name} were not found: {", ".join(do_not_exist)}'
+  except AssertionError as e:
+    full_filenames = rescue_predictions(ordered_names, os.path.join(all_runs_path, run_name), e)
 
   return full_filenames
 
