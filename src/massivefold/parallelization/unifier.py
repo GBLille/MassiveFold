@@ -282,8 +282,8 @@ def af3_records_to_sequences(records, fasta_ids_sequences):
 def af3_entities_to_records(af3_params, fasta_ids_sequences):
   additional_records = []
   ligand = af3_params['ligand']
-  all_ptm_types = ["glycosylation", "phosphorylation", "hydroxylation", "methylation", "acetylation","cyclization"]
-  modifs_dummy_seq = {"phosphorylation": "PO3", "hydroxylation": "OH", "methylation": "CH3", "acetylation": "CH3CO", "cyclization":"PCA"}
+  all_ptm_types = ["glycosylation", "phosphorylation", "hydroxylation", "methylation", "acetylation", "cyclization", "formylation"]
+  modifs_dummy_seq = {"phosphorylation": "PO3", "hydroxylation": "OH", "methylation": "CH3", "acetylation": "CH3CO", "cyclization": "PCA", "formylation": "FOR"}
 
   used_ids = list(fasta_ids_sequences.keys())
 
@@ -367,6 +367,7 @@ def af3_add_modifications(all_modifications, all_sequences):
     'R': {"methylation": "MMO"},
     'K': {"acetylation": "ALY", "methylation": "MLZ"},
     'E': {"cyclization": "PCA"},
+    'F': {"formylation": "FOR"}
   }
 
   dna_modification_codes = {
@@ -479,7 +480,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
   additional_records = af3_entities_to_records(af3_params, fasta_ids_sequences)
 
   # add the sequence modifications
-  modifications_types = ["phosphorylation", "methylation", "acetylation", "hydroxylation", "cyclization"]
+  modifications_types = ["phosphorylation", "methylation", "acetylation", "hydroxylation", "cyclization", "formylation"]
   new_modifications_records = [ record for record in additional_records if record["sequence_type"] in modifications_types ]
   batch_input_json["sequences"] = af3_add_modifications(new_modifications_records, batch_input_json["sequences"])
 
@@ -509,7 +510,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
   return batch_input_json
 
 def ppi_create_base_fasta(file_list, output_dir):
-  fasta_types = ["protein", "dna", "rna"]
+  fasta_types = ["protein", "DNA", "RNA"]
   combined_fasta_dir = os.path.join(output_dir, "combined")
   os.makedirs(combined_fasta_dir, exist_ok=True)
 
@@ -521,7 +522,7 @@ def ppi_create_base_fasta(file_list, output_dir):
     raise ValueError(f"Unsupported interactor file format for {file_list} (expected .csv or .json)")
 
   if not any(fasta_type in interactors.columns for fasta_type in fasta_types):
-    raise ValueError(f'Interactor types in {file_list} should be in {{"protein"|"dna"|"rna"}}')
+    raise ValueError(f'Interactor types in {file_list} should be in {{"protein"|"DNA"|"RNA"}}')
 
   for fasta_type in fasta_types:
     if fasta_type not in interactors.columns:
