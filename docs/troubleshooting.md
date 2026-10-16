@@ -48,7 +48,7 @@ the structure inference with MassiveFold.
 In the `massivefold_runs` folder, run:
 
 ```commandline
-conda activate mf-colabfold-1.5.5
+conda activate mf-colabfold-1.6.3
 colabfold_batch ./input/converted_for_colabfold/<sequence>.fasta ./output/<sequence>/msas_colabfold --msa-only
 ```
 

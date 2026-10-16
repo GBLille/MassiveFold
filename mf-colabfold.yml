@@ -1,4 +1,4 @@
-name: mf-colabfold-1.6.1
+name: mf-colabfold-1.6.3
 channels:
   - bioconda
   - conda-forge
@@ -10,8 +10,8 @@ dependencies:
   - hhsuite=3.3.0
   - mmseqs2=18.8cc5c
   - pip:
-      - colabfold[alphafold,openmm]==1.6.1
-      - alphafold-colabfold==2.3.13
-      - jax[cuda]==0.5.3
-      - jaxlib==0.5.3
-      - openmm[cuda12]==8.4.0.post2
+      - colabfold[alphafold,openmm]==1.6.3
+      - alphafold-colabfold==2.3.20
+      - jax[cuda12]==0.11.2
+      - jaxlib==0.11.2
+      - openmm[cuda12]==8.6.1

@@ -24,7 +24,7 @@ msas_output="$${output}/$${sequence_name}/msas_colabfold/"
 date
 
 . $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-colabfold-1.6.1
+conda activate mf-colabfold-1.6.3
 
 echo "colabfold_search
   $${fafile}

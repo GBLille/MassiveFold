@@ -53,7 +53,7 @@ random_seed=$$(shuf -i 0-4000000000 -n 1)
 echo "Batch random seed: $$random_seed"
 
 . $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-colabfold-1.6.1
+conda activate mf-colabfold-1.6.3
 
 time colabfold_batch
   $${path_to_msas}

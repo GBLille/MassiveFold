@@ -2,7 +2,7 @@
 
 mf_version=-1.8.2 # prefix it with a -
 mf_afm_version=1.1.10
-mf_cf_version=1.6.1
+mf_cf_version=1.6.3
 mf_af3_version=1.1.1
 install_env () {
   env=$1
