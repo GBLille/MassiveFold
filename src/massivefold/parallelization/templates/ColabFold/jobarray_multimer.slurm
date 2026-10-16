@@ -48,7 +48,7 @@ num_seeds=$$(($$batch_end - $$batch_start + 1))
 echo "predictions computed in the batch: $$num_seeds"
 
 
-random_seed=$$(shuf -i 0-1000000 -n 1)
+random_seed=$$(shuf -i 0-4000000000 -n 1)
 echo "Batch random seed: $$random_seed"
 
 num_recycle=$num_recycle
