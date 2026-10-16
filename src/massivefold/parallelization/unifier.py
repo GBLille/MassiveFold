@@ -763,7 +763,7 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
   batches_keys = set(batches_keys)
 
   for batch in batches:
-    starting_seed = random.randint(0, 1_000_000)
+    starting_seed = random.randint(0, 4_000_000_000)
     num_seeds = int(batches[batch]['end']) - int(batches[batch]['start']) + 1
     model_seeds = [ starting_seed  + i for i in range(num_seeds)]
     single_batch = copy.deepcopy(batch_input_json)
