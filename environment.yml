@@ -1,4 +1,4 @@
-name: massivefold-1.8.2
+name: massivefold-1.8.3
 channels:
   - conda-forge
   - bioconda
