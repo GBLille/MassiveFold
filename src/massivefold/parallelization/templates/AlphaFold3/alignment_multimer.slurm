@@ -8,6 +8,7 @@ run_name=$run_name
 output=$output_dir
 data_dir=$data_dir
 logs_dir=$logs_dir
+max_template_date=$max_template_date
 
 json_path=${input_dir}/alphafold3_json_requests/$${sequence_name}.json
 
@@ -18,6 +19,7 @@ date
 echo "$${run_massivefold}
   --norun_inference
   --json_path $${json_path}
+  --max_template_date $${max_template_date}
   --db_dir $${data_dir}
   --model_dir $${data_dir}
   --output_dir $${output}/$${sequence_name}
@@ -30,6 +32,7 @@ echo "$${run_massivefold}
 time $${run_massivefold} \
   --norun_inference \
   --json_path $${json_path} \
+  --max_template_date $${max_template_date} \
   --db_dir $${data_dir} \
   --model_dir $${data_dir} \
   --output_dir $${output}/$${sequence_name} \
