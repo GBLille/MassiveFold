@@ -2,24 +2,25 @@ name: mf-afmassive-1.1.10
 channels:
   - conda-forge
   - bioconda
-  - nvidia
   - nodefaults
 dependencies:
+  - python=3.10
   - colabfold=1.5.5
   - jax=0.4.23
-  - jaxlib=*=cuda*
+  - jaxlib=0.4.23=cuda118*
   - hmmer=3.3.2
   - hhsuite=3.3.0
   - openmm=7.7.0
   - kalign2=2.04
-  - cuda-nvcc
   - dm-haiku=0.0.13
   - dm-tree=0.1.8
+  - absl-py=1.0.0
+  - biopython=1.79
+  - matplotlib-base=3.7.2
+  - setuptools=80.10.1
   - pip
   - pip:
-      - absl-py==1.0.0
-      - biopython==1.79
-      - matplotlib==3.7.2
+      - nvidia-cuda-nvcc-cu11==11.8.89
       - seaborn==0.13.2
-      - setuptools==80.10.1
       - git+https://github.com/GBLille/AFmassive@v1.1.10
+

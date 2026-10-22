@@ -1,4 +1,4 @@
-name: massivefold-1.8.3
+name: massivefold-1.8.4
 channels:
   - conda-forge
   - bioconda
@@ -6,6 +6,7 @@ channels:
 dependencies:
   - python=3.12
   - pip
+  - zip=3.0
   - pip:
       - simple-slurm==0.3.6
       - biopython==1.81
@@ -15,4 +16,5 @@ dependencies:
       - tqdm==4.67.3
       - pandas==2.2.3
       - scipy==1.15.2
-      - glypy==1.0.14
+      - glypy==1.0.17
+
