@@ -552,7 +552,7 @@ def ppi_create_base_fasta(file_list, output_dir):
       for fasta_path, fasta_type in fasta_pairs:
         with open(fasta_path, "r") as input_file:
           content = input_file.read().rstrip()
-        output_file.write(content)
+        output_file.write(content + "\n")
         sequence_count = sum(1 for line in content.splitlines() if line.startswith(">"))
         fasta_files_types.extend([fasta_type] * sequence_count)
 
@@ -605,7 +605,7 @@ def ppi_create_input(receptors, ligands, parameters_file):
         content = input1_file.readlines()
       with open(lig_filename, 'r') as input2_file:
         content.extend(input2_file.readlines())
-      output_file.write('\n'.join(content))
+      output_file.write(''.join(content))
 
   df_all_ppi = df_all_ppi[["ppi", "fasta_chains"]]
   print(f"Created {len(df_all_ppi['ppi'].tolist())} PPI input files...")
