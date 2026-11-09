@@ -112,9 +112,10 @@ def convert_input(fasta_file, tool, json_params):
 def set_alphafold3_parameters(af3_input: dict, parameters: list):
   for i, sequence in enumerate(af3_input["sequences"]):
     entity = list(sequence.keys())[0]
-    if entity != "protein":
-      continue
     for param in parameters:
+      # only the fields of the entity type (e.g. RNA has an unpairedMsa, DNA has none)
+      if param not in af3_input['sequences'][i][entity]:
+        continue
       if param == "unpairedMsa" or param == "pairedMsa":
         af3_input['sequences'][i][entity][param] = ""
       elif param == "templates":
