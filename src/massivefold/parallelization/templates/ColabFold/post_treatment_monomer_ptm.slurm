@@ -36,7 +36,7 @@ time python3 $$(which $${mf_plots_path}) \
   --input_path=$${output} \
   --top_n_predictions=$MF_plots_top_n_predictions \
   --chosen_plots=$MF_plots_chosen_plots \
-  || { echo "Plots production has failed. }
+  || echo "Plots production has failed."
 
 if [ "$$pkl_format" = "light" ]; then
   pkl_mode="light"
