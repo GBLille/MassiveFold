@@ -64,7 +64,8 @@ if $${mf_following_msas}; then
     --batches_file $$batches_file \
     --json_params $$json_params \
     --to_convert $$json_msas \
-    --tool AlphaFold3
+    --tool AlphaFold3 \
+    || { echo "Input preparation for inference has failed. Exiting."; exit 1; }
 else
   echo "Only MSAS are computed, no following inference."
 fi

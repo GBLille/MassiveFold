@@ -17,11 +17,12 @@ time unifier \
   --batches_file $${batches_file} \
   --conversion output \
   --to_convert $$output \
-  --tool AFmassive
+  --tool AFmassive \
+  || { echo "Output standardization has failed. Exiting."; exit 1; } ?
 
 # rename and move files
 echo "time organize_outputs --batches_path $$output --nomultithreading"
-time organize_outputs --batches_path $$output --nomultithreading
+time organize_outputs --batches_path $$output --nomultithreading || { echo "Batch gathering has failed. Exiting."; exit 1; } ?
 
 # plots
 echo "Generating plots"
@@ -35,6 +36,7 @@ time python3 $$(which $${mf_plots_path}) \
         --input_path=$${output} \
         --top_n_predictions=$MF_plots_top_n_predictions \
         --chosen_plots=$MF_plots_chosen_plots \
+        || { echo "Plots production has failed. } ?
 
 if [ "$$pkl_format" = "light" ]; then
   pkl_mode="light"
@@ -50,7 +52,7 @@ else
 fi
 
 echo "lighten_output $${output} --pickle_size $${pkl_mode}"
-time lighten_output $${output} --pickle_size $${pkl_mode}
+time lighten_output $${output} --pickle_size $${pkl_mode} || { echo "Plots production has failed. } ?
 
 date
 
@@ -61,3 +63,5 @@ cd $${output}/log
 zip ../logs.zip *
 rm $$output_logs_path/*
 mv ../logs.zip .
+
+exit $$rc

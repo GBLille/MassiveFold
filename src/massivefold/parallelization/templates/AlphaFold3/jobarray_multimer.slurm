@@ -93,5 +93,7 @@ time run_alphafold.py \
   --jackhmmer_binary_path $$(which jackhmmer) \
   --hmmalign_binary_path $$(which hmmalign) \
   --hmmbuild_binary_path $$(which hmmbuild) \
-  --hmmsearch_binary_path $$(which hmmsearch)
+  --hmmsearch_binary_path $$(which hmmsearch) \
+  || { echo "Inference has failed. Exiting."; exit 1; }
 date
+
