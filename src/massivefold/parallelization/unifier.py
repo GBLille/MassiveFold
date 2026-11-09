@@ -490,7 +490,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
   new_sequences_records = [ record for record in additional_records if record["entity"] == entity_type ]
   additional_sequences, bonds = af3_records_to_sequences(new_sequences_records, fasta_ids_sequences)
   if bonds:
-    batch_input_json["bondedAtomPairs"] = bonds
+    batch_input_json["bondedAtomPairs"] = (batch_input_json.get("bondedAtomPairs") or []) + bonds
   batch_input_json["sequences"].extend(additional_sequences)
 
   # display the recorded entities for the run launched
@@ -788,7 +788,7 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
       single_batch["name"] = single_batch["name"].replace(' ', '_')
       single_batch["sequences"].extend(additional_sequences)
       if bonds:
-        single_batch["bondedAtomPairs"] = bonds
+        single_batch["bondedAtomPairs"] = (single_batch.get("bondedAtomPairs") or []) + bonds
 
     alphafold3_input = os.path.join(output_dir, sequence, run_name, f"af3_batch_{batch}.json")
     json.dump(single_batch, open(alphafold3_input, 'w'), indent=4)
