@@ -139,6 +139,13 @@ def remove_batch_dirs(all_batches_path):
   for batch_dir in batch_dirs:
     rm(os.path.join(all_batches_path, batch_dir))
 
+def already_organized(all_batches_path):
+  # batch directories are removed once organized, a rerun has nothing to do
+  if any(d.startswith('batch') for d in os.listdir(all_batches_path)):
+    return False
+  print(f"No batch directory in {all_batches_path}, outputs are already organized.")
+  return True
+
 def main():
   args = parser.parse_args()
   batches_path = os.path.normpath(args.batches_path)
@@ -185,6 +192,9 @@ def main():
         cp(os.path.join(batches_path, batch_file), os.path.join(batches_path, 'screening_inputs', batch_file))
       sys.exit()
 
+    if already_organized(batches_path):
+      return
+
     for batch in all_batches:
       batch_dir = os.path.join(batches_path, batch)
       new_location = os.path.join(batch_dir, sequence_name)
@@ -200,6 +210,9 @@ def main():
       for file in output_files: 
         new_file = os.path.join(new_location, os.path.basename(file))
         cp(file, new_file)
+
+  if already_organized(batches_path):
+    return
 
   batch_0 = os.path.join(batches_path, "batch_0")
   # create ranking json files
