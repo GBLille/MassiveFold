@@ -63,5 +63,3 @@ cd $${output}/log
 zip ../logs.zip *
 rm $$output_logs_path/*
 mv ../logs.zip .
-
-exit $$rc

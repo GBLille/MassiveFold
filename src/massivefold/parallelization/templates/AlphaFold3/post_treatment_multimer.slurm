@@ -4,7 +4,6 @@ output=${output_dir}/$${sequence_name}/$${run_name}/
 mf_plots_path=massivefold_plots
 batches_file=${logs_dir}/$${sequence_name}/$${run_name}/$${sequence_name}_$${run_name}_batches.json
 pkl_format=$pkl_format
-rc=0
 
 date
 # adapt colabfold output for massivefold
