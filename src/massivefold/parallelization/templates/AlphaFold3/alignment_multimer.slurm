@@ -23,6 +23,7 @@ echo "$${run_massivefold}
   --db_dir $${data_dir}
   --model_dir $${data_dir}
   --output_dir $${output}/$${sequence_name}
+  --force_output_dir
   --jackhmmer_binary_path $$(which jackhmmer)
   --hmmalign_binary_path $$(which hmmalign)
   --hmmbuild_binary_path $$(which hmmbuild)
@@ -36,6 +37,7 @@ time $${run_massivefold} \
   --db_dir $${data_dir} \
   --model_dir $${data_dir} \
   --output_dir $${output}/$${sequence_name} \
+  --force_output_dir \
   --jackhmmer_binary_path $$(which jackhmmer) \
   --hmmalign_binary_path $$(which hmmalign) \
   --hmmbuild_binary_path $$(which hmmbuild) \
