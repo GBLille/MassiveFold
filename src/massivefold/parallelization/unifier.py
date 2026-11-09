@@ -1046,11 +1046,14 @@ def convert_colabfold_output(output_path:str, pred_shift:int, to_convert: str):
 
 def create_afmassive_confidences(output_path, pdbs):
   confidence_path = os.path.join(output_path, 'confidences')
-  os.makedirs(confidence_path, exist_ok=True)
   for pdb in pdbs:
     json_file = pdb.replace('unrelaxed_', 'result_').replace('.pdb', '.json')
 
     initial_json_path = os.path.join(output_path, json_file)
+    # AFmassive writes result_<model>.json for multimer predictions only
+    if not os.path.isfile(initial_json_path):
+      continue
+    os.makedirs(confidence_path, exist_ok=True)
     json_content = json.load(open(initial_json_path, 'r'))
 
     json_confidence_path = os.path.join(confidence_path, json_file.replace('result_', 'unrelaxed_'))
