@@ -71,9 +71,9 @@ echo "run_alphafold.py
   --model_dir $${data_dir}
   --output_dir $${output_path}
   --num_diffusion_samples $${num_diffusion_samples}
-  --xla_python_client_preallocate $${xla_python_client_preallocate}
+  --xla_python_client_preallocate=$${xla_python_client_preallocate}
   --xla_client_mem_fraction $${xla_client_mem_fraction}
-  --tf_force_unified_memory $${tf_force_unified_memory}
+  --tf_force_unified_memory=$${tf_force_unified_memory}
   --jackhmmer_binary_path $$(which jackhmmer)
   --hmmalign_binary_path $$(which hmmalign)
   --hmmbuild_binary_path $$(which hmmbuild)
@@ -87,9 +87,9 @@ time run_alphafold.py \
   --model_dir $${data_dir} \
   --output_dir $${output_path} \
   --num_diffusion_samples $${num_diffusion_samples} \
-  --xla_python_client_preallocate $${xla_python_client_preallocate} \
+  --xla_python_client_preallocate=$${xla_python_client_preallocate} \
   --xla_client_mem_fraction $${xla_client_mem_fraction} \
-  --tf_force_unified_memory $${tf_force_unified_memory} \
+  --tf_force_unified_memory=$${tf_force_unified_memory} \
   --jackhmmer_binary_path $$(which jackhmmer) \
   --hmmalign_binary_path $$(which hmmalign) \
   --hmmbuild_binary_path $$(which hmmbuild) \
