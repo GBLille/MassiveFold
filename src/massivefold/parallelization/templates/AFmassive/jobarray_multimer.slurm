@@ -130,6 +130,6 @@ time $${run_massivefold} \
     --pdb_seqres_database_path=$${data_dir}/pdb_seqres/pdb_seqres.txt \
     --uniref30_database_path=$${uniref_database} \
     --uniprot_database_path=$${data_dir}/uniprot/uniprot.fasta \
-    || { echo "Inference has failed. Exiting."; exit 1; } ?
+    || { echo "Inference has failed. Exiting."; exit 1; }
 
 date

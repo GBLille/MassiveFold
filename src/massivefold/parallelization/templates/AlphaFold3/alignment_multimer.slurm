@@ -41,7 +41,9 @@ time $${run_massivefold} \
   --jackhmmer_binary_path $$(which jackhmmer) \
   --hmmalign_binary_path $$(which hmmalign) \
   --hmmbuild_binary_path $$(which hmmbuild) \
-  --hmmsearch_binary_path $$(which hmmsearch)
+  --hmmsearch_binary_path $$(which hmmsearch) \
+  || { echo "Alignment has failed. Exiting."; exit 1; }
+
 date
 
 conda deactivate
