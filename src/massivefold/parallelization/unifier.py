@@ -156,7 +156,7 @@ def glycan_traversal(sugar, parent_index, linkage, state):
   # if an alternative anomery is recorded in the ccdcode map, use it instead
   sugar_name, sugar_anomery = sugar.serialize(name="iupac_lite"), sugar.anomer
   full_name = f"{sugar_anomery.name[0]}-{sugar_name}"
-  if full_name in state["map_code"]:
+  if parent_index is not None and full_name in state["map_code"]:
     sugar_name = full_name
 
   state['ccdCodes'].append(state['map_code'][sugar_name])
@@ -177,7 +177,7 @@ def af3_resolve_glycan(glycan_str, chain_id):
     print(f"Error while parsing {glycan_str}:")
     raise ValueError(e)
   iupac_to_ccd = {
-    "Gal": "GAL", "a-Gal": "GAL", "b-Gal": "GLB",
+    "Gal": "GAL", "a-Gal": "GLA", "b-Gal": "GAL",
     "Glc": "GLC", "a-Glc": "GLC", "b-Glc": "BGC",
     "Man": "MAN", "a-Man": "MAN", "b-Man": "BMA",
     "Fuc": "FUC" ,# "a-Fuc": "FCA", "b-Fuc": "FCB", => FCA would be D-Fucose
