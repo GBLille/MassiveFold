@@ -97,6 +97,7 @@ time colabfold_batch \
   --local-pdb-path $${data_dir}/pdb/divided/ \
   $$templates \
   $$use_dropout \
-  $$disable_cluster_profile
+  $$disable_cluster_profile \
+  || { echo "Inference has failed. Exiting."; exit 1; }
 
 date

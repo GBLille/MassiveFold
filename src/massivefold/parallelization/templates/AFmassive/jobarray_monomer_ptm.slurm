@@ -126,6 +126,8 @@ time python $$(which $${run_massivefold}) \
     --obsolete_pdbs_path=$${data_dir}/pdb_mmcif/obsolete.dat \
     --bfd_database_path=$${data_dir}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt \
     --uniref30_database_path=$${uniref_database} \
-    --pdb70_database_path=$${data_dir}/pdb70/pdb70
+    --pdb70_database_path=$${data_dir}/pdb70/pdb70 \
+    || { echo "Inference has failed. Exiting."; exit 1; }
 
 date
+

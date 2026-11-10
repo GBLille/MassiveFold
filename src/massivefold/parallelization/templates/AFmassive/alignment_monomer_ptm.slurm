@@ -66,6 +66,7 @@ time $${run_massivefold} \
     --obsolete_pdbs_path=$${data_dir}/pdb_mmcif/obsolete.dat \
     --bfd_database_path=$${data_dir}/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt \
     --pdb70_database_path=$${data_dir}/pdb70/pdb70 \
-    --uniref30_database_path=$${uniref_database}
+    --uniref30_database_path=$${uniref_database} \
+    || { echo "Alignment has failed. Exiting."; exit 1; }
 
 date

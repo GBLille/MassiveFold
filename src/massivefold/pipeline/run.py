@@ -526,6 +526,11 @@ def run_pipeline_internal(args, forwarded_args, scheduler):
       destination = os.path.join(output_dir, sequence_name, "msas")
       safe_symlink(source, destination)
 
+    elif tool == "ColabFold":
+      source = os.path.realpath(os.path.join(msas_precomputed, "msas_colabfold"))
+      destination = os.path.join(output_dir, sequence_name, "msas_colabfold")
+      safe_symlink(source, destination)
+
     elif tool == "AlphaFold3" and not waiting_for_alignment and not use_user_request_file:
       prepare_af3_inference_input(
         os.path.join(msas_precomputed, "msas_alphafold3_data.json"),

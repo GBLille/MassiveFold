@@ -23,6 +23,7 @@ echo "$${run_massivefold}
   --db_dir $${data_dir}
   --model_dir $${data_dir}
   --output_dir $${output}/$${sequence_name}
+  --force_output_dir
   --jackhmmer_binary_path $$(which jackhmmer)
   --hmmalign_binary_path $$(which hmmalign)
   --hmmbuild_binary_path $$(which hmmbuild)
@@ -36,10 +37,13 @@ time $${run_massivefold} \
   --db_dir $${data_dir} \
   --model_dir $${data_dir} \
   --output_dir $${output}/$${sequence_name} \
+  --force_output_dir \
   --jackhmmer_binary_path $$(which jackhmmer) \
   --hmmalign_binary_path $$(which hmmalign) \
   --hmmbuild_binary_path $$(which hmmbuild) \
-  --hmmsearch_binary_path $$(which hmmsearch)
+  --hmmsearch_binary_path $$(which hmmsearch) \
+  || { echo "Alignment has failed. Exiting."; exit 1; }
+
 date
 
 conda deactivate
@@ -62,7 +66,8 @@ if $${mf_following_msas}; then
     --batches_file $$batches_file \
     --json_params $$json_params \
     --to_convert $$json_msas \
-    --tool AlphaFold3
+    --tool AlphaFold3 \
+    || { echo "Input preparation for inference has failed. Exiting."; exit 1; }
 else
   echo "Only MSAS are computed, no following inference."
 fi

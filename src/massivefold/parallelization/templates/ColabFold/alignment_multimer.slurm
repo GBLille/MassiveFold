@@ -40,6 +40,7 @@ time colabfold_search \
   $${msas_output} \
   --pairing_strategy $${pairing_strategy} \
   --use-templates 1 \
-  --db2 $${pdb_db_templates}
+  --db2 $${pdb_db_templates} \
+  || { echo "Alignment has failed. Exiting."; exit 1; }
 
 date

@@ -112,9 +112,10 @@ def convert_input(fasta_file, tool, json_params):
 def set_alphafold3_parameters(af3_input: dict, parameters: list):
   for i, sequence in enumerate(af3_input["sequences"]):
     entity = list(sequence.keys())[0]
-    if entity != "protein":
-      continue
     for param in parameters:
+      # only the fields of the entity type (e.g. RNA has an unpairedMsa, DNA has none)
+      if param not in af3_input['sequences'][i][entity]:
+        continue
       if param == "unpairedMsa" or param == "pairedMsa":
         af3_input['sequences'][i][entity][param] = ""
       elif param == "templates":
@@ -155,7 +156,7 @@ def glycan_traversal(sugar, parent_index, linkage, state):
   # if an alternative anomery is recorded in the ccdcode map, use it instead
   sugar_name, sugar_anomery = sugar.serialize(name="iupac_lite"), sugar.anomer
   full_name = f"{sugar_anomery.name[0]}-{sugar_name}"
-  if full_name in state["map_code"]:
+  if parent_index is not None and full_name in state["map_code"]:
     sugar_name = full_name
 
   state['ccdCodes'].append(state['map_code'][sugar_name])
@@ -176,7 +177,7 @@ def af3_resolve_glycan(glycan_str, chain_id):
     print(f"Error while parsing {glycan_str}:")
     raise ValueError(e)
   iupac_to_ccd = {
-    "Gal": "GAL", "a-Gal": "GAL", "b-Gal": "GLB",
+    "Gal": "GAL", "a-Gal": "GLA", "b-Gal": "GAL",
     "Glc": "GLC", "a-Glc": "GLC", "b-Glc": "BGC",
     "Man": "MAN", "a-Man": "MAN", "b-Man": "BMA",
     "Fuc": "FUC" ,# "a-Fuc": "FCA", "b-Fuc": "FCB", => FCA would be D-Fucose
@@ -489,7 +490,7 @@ def af3_add_input_entity(batch_input_json, af3_params):
   new_sequences_records = [ record for record in additional_records if record["entity"] == entity_type ]
   additional_sequences, bonds = af3_records_to_sequences(new_sequences_records, fasta_ids_sequences)
   if bonds:
-    batch_input_json["bondedAtomPairs"] = bonds
+    batch_input_json["bondedAtomPairs"] = (batch_input_json.get("bondedAtomPairs") or []) + bonds
   batch_input_json["sequences"].extend(additional_sequences)
 
   # display the recorded entities for the run launched
@@ -552,7 +553,7 @@ def ppi_create_base_fasta(file_list, output_dir):
       for fasta_path, fasta_type in fasta_pairs:
         with open(fasta_path, "r") as input_file:
           content = input_file.read().rstrip()
-        output_file.write(content)
+        output_file.write(content + "\n")
         sequence_count = sum(1 for line in content.splitlines() if line.startswith(">"))
         fasta_files_types.extend([fasta_type] * sequence_count)
 
@@ -605,7 +606,7 @@ def ppi_create_input(receptors, ligands, parameters_file):
         content = input1_file.readlines()
       with open(lig_filename, 'r') as input2_file:
         content.extend(input2_file.readlines())
-      output_file.write('\n'.join(content))
+      output_file.write(''.join(content))
 
   df_all_ppi = df_all_ppi[["ppi", "fasta_chains"]]
   print(f"Created {len(df_all_ppi['ppi'].tolist())} PPI input files...")
@@ -787,7 +788,7 @@ def get_alphafold3_batch_input(input_json: str, params_json: str, batches: str):
       single_batch["name"] = single_batch["name"].replace(' ', '_')
       single_batch["sequences"].extend(additional_sequences)
       if bonds:
-        single_batch["bondedAtomPairs"] = bonds
+        single_batch["bondedAtomPairs"] = (single_batch.get("bondedAtomPairs") or []) + bonds
 
     alphafold3_input = os.path.join(output_dir, sequence, run_name, f"af3_batch_{batch}.json")
     json.dump(single_batch, open(alphafold3_input, 'w'), indent=4)
@@ -1046,11 +1047,14 @@ def convert_colabfold_output(output_path:str, pred_shift:int, to_convert: str):
 
 def create_afmassive_confidences(output_path, pdbs):
   confidence_path = os.path.join(output_path, 'confidences')
-  os.makedirs(confidence_path, exist_ok=True)
   for pdb in pdbs:
     json_file = pdb.replace('unrelaxed_', 'result_').replace('.pdb', '.json')
 
     initial_json_path = os.path.join(output_path, json_file)
+    # AFmassive writes result_<model>.json for multimer predictions only
+    if not os.path.isfile(initial_json_path):
+      continue
+    os.makedirs(confidence_path, exist_ok=True)
     json_content = json.load(open(initial_json_path, 'r'))
 
     json_confidence_path = os.path.join(confidence_path, json_file.replace('result_', 'unrelaxed_'))

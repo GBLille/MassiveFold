@@ -75,6 +75,7 @@ time colabfold_batch \
   --num-seeds $$num_seeds \
   --model-type $$model_type \
   --model-order $$num_models \
-  --num-models 1
+  --num-models 1 \
+  || { echo "Inference has failed. Exiting."; exit 1; }
 
 date
