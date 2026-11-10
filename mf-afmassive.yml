@@ -1,4 +1,4 @@
-name: mf-afmassive-1.1.10
+name: mf-afmassive-1.1.11
 channels:
   - conda-forge
   - bioconda
@@ -22,5 +22,5 @@ dependencies:
   - pip:
       - nvidia-cuda-nvcc-cu11==11.8.89
       - seaborn==0.13.2
-      - git+https://github.com/GBLille/AFmassive@v1.1.10
+      - git+https://github.com/GBLille/AFmassive@v1.1.11
 

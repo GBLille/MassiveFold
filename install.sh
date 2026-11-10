@@ -1,7 +1,7 @@
 #!/bin/bash
 
-mf_version=-1.8.4 # prefix it with a -
-mf_afm_version=1.1.10
+mf_version=-1.8.5 # prefix it with a -
+mf_afm_version=1.1.11
 mf_cf_version=1.6.3
 mf_af3_version=1.2.0
 install_env () {

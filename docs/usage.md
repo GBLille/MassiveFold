@@ -65,7 +65,7 @@ Then you can set the parameters of the **custom_params** section if necessary an
 
 Activate the conda environment:
 ```bash
-conda activate massivefold-1.8.4
+conda activate massivefold-1.8.5
 ```
 >**N.B.**: on the Jean Zay cluster, simply load the `massivefold` >module. To be able to run on H100 or A100, uncomment the
 >corresponding last lines of the `jobarray.slurm` header. Example >for H100:
@@ -290,7 +290,7 @@ available for AlphaFold3. The `recycles` plot is not available for AFmassive mon
 
 Three ranking files are generated for each run : `ranking_debug.json`, which contains the AlphaFold confidence score for each prediction, 
 `ranking_ptm.json`, which contains the pTM score for each prediction, and, for complexes, `ranking_iptm.json`, which contains the ipTM score 
-for each prediction. For AlphaFold3, a `confidences` subfolder contains detailed scores for each prediction, one json file per prediction.  
+for each prediction. For AlphaFold3, ColabFold and AFmassive (except AFmassive's monomers), a `confidences` subfolder contains detailed scores for each prediction, one json file per prediction.  
 
 ***N.B.***: For AFmassive and ColabFold, even if not directly comparable between AF2 versions because using weights coming from a different 
 training, the scores are used to rank all the predictions for convenience, whatever the neural network version.
@@ -390,7 +390,7 @@ To reduce the size of the pickle files, the `pkl_format` parameter can be set to
 ## Ligand screening
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.8.4
+conda activate massivefold-1.8.5
 ```
 To launch a screening round, run:
 
@@ -409,7 +409,7 @@ This csv has 4 columns: `id`, `smiles`, `ccdCode` and `IUPAC`.
 Each row is a ligand to use for the screening round. "id" designates the name of the ligand, it can simply be the number of the ligand  in the list or a more detailed name for convenience.  
 For the ligand sequence, use either `smiles`, `ccdCode` or `IUPAC` but not two at the same time, respectively in the SMILES format or the Chemical Compound Dictionnary code format (ccdCode) found at https://www.ebi.ac.uk/pdbe-srv/pdbechem/.
 
-The format should be as follow:
+The format should be as follow (downloadable file [here](./lig_screen_example.csv)):
 
 | id       | smiles                   | ccdCode | IUPAC                  |
 |----------|--------------------------|---------|------------------------|
@@ -428,7 +428,7 @@ See this [section](#multiple-runs-gathering).
 ## PPI screening 
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.8.4
+conda activate massivefold-1.8.5
 ```
 To launch a PPI discovery round, run:
 
