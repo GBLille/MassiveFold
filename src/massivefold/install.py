@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import socket
+import subprocess
 
 from massivefold import engines
 
@@ -194,7 +195,12 @@ def install_workspace(args):
     print("No engine environment installed: the engines are run from the PATH (engine_prefix is left as is).")
   else:
     engines_dir = args.engines_dir or os.path.join(root_dir, "engines")
-    launchers = engines.install_engines(engines_dir, tools, reuse_conda=not args.ignore_conda_envs)
+    try:
+      launchers = engines.install_engines(engines_dir, tools, reuse_conda=not args.ignore_conda_envs)
+    except subprocess.CalledProcessError as error:
+      print(f"Installation of the engines failed: '{' '.join(error.cmd)}' exited with {error.returncode} (see above).")
+      print("Run the same `massivefold install` command again once fixed, it resumes where it stopped.")
+      return 1
 
   configure_site_defaults(host_is_jeanzay, data_dirs, launchers)
 

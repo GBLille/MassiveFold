@@ -105,14 +105,16 @@ def pixi_binary(engines_dir):
   os.chmod(binary, os.stat(binary).st_mode | stat.S_IXUSR)
   return binary
 
-def pixi_env():
+def pixi_env(engines_dir):
   env = dict(os.environ)
   env.setdefault("CONDA_OVERRIDE_CUDA", "12")
+  if not env.get("PIXI_CACHE_DIR") and not env.get("RATTLER_CACHE_DIR"):
+    env["PIXI_CACHE_DIR"] = os.path.join(engines_dir, ".cache")
   return env
 
-def run(command, **kwargs):
+def run(command, env):
   print(" ".join(command), flush=True)
-  subprocess.run(command, check=True, env=pixi_env(), **kwargs)
+  subprocess.run(command, check=True, env=env)
 
 def write_launcher(engines_dir, tool, activation_command, env=None):
   """Launcher sourcing the activation script printed by activation_command (pixi shell-hook or conda)."""
@@ -208,12 +210,12 @@ def install_engines(engines_dir, tools, reuse_conda=True):
   for tool in tools:
     environment = ENGINES[tool]["environment"]
     print(f"Installing the {tool} environment in {environment_prefix(engines_dir, tool)}", flush=True)
-    run([pixi, "install", "--manifest-path", manifest, "--frozen", "-e", environment])
+    run([pixi, "install", "--manifest-path", manifest, "--frozen", "-e", environment], pixi_env(engines_dir))
     add_engine_files(engines_dir, tool)
     launchers[tool] = write_launcher(
       engines_dir, tool,
       [pixi, "shell-hook", "--manifest-path", manifest, "--frozen", "-e", environment, "--shell", "bash"],
-      env=pixi_env())
+      env=pixi_env(engines_dir))
     for command in ENGINES[tool]["post_install"]:
-      run([launchers[tool]] + command)
+      run([launchers[tool]] + command, os.environ)
   return launchers

@@ -61,8 +61,17 @@ massivefold install -h
 incompatible library versions. They are installed with [pixi](https://pixi.sh), from the recipes 
 (`massivefold/engines/pixi.toml`, locked by `pixi.lock`). The jobs run each engine through a launcher, 
 `<engines-dir>/bin/run_in_<engine>`, recorded as `engine_prefix` in the parameters files. To use engines installed 
-another way, set `engine_prefix` to the command that runs them (for instance a container `apptainer exec --nv <image.sif>`),
+another way, set `engine_prefix` to the command that runs them (for instance a container `apptainer exec --nv <image.sif>`), 
 or leave it empty if they are in the `PATH` of the jobs (`--no-env`).
+
+An engine already installed in conda, in an environment named (`mf-afmassive-1.1.11`, `mf-colabfold-1.6.3`, 
+`mf-alphafold3-1.2.0` for this MassiveFold version), is used instead of being installed. Use `--ignore-conda-envs` 
+to install all the engines with pixi anyway.
+
+The jobs run each engine through a launcher, `<engines-dir>/bin/run_in_<engine>`, recorded as `engine_prefix` in the 
+parameters files. It runs the command in the engine's environment, without pixi or network access on the compute 
+nodes. To use engines installed another way, set `engine_prefix` to the command that runs them (for instance a container 
+`apptainer exec --nv <image.sif>`), or leave it empty if they are in the `PATH` of the jobs (`--no-env`).
 
 This file tree displays the files' architecture after running `massivefold install`.
 
@@ -279,7 +288,6 @@ To use AlphaFold3, **copy your weights to the `~/af3_datadir` directory**.
 
 The same [file architecture](#tree) is built, follow the [usage](#usage) section to use MassiveFold.
 As the engines' environments are large, use an `--install-path` in your `$WORK` rather than in your `$HOME`.
-
 And specify the project you want to use in the `AFmassive_params.json` or `ColabFold_params.json` or `AlphaFold3_params.json`, 
 replacing the `<project>` value by the 3-letters project name.  
 
