@@ -195,7 +195,7 @@ def install_workspace(args):
   if args.no_env:
     print("No engine environment installed: the engines are run from the PATH (engine_prefix is left as is).")
   else:
-    engines_dir = args.engines_dir or os.path.join(root_dir, "engines")
+    engines_dir = os.path.join(root_dir, "engines")
     try:
       launchers = engines.install_engines(engines_dir, tools, reuse_conda=not args.ignore_conda_envs)
     except subprocess.CalledProcessError as error:

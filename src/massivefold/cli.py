@@ -86,8 +86,6 @@ def add_install_arguments(install_parser):
   install_parser.add_argument("--colabfold-db", dest="colabfold_databases", default="", help="Path to ColabFold database.")
   install_parser.add_argument("--install-path", dest="install_path", default="massivefold_runs",
                                 help="Where to install MassiveFold files.")
-  install_parser.add_argument("--engines-dir", dest="engines_dir", default="",
-                                help="Where to install the environments of the engines (default: <install-path>/engines).")
   install_parser.add_argument("--jeanzay", dest="jeanzay", action="store_true",
                                 help="Install for the Jean Zay cluster (detected automatically on its login nodes).")
   install_parser.add_argument("--ignore-conda-envs", dest="ignore_conda_envs", action="store_true",

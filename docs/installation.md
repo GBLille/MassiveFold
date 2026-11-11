@@ -50,8 +50,7 @@ massivefold install -h
   --alphafold-db <str>: path to AlphaFold2 database
   --alphafold3-db <str>: path to AlphaFold3 database
   --colabfold-db <str>: path to ColabFold database
-  --install-path <str>: where to create the MassiveFold file architecture (default: massivefold_runs)
-  --engines-dir <str>: where to install the environments of the engines (default: <install-path>/engines)
+  --install-path <str>: where to create the MassiveFold file architecture, engines included (default: massivefold_runs)
   --no-env: do not install the environments, only files and parameters: the engines are run from the PATH.
   --only-envs: only install the environments of the engines (of the given databases, or all of them)
   --jeanzay: install for the Jean Zay cluster (detected automatically on its login nodes and in its jobs)
@@ -59,17 +58,28 @@ massivefold install -h
 ```
 
 **The engines** (AFmassive, ColabFold and AlphaFold3) each run in their own environment, as they need different and 
+<<<<<<< HEAD
 incompatible library versions. They are installed with [pixi](https://pixi.sh), from the recipes 
 (`massivefold/engines/pixi.toml`, locked by `pixi.lock`). The jobs run each engine through a launcher, 
 `<engines-dir>/bin/run_in_<engine>`, recorded as `engine_prefix` in the parameters files. To use engines installed 
 another way, set `engine_prefix` to the command that runs them (for instance a container `apptainer exec --nv <image.sif>`), 
 or leave it empty if they are in the `PATH` of the jobs (`--no-env`).
+=======
+incompatible versions of Python, jax and of the `alphafold` package. They are installed with [pixi](https://pixi.sh), 
+from the environment files shipped with MassiveFold (`massivefold/engines/pixi.toml`, locked by `pixi.lock`), so each 
+MassiveFold version always installs the same engines' versions. Nothing has to be installed beforehand: 
+`massivefold install` downloads pixi itself. The environments take about 15 GB and are built on the machine 
+running `massivefold install` (a GPU is not needed, a login node is fine), for Linux x86_64 with CUDA 12 drivers. 
+pixi's package cache is put in `<install-path>/engines/.cache` (unless `PIXI_CACHE_DIR` is set): on the same filesystem as 
+the environments, whose files are hard links to it, and not in the home directory, often limited by a quota on 
+clusters. If an installation stops (network, quota...), running the same `massivefold install` command again resumes it.
+>>>>>>> c095ed3 (Always install the engines in <install-path>/engines)
 
 An engine already installed in conda, in an environment named (`mf-afmassive-1.1.11`, `mf-colabfold-1.6.3`, 
 `mf-alphafold3-1.2.0` for this MassiveFold version), is used instead of being installed. Use `--ignore-conda-envs` 
 to install all the engines with pixi anyway.
 
-The jobs run each engine through a launcher, `<engines-dir>/bin/run_in_<engine>`, recorded as `engine_prefix` in the 
+The jobs run each engine through a launcher, `<install-path>/engines/bin/run_in_<engine>`, recorded as `engine_prefix` in the 
 parameters files. It runs the command in the engine's environment, without pixi or network access on the compute 
 nodes. To use engines installed another way, set `engine_prefix` to the command that runs them (for instance a container 
 `apptainer exec --nv <image.sif>`), or leave it empty if they are in the `PATH` of the jobs (`--no-env`).
@@ -118,10 +128,10 @@ The database paths and the engines' launchers are also kept in `~/.config/massiv
 **On a GPU cluster:**  
 - the **administrator** only needs to install the engines once, in a shared directory: 
 ```bash
-massivefold install --only-envs --engines-dir <SHARED_ENGINES_DIR>
+massivefold install --only-envs --install-path <SHARED_DIR>
 ```
 - the **user** installs MassiveFold and only creates the remaining files, then sets `engine_prefix` in the parameters 
-files to the shared launchers (`<SHARED_ENGINES_DIR>/bin/run_in_<engine>`):
+files to the shared launchers (`<SHARED_DIR>/engines/bin/run_in_<engine>`):
 ```bash
 massivefold install --no-env --alphafold-db <AF_DB_PATH> --colabfold-db <CF_DB_PATH> --alphafold3-db <AF3_DB_PATH>
 ```
