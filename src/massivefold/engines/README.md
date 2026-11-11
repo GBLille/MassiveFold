@@ -1,7 +1,8 @@
 # Engines' environments
 
 `pixi.toml` describes one environment per engine (`afmassive`, `colabfold`, `alphafold3`) and `pixi.lock` locks them:
-each MassiveFold version installs exactly the locked packages (`massivefold install` runs `pixi install --frozen`).
+each MassiveFold version installs exactly the locked packages (`massivefold install` runs `pixi install --locked`,
+which refuses to install if `pixi.lock` does not match `pixi.toml`).
 
 To change an engine's version:
 
@@ -13,3 +14,8 @@ To change an engine's version:
    rm -rf src/massivefold/engines/.pixi
    ```
 3. commit `pixi.toml` and `pixi.lock` together.
+
+Before a release, check that the lock matches the manifest (exits with an error otherwise):
+```bash
+CONDA_OVERRIDE_CUDA=12 pixi lock --check --manifest-path src/massivefold/engines/pixi.toml
+```

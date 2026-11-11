@@ -178,7 +178,6 @@ def find_conda_environment(tool, prefixes):
   return next((prefix for prefix in prefixes if is_engine_environment(tool, prefix)), None)
 
 def conda_activation_env():
-  # capture the activation of the environment alone, not the deactivation of the one active here
   env = { key: value for key, value in os.environ.items() if not key.startswith("CONDA_") or key == "CONDA_EXE" }
   env["CONDA_SHLVL"] = "0"
   return env
@@ -210,11 +209,11 @@ def install_engines(engines_dir, tools, reuse_conda=True):
   for tool in tools:
     environment = ENGINES[tool]["environment"]
     print(f"Installing the {tool} environment in {environment_prefix(engines_dir, tool)}", flush=True)
-    run([pixi, "install", "--manifest-path", manifest, "--frozen", "-e", environment], pixi_env(engines_dir))
+    run([pixi, "install", "--manifest-path", manifest, "--locked", "-e", environment], pixi_env(engines_dir))
     add_engine_files(engines_dir, tool)
     launchers[tool] = write_launcher(
       engines_dir, tool,
-      [pixi, "shell-hook", "--manifest-path", manifest, "--frozen", "-e", environment, "--shell", "bash"],
+      [pixi, "shell-hook", "--manifest-path", manifest, "--locked", "-e", environment, "--shell", "bash"],
       env=pixi_env(engines_dir))
     for command in ENGINES[tool]["post_install"]:
       run([launchers[tool]] + command, os.environ)
