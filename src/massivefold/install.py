@@ -170,10 +170,11 @@ def validate_db_paths(args, host_is_jeanzay):
   return None
 
 def is_jeanzay_host():
-  return socket.gethostname()[:8] == "jean-zay"
+  # login nodes are named jean-zay*, not the compute ones: SLURM gives the cluster name in jobs
+  return socket.gethostname().startswith("jean-zay") or os.environ.get("SLURM_CLUSTER_NAME", "").startswith("jean-zay")
 
 def install_workspace(args):
-  host_is_jeanzay = is_jeanzay_host()
+  host_is_jeanzay = args.jeanzay or is_jeanzay_host()
   error = validate_db_paths(args, host_is_jeanzay)
   if error:
     print(error)

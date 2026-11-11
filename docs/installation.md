@@ -54,6 +54,7 @@ massivefold install -h
   --engines-dir <str>: where to install the environments of the engines (default: <install-path>/engines)
   --no-env: do not install the environments, only files and parameters: the engines are run from the PATH.
   --only-envs: only install the environments of the engines (of the given databases, or all of them)
+  --jeanzay: install for the Jean Zay cluster (detected automatically on its login nodes and in its jobs)
   --ignore-conda-envs: install all the engines' environments, even those already found in conda
 ```
 
