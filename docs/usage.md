@@ -65,7 +65,7 @@ Then you can set the parameters of the **custom_params** section if necessary an
 
 Activate the conda environment:
 ```bash
-conda activate massivefold-1.8.5
+conda activate massivefold
 ```
 >**N.B.**: on the Jean Zay cluster, simply load the `massivefold` >module. To be able to run on H100 or A100, uncomment the
 >corresponding last lines of the `jobarray.slurm` header. Example >for H100:
@@ -205,19 +205,22 @@ The **massivefold** section designates the whole run parameters.
 "massivefold": 
 {
     "run_massivefold": "run_AFmassive.py",
+    "engine_prefix": "/path/to/massivefold_runs/engines/bin/run_in_afmassive",
     "data_dir": "$DSDIR/Alphafold-2024-04",
     "uniref_database": "",
     "jobfile_headers_dir": "./headers",
-    "jobfile_templates_dir": "../massivefold/parallelization/templates",
     "output_dir": "./output",
     "logs_dir": "./log",
     "input_dir": "./input",
-    "scripts_dir": "../massivefold/parallelization",
     "models_to_use": "",
     "pkl_format": "full"
 }
 ```
-The paths in the section are filled by `install.sh` but can be changed here if necessary. 
+The paths in the section are filled by `massivefold install` but can be changed here if necessary. 
+**engine_prefix** is the command the jobs put in front of the engine's commands to run them in the engine's environment: 
+the launcher written by `massivefold install`, another command (e.g. a container: `apptainer exec --nv <image.sif>`), or 
+empty if the engine is in the `PATH` of the jobs. The jobfile templates are taken from the installed package, unless a 
+**jobfile_templates_dir** parameter points to other ones.
 Headers (**jobfile_headers_dir**) are specified to setup the run, in order to give the parameters that are required to 
 run the jobs on your cluster/server.
 Build your own according to the [Jobfile's header building](#jobfiles-header-building) section.   
@@ -372,7 +375,7 @@ Because the relaxation takes time and resources to compute and that the MassiveF
 many batches, the `use_gpu_relax` and `models_to_relax` parameters are set to 'false' and 'none' respectively. Indeed, 
 if the relaxation is activated during the process, it runs per batches, before the final ranking, resulting in 
 relaxed structures that wouldn't necessarily be the best predictions. Instead, we recommend to use the `colabfold_relax` 
-program provided in the `mf-colabfold` conda environment and developed by the ColabFold team on selected structures, once 
+program provided in the ColabFold environment (`massivefold_runs/engines/bin/run_in_colabfold colabfold_relax`) and developed by the ColabFold team on selected structures, once 
 all the predictions are produced and ranked (run `colabfold_relax -h` for help).
 
 ### Multiple runs gathering
@@ -390,7 +393,7 @@ To reduce the size of the pickle files, the `pkl_format` parameter can be set to
 ## Ligand screening
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.8.5
+conda activate massivefold
 ```
 To launch a screening round, run:
 
@@ -428,7 +431,7 @@ See this [section](#multiple-runs-gathering).
 ## PPI screening 
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.8.5
+conda activate massivefold
 ```
 To launch a PPI discovery round, run:
 

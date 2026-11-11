@@ -7,23 +7,18 @@ MassiveFold was developed to run massive sampling with [AFmassive](https://githu
 
 <a id="retrieve-massivefold"></a>
 
-1. **Retrieve MassiveFold**
+1. **Retrieve the databases and model parameters**
 
-```bash
-# clone MassiveFold's repository
-git clone https://github.com/GBLille/MassiveFold.git
-```
-
-For AFmassive runs, two additional installation steps are required to use MassiveFold:
+For AFmassive runs:
 - Download [sequence databases](https://github.com/GBLille/AFmassive?tab=readme-ov-file#sequence-databases)
 - Retrieve the [neural network (NN) models parameters](https://github.com/GBLille/AFmassive?tab=readme-ov-file#alphafold-neural-network-model-parameters)
 
-For ColabFold runs, two additional installation steps are required to use MassiveFold:
+For ColabFold runs:
 - Download [sequence databases](https://github.com/sokrypton/ColabFold?tab=readme-ov-file#generating-msas-for-large-scale-structurecomplex-predictions)
 - Retrieve the [neural network (NN) models parameters](https://github.com/GBLille/AFmassive?tab=readme-ov-file#alphafold-neural-network-model-parameters)
 and move them to a 'params' folder in the sequence databases folder (same parameters as AFmassive)
 
-For AlphaFold3 runs, two additional installation steps are required to use MassiveFold:
+For AlphaFold3 runs:
 - Download [sequence databases](https://github.com/google-deepmind/alphafold3/blob/main/docs/installation.md#obtaining-genetic-databases)
 - Retrieve the [neural network (NN) models parameters](https://github.com/google-deepmind/alphafold3?tab=readme-ov-file#obtaining-model-parameters)
 
@@ -31,84 +26,93 @@ For AlphaFold3 runs, two additional installation steps are required to use Massi
 
 2. **Install MassiveFold**
 
-We use an installation based on conda. The **install.sh** script we provide installs the conda environments using the 
-`environment.yml`, `mf-afmassive.yml`, `mf-colabfold.yml` and `mf-alphafold3.yml` files. The first one is created for MassiveFold, 
-the second one for AFmassive, the third for ColabFold and the last one for Alphafold3. It also creates the files 
-architecture and set paths according to this architecture in the `AFmassive_params.json` and/or `ColabFold_params.json` 
-and/or `AlphaFold3_params.json` parameters file.  
-
-Help with:
+MassiveFold is a Python package, installed with pip in a conda environment created from the `environment.yml` file 
+of the repository (Python and pip only):
 ```bash
-cd MassiveFold
-./install.sh -h
+conda env create -f environment.yml
+conda activate massivefold
+pip install massivefold
+```
+From a clone of the repository, `pip install .` installs that version instead. MassiveFold's environment only contains 
+MassiveFold: the engines are installed in their own environments (see below). The jobs run MassiveFold with the Python 
+of this environment, without activating it: it must be on a filesystem shared with the compute nodes.
+
+Then `massivefold install` installs the structure prediction engines and creates the files architecture, with the 
+paths of the databases set in the `AFmassive_params.json` and/or `ColabFold_params.json` and/or `AlphaFold3_params.json` 
+parameters files:
+```bash
+massivefold install --alphafold-db <AF_DB_PATH> --colabfold-db <CF_DB_PATH> --alphafold3-db <AF3_DB_PATH> [--install-path massivefold_runs]
+```
+Only the engines of the databases given are installed.
+
+```txt
+massivefold install -h
+  --alphafold-db <str>: path to AlphaFold2 database
+  --alphafold3-db <str>: path to AlphaFold3 database
+  --colabfold-db <str>: path to ColabFold database
+  --install-path <str>: where to create the MassiveFold file architecture (default: massivefold_runs)
+  --engines-dir <str>: where to install the environments of the engines (default: <install-path>/engines)
+  --no-env: do not install the environments, only files and parameters: the engines are run from the PATH.
+  --only-envs: only install the environments of the engines (of the given databases, or all of them)
 ```
 
-Installation with:
-```bash
-Usage:
-------
-On Jean Zay cluster or any cluster where MassiveFold is already installed with `module`:
-  module load massivefold
-  ./install.sh [--install-path str]
-Otherwise:
-  ./install.sh [--only-envs] || --alphafold-db str --alphafold3-db str --colabfold-db str [--no-env] [--install-path str]
+**The engines** (AFmassive, ColabFold and AlphaFold3) each run in their own environment, as they need different and 
+incompatible library versions. They are installed with [pixi](https://pixi.sh), from the recipes 
+(`massivefold/engines/pixi.toml`, locked by `pixi.lock`). The jobs run each engine through a launcher, 
+`<engines-dir>/bin/run_in_<engine>`, recorded as `engine_prefix` in the parameters files. To use engines installed 
+another way, set `engine_prefix` to the command that runs them (for instance a container `apptainer exec --nv <image.sif>`),
+or leave it empty if they are in the `PATH` of the jobs (`--no-env`).
 
-./install.sh -h for more details
-  Options:
-    --alphafold-db <str>: path to AlphaFold2 database
-    --alphafold3-db <str>: path to AlphaFold3 database
-    --colabfold-db <str>: path to ColabFold database
-    --install-path <str>: where to create the MassiveFold file architecture (default: massivefold_runs)
-    --no-env: do not install the environments, only files and parameters.
-      At least one of --alphafold-db or --colabfold-db is required with this option.
-    --only-envs: only install the environments (other arguments are not used)
-```
-
-This file tree displays the files' architecture after running `./install.sh`.
+This file tree displays the files' architecture after running `massivefold install`.
 
 <a id="tree"></a> 
 ```txt
-MassiveFold
-├── pyproject.toml
-├── install.sh
-├── ...
-├── docs
-├── src/massivefold
-└── massivefold_runs
-    ├── AFmassive_params.json
-    ├── ColabFold_params.json
-    ├── AlphaFold3_params.json
-    ├── headers/
-    |    ├── example_header_alignment_jeanzay.slurm
-    |    ├── example_header_jobarray_jeanzay.slurm
-    |    └── example_header_post_treatment_jeanzay.slurm
-    ├── input/
-    |    └── H1140.fasta
-    ├── log/
-    └── output/
+massivefold_runs
+├── AFmassive_params.json
+├── ColabFold_params.json
+├── AlphaFold3_params.json
+├── multirun_setup.json
+├── engines/
+|    ├── bin/
+|    |    ├── run_in_afmassive
+|    |    ├── run_in_colabfold
+|    |    └── run_in_alphafold3
+|    ├── pixi.toml
+|    └── pixi.lock
+├── headers/
+|    ├── alignment.slurm
+|    ├── jobarray.slurm
+|    ├── post_treatment.slurm
+|    ├── example_header_alignment_jeanzay.slurm
+|    ├── example_header_jobarray_jeanzay.slurm
+|    └── example_header_post_treatment_jeanzay.slurm
+├── input/
+|    └── H1140.fasta
+├── log/
+└── output/
 ```
 The directory `massivefold_runs` is created, which contains:
 - `AFmassive_params.json` to set the run parameters for AFmassive,
 - `ColabFold_params.json` to set the run parameters for ColabFold,
 - `AlphaFold3_params.json` to set the run parameters for AlphaFold3,
-- `headers`' directory, containing the headers that must be created to use MassiveFold. Examples are given for the Jean 
-Zay national CNRS French cluster (ready to use, see the [installation on Jean Zay](#install-on-jean-zay) to run 
-MassiveFold directly on Jean Zay),
+- `engines` with the environments of the engines,
+- `headers`' directory, containing the jobfile headers (see [Create header files](#create-headers)),
 - `input` which contains the FASTA sequences,
 - `log` with the logs of the MassiveFold runs (debug purposes), 
-- `output` which contains the predictions, 
-- `run_massivefold.sh` being the script to run [MassiveFold](#usage)
+- `output` which contains the predictions
+
+The database paths and the engines' launchers are also kept in `~/.config/massivefold/site_defaults/`, so that a later 
+`massivefold install` of another workspace reuses them.
 
 **On a GPU cluster:**  
-- the **administrator** only needs to install the environments: 
+- the **administrator** only needs to install the engines once, in a shared directory: 
 ```bash
-cd MassiveFold
-./install.sh --only-envs
+massivefold install --only-envs --engines-dir <SHARED_ENGINES_DIR>
 ```
-- the **user** only needs to install the remaining files:
+- the **user** installs MassiveFold and only creates the remaining files, then sets `engine_prefix` in the parameters 
+files to the shared launchers (`<SHARED_ENGINES_DIR>/bin/run_in_<engine>`):
 ```bash
-cd MassiveFold
-./install.sh --no-env --alphafold-db <AF_DB_PATH> --colabfold-db <CF_DB_PATH> --alphafold3-db <AF3_DB_PATH>
+massivefold install --no-env --alphafold-db <AF_DB_PATH> --colabfold-db <CF_DB_PATH> --alphafold3-db <AF3_DB_PATH>
 ```
 
 ***N.B.***: for <AF3_DB_PATH>, you need to use your own AlphaFold3 weights, while the database files can be shared. Therefore,
@@ -121,20 +125,19 @@ ln -s <SHARED_DB_PATH>/* ~/af3_db/
 
 <a id="create-headers"></a>
 
-3. **Create header files**  
+3. **Adapt the header files**  
 
 Refer to [Jobfile's header](#jobfiles-header) for this installation step.
 
-To run MassiveFold in parallel on your cluster/server, it is **required** to build custom jobfile headers for each step. 
-They are three and should be named as follows: `{step}.slurm` (`alignment.slurm`, `jobarray.slurm` and 
-`post_treatment.slurm`). The headers contain the parameters to give to SLURM for the jobs running (#SBATCH parameters). 
-They have to be added in `MassiveFold/massivefold_runs/headers/` directory. Depending on your installation it can be 
-another path, this path has to be set in the `AFmassive_params.json` and/or `ColabFold_params.json` and/or 
-`AlphaFold3_params.json` as `jobfile_headers_dir` parameter.
+To run MassiveFold in parallel on your cluster/server, jobfile headers are needed for each step. They are three and 
+named as follows: `{step}.slurm` (`alignment.slurm`, `jobarray.slurm` and `post_treatment.slurm`). The headers contain 
+the parameters to give to SLURM for the jobs running (#SBATCH parameters). They are in the 
+`massivefold_runs/headers/` directory. Depending on your installation it can be another path, this path has to be set in 
+the `AFmassive_params.json` and/or `ColabFold_params.json` and/or `AlphaFold3_params.json` as `jobfile_headers_dir` 
+parameter.
 
-Headers for Jean Zay cluster are provided as examples to follow (named `example_header_<step>_jeanzay.slurm`), to use 
-them, rename each one following the previously mentioned naming convention.  
-
+`massivefold install` creates generic headers as a basid to adapt for your cluster (nodes, RAM, partitions, time limits...). 
+Headers for Jean Zay cluster are provided as examples to follow (named `example_header_<step>_jeanzay.slurm`).
 <a id="set-custom-params"></a>
 
 4. **Set custom parameters**
@@ -170,8 +173,8 @@ And specify them in the jobfile headers (such as here for `MassiveFold/headers/j
 
 #### Building
 
-The jobfiles for each step are built by combining the jobfile header that you have to create in 
-**MassiveFold/massivefold_runs/headers/** with the jobfile body in **massivefold/parallelization/templates/**.
+The jobfiles for each step are built by combining the jobfile header in **massivefold_runs/headers/** with the 
+jobfile body in **massivefold/parallelization/templates/** (in the installed package).
 
 Only the headers have to be adapted in function of your computation infrastructure. They contain the parameters to give to 
 SLURM for the job running (#SBATCH parameters).
@@ -184,7 +187,7 @@ Their names should be identical to:
 * **post_treatment.slurm**
 
 The templates work with the parameters provided in `AFmassive_params.json` and/or `ColabFold_params.json` and/or 
-`AlphaFold3_params.json` files, given as a parameter to the **run_massivefold.sh** script.  
+`AlphaFold3_params.json` files, given as a parameter to the `massivefold` command.  
 These parameters are substituted in the template job files thanks to the python library [string.Template](https://docs.python.org/3.8/library/string.html#template-strings).  
 Refer to [How to add a parameter](#how-to-add-a-parameter) for parameters substitution.
 
@@ -263,16 +266,18 @@ To use $ inside the template files (bash variables or other uses), use instead $
 
 To use it on Jean Zay, the only installation steps are:
 ```bash
-git clone https://github.com/GBLille/MassiveFold.git
-./install.sh
+module load miniforge/26.1.1-3
+conda env create -f environment.yml -p $WORK/conda/massivefold
+conda activate $WORK/conda/massivefold
+pip install massivefold
+massivefold install [--install-path str]
 ```
-
-To use AlphaFold3, copy your weights to the `~/af3_datadir` directory and run the following command:
-```bash
-ln -s $DSDIR/Alphafold3/* ~/af3_datadir/
-```
+On Jean Zay, the prebuilt headers and parameters files are used, all the engines are installed and the AlphaFold3 
+databases of `$DSDIR/Alphafold3` are linked in `~/af3_datadir`. 
+To use AlphaFold3, **copy your weights to the `~/af3_datadir` directory**.
 
 The same [file architecture](#tree) is built, follow the [usage](#usage) section to use MassiveFold.
+As the engines' environments are large, use an `--install-path` in your `$WORK` rather than in your `$HOME`.
 
 And specify the project you want to use in the `AFmassive_params.json` or `ColabFold_params.json` or `AlphaFold3_params.json`, 
 replacing the `<project>` value by the 3-letters project name.  

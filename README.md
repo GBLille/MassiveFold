@@ -45,19 +45,20 @@ MassiveFold was developed to run massive sampling with [AFmassive](https://githu
 Follow the MassiveFold [installation guide](docs/installation.md).  
 It details these steps of the MassiveFold installation:
 
-1. [**Retrieve MassiveFold**](docs/installation.md#retrieve-massivefold)
+1. [**Retrieve the databases and model parameters**](docs/installation.md#retrieve-massivefold)
 
 2. [**Install MassiveFold**](docs/installation.md#install-massivefold)
 
-3. [**Create header files**](docs/installation.md#create-headers)
+3. [**Adapt the header files**](docs/installation.md#create-headers)
 
 4. [**Set custom parameters**](docs/installation.md#set-custom-params)
 
 ## Uninstallation
 
-To uninstall MassiveFold, remove the three conda environments (`massivefold-1.8.5`, `mf-afmassive-1.1.11`, `mf-colabfold-1.6.3` and 
-`mf-alphafold3-1.2.0`) and remove the `MassiveFold` folder you cloned. Make sure you copy all the files and folders you want 
-to keep from the `output` and `log` directories somewhere else. 
+To uninstall MassiveFold, remove its conda environment (`conda env remove -n massivefold`), the `engines` directory 
+of the install path (`massivefold_runs/engines`), which contains the engines' environments, and `~/.config/massivefold`. 
+Make sure you copy all the files and folders you want to keep from the `output` and `log` directories somewhere else 
+before removing `massivefold_runs`. 
 
 ## Usage
 
@@ -66,11 +67,11 @@ Usage section includes the most simple way to run MassiveFold with examples. For
 
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.8.5
+conda activate massivefold
 ```
 Then launch MassiveFold:
 ```bash
-massivefold run -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE> -t <TOOL> 
+massivefold run -s <SEQUENCE_PATH> -r <RUN_NAME> -p <NUMBER_OF_PREDICTIONS_PER_MODEL> -f <JSON_PARAMETERS_FILE>
 ```
 
 Example for AFmassive:
@@ -89,7 +90,7 @@ massivefold run -s input/H1140.fasta -r af3_default -p 5 -f AlphaFold3_params.js
 ### Screening a receptor with ligands
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.8.5
+conda activate massivefold
 ```
 To screen a single protein receptor with multiple ligands, launch:
 ```bash
@@ -101,7 +102,7 @@ See documentation for [further details](docs/usage.md#ligand-screening)
 ### Discover PPI between receptors and ligands
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.8.5
+conda activate massivefold
 ```
 To launch a PPI discovery round between a set of protein (or dna or rna) receptors and a set of protein (or dna or rna) ligands, run:
 
@@ -117,7 +118,7 @@ See documentation for [further details](docs/usage.md#ppi-screening).
 ### Launch several runs
 First, activate the conda environment:
 ```bash
-conda activate massivefold-1.8.5
+conda activate massivefold
 ```
 To launch multiple runs for a single sequence combination, use `multirun` pipeline, run the following command:
 
