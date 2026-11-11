@@ -58,22 +58,11 @@ massivefold install -h
 ```
 
 **The engines** (AFmassive, ColabFold and AlphaFold3) each run in their own environment, as they need different and 
-<<<<<<< HEAD
 incompatible library versions. They are installed with [pixi](https://pixi.sh), from the recipes 
 (`massivefold/engines/pixi.toml`, locked by `pixi.lock`). The jobs run each engine through a launcher, 
 `<engines-dir>/bin/run_in_<engine>`, recorded as `engine_prefix` in the parameters files. To use engines installed 
 another way, set `engine_prefix` to the command that runs them (for instance a container `apptainer exec --nv <image.sif>`), 
 or leave it empty if they are in the `PATH` of the jobs (`--no-env`).
-=======
-incompatible versions of Python, jax and of the `alphafold` package. They are installed with [pixi](https://pixi.sh), 
-from the environment files shipped with MassiveFold (`massivefold/engines/pixi.toml`, locked by `pixi.lock`), so each 
-MassiveFold version always installs the same engines' versions. Nothing has to be installed beforehand: 
-`massivefold install` downloads pixi itself. The environments take about 15 GB and are built on the machine 
-running `massivefold install` (a GPU is not needed, a login node is fine), for Linux x86_64 with CUDA 12 drivers. 
-pixi's package cache is put in `<install-path>/engines/.cache` (unless `PIXI_CACHE_DIR` is set): on the same filesystem as 
-the environments, whose files are hard links to it, and not in the home directory, often limited by a quota on 
-clusters. If an installation stops (network, quota...), running the same `massivefold install` command again resumes it.
->>>>>>> c095ed3 (Always install the engines in <install-path>/engines)
 
 An engine already installed in conda, in an environment named (`mf-afmassive-1.1.11`, `mf-colabfold-1.6.3`, 
 `mf-alphafold3-1.2.0` for this MassiveFold version), is used instead of being installed. Use `--ignore-conda-envs` 
@@ -157,7 +146,7 @@ the parameters to give to SLURM for the jobs running (#SBATCH parameters). They 
 the `AFmassive_params.json` and/or `ColabFold_params.json` and/or `AlphaFold3_params.json` as `jobfile_headers_dir` 
 parameter.
 
-`massivefold install` creates generic headers as a basid to adapt for your cluster (nodes, RAM, partitions, time limits...). 
+`massivefold install` creates generic headers as a basis to adapt for your cluster (nodes, RAM, partitions, time limits...). 
 Headers for Jean Zay cluster are provided as examples to follow (named `example_header_<step>_jeanzay.slurm`).
 <a id="set-custom-params"></a>
 
