@@ -1,0 +1,65 @@
+[workspace]
+name = "massivefold-engines"
+channels = ["conda-forge", "bioconda"]
+platforms = [{ name = "linux-64-cuda12", platform = "linux-64", cuda = "12" }]
+
+# AFmassive v1.1.11
+[feature.afmassive.dependencies]
+python = "3.10.*"
+jax = "0.4.23.*"
+jaxlib = { version = "0.4.23.*", build = "cuda118*" }
+dm-haiku = "0.0.13.*"
+dm-tree = "0.1.8.*"
+ml-collections = "*"
+immutabledict = "*"
+numpy = "<2"
+scipy = "*"
+pandas = "*"
+absl-py = "1.0.0.*"
+biopython = "1.79.*"
+tensorflow-base = { version = ">=2.12.1", build = "cpu*" }
+openmm = "7.7.0.*"
+pdbfixer = "*"
+hmmer = "3.3.2.*"
+hhsuite = "3.3.0.*"
+kalign2 = "2.04.*"
+matplotlib-base = "3.7.2.*"
+seaborn = "0.13.2.*"
+setuptools = "<81"
+
+[feature.afmassive.pypi-dependencies]
+alphafold = { git = "https://github.com/GBLille/AFmassive.git", tag = "v1.1.11" }
+nvidia-cuda-nvcc-cu11 = "==11.8.89"
+
+# ColabFold 1.6.3
+[feature.colabfold.dependencies]
+python = "3.13.*"
+kalign2 = "2.04.*"
+hhsuite = "3.3.0.*"
+mmseqs2 = "18.8cc5c.*"
+openmm = "8.6.1.*"
+pdbfixer = "*"
+setuptools = "<81"
+
+[feature.colabfold.pypi-dependencies]
+colabfold = { version = "==1.6.3", extras = ["alphafold"] }
+alphafold-colabfold = "==2.3.20"
+jax = { version = "==0.11.2", extras = ["cuda12"] }
+jaxlib = "==0.11.2"
+
+# mf-alphafold3 v1.2.0
+[feature.alphafold3.dependencies]
+python = "3.12.*"
+cxx-compiler = "*"
+cmake = "*"
+zlib = "1.3.1.*"
+absl-py = "2.4.0.*"
+hmmer = "3.4.*"
+
+[feature.alphafold3.pypi-dependencies]
+alphafold3 = { git = "https://github.com/GBLille/mf-alphafold3.git", tag = "v1.2.0" }
+
+[environments]
+afmassive = { features = ["afmassive"], no-default-feature = true }
+colabfold = { features = ["colabfold"], no-default-feature = true }
+alphafold3 = { features = ["alphafold3"], no-default-feature = true }

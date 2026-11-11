@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """MassiveFold workspace installer."""
 
+import glob
 import json
 import os
 import shutil
 import socket
+
+from massivefold import engines
+
+TOOLS = ("AFmassive", "AlphaFold3", "ColabFold")
 
 def package_root():
   return os.path.dirname(os.path.abspath(__file__))
@@ -17,11 +22,10 @@ def resolve_path(path_value):
 def ordered_massivefold_section(params):
   key_order = [
     "run_massivefold",
+    "engine_prefix",
     "data_dir",
     "uniref_database",
     "jobfile_headers_dir",
-    "jobfile_templates_dir",
-    "scripts_dir",
     "output_dir",
     "logs_dir",
     "input_dir",
@@ -39,14 +43,15 @@ def ordered_massivefold_section(params):
   params["massivefold"] = ordered
   return params
 
-def patch_cluster_params(params, data_dir=None):
-  pkg_root = package_root()
+def patch_cluster_params(params, data_dir=None, engine_prefix=None):
   massivefold = params.setdefault("massivefold", {})
-
   if data_dir is not None:
     massivefold["data_dir"] = resolve_path(data_dir)
-  massivefold["jobfile_templates_dir"] = os.path.abspath(os.path.join(pkg_root, "parallelization", "templates"))
-  massivefold["scripts_dir"] = os.path.abspath(os.path.join(pkg_root, "parallelization"))
+  if engine_prefix is not None:
+    massivefold["engine_prefix"] = engine_prefix
+  # the templates are found in the installed package
+  massivefold.pop("jobfile_templates_dir", None)
+  massivefold.pop("scripts_dir", None)
   return ordered_massivefold_section(params)
 
 def patch_workspace_params(params, root_dir):
@@ -65,18 +70,20 @@ def write_json(path, payload):
   with open(path, "w", encoding="utf-8") as handle:
     json.dump(payload, handle, indent=4)
 
+def param_name(tool, host_is_jeanzay=False):
+  return f"jeanzay_{tool}_params.json" if host_is_jeanzay else f"{tool}_params.json"
+
+def site_defaults_dir():
+  """Database paths and engine launchers kept from one install to the next (never in the package)."""
+  config_home = os.environ.get("XDG_CONFIG_HOME") or os.path.join(os.path.expanduser("~"), ".config")
+  return os.path.join(config_home, "massivefold", "site_defaults")
+
 def resolve_site_default_path(tool, host_is_jeanzay=False):
-  """Cluster-wide default JSON: user config (if dir exists), else package site_defaults, else template."""
-  param_name = f"jeanzay_{tool}_params.json" if host_is_jeanzay else f"{tool}_params.json"
-  user_root = os.path.join(os.path.expanduser("~"), ".config", "massivefold", "site_defaults")
-  if os.path.isdir(user_root):
-    user_path = os.path.join(user_root, param_name)
-    if os.path.isfile(user_path):
-      return user_path
-  package_path = os.path.join(package_root(), "parallelization", "site_defaults", param_name)
-  if os.path.isfile(package_path):
-    return package_path
-  return os.path.join(package_root(), "parallelization", param_name)
+  """Site default of the tool if a previous install wrote one, else the packaged parameters."""
+  site_path = os.path.join(site_defaults_dir(), param_name(tool, host_is_jeanzay))
+  if os.path.isfile(site_path):
+    return site_path
+  return os.path.join(package_root(), "parallelization", param_name(tool, host_is_jeanzay))
 
 def parse_tool_from_param_basename(basename):
   host_is_jeanzay = basename.startswith("jeanzay_")
@@ -88,19 +95,10 @@ def parse_tool_from_param_basename(basename):
   return basename[: -len(suffix)], host_is_jeanzay
 
 def write_site_default(tool, params, host_is_jeanzay=False):
-  param_name = f"jeanzay_{tool}_params.json" if host_is_jeanzay else f"{tool}_params.json"
-  package_dir = os.path.join(package_root(), "parallelization", "site_defaults")
-  package_path = os.path.join(package_dir, param_name)
-  try:
-    os.makedirs(package_dir, exist_ok=True)
-    write_json(package_path, params)
-    return package_path
-  except PermissionError:
-    user_dir = os.path.join(os.path.expanduser("~"), ".config", "massivefold", "site_defaults")
-    os.makedirs(user_dir, exist_ok=True)
-    user_path = os.path.join(user_dir, param_name)
-    write_json(user_path, params)
-    return user_path
+  os.makedirs(site_defaults_dir(), exist_ok=True)
+  site_path = os.path.join(site_defaults_dir(), param_name(tool, host_is_jeanzay))
+  write_json(site_path, params)
+  return site_path
 
 def install_root(path_value):
   return os.path.abspath(os.path.expanduser(path_value))
@@ -121,106 +119,51 @@ def copy_examples(root_dir):
     else:
       print(f"Warning: missing packaged example '{source}'.")
 
-def copy_headers(root_dir):
+def copy_headers(root_dir, host_is_jeanzay):
+  """alignment, jobarray and post_treatment headers: Jean Zay ones on Jean Zay, generic ones elsewhere.
+  Existing headers are kept, they may have been adapted to the cluster."""
   source = os.path.join(package_root(), "parallelization", "headers")
   destination = os.path.join(root_dir, "headers")
   os.makedirs(destination, exist_ok=True)
-  for name in os.listdir(source):
-    if name.endswith(".slurm"):
-      shutil.copy2(os.path.join(source, name), os.path.join(destination, name))
+  for job_type in ("alignment", "jobarray", "post_treatment"):
+    header = f"example_header_{job_type}_jeanzay.slurm" if host_is_jeanzay else f"{job_type}.slurm"
+    target = os.path.join(destination, f"{job_type}.slurm")
+    if not os.path.exists(target):
+      shutil.copy2(os.path.join(source, header), target)
+  for example in glob.glob(os.path.join(source, "example_header_*.slurm")):
+    shutil.copy2(example, os.path.join(destination, os.path.basename(example)))
 
-def configure_site_defaults(host_is_jeanzay, alphafold_db=None, alphafold3_db=None, colabfold_db=None):
-  data_dirs = {
-    "AFmassive": alphafold_db,
-    "AlphaFold3": alphafold3_db,
-    "ColabFold": colabfold_db,
-  }
-  for tool, data_dir in data_dirs.items():
-    param_name = f"jeanzay_{tool}_params.json" if host_is_jeanzay else f"{tool}_params.json"
-    template_path = os.path.join(package_root(), "parallelization", param_name)
-    params = read_json(template_path)
-    params = patch_cluster_params(params, data_dir=data_dir if data_dir else None)
+def configure_site_defaults(host_is_jeanzay, data_dirs, launchers):
+  """Record the given database paths and launchers; the tools not given keep their previous ones."""
+  for tool in TOOLS:
+    params = read_json(resolve_site_default_path(tool, host_is_jeanzay))
+    params = patch_cluster_params(params, data_dir=data_dirs.get(tool) or None, engine_prefix=launchers.get(tool))
     write_site_default(tool, params, host_is_jeanzay)
 
-def build_param_file(tool, destination, root_dir, data_dir=None, host_is_jeanzay=False):
+def build_param_file(tool, destination, root_dir, host_is_jeanzay=False):
   params = read_json(resolve_site_default_path(tool, host_is_jeanzay))
-  if data_dir:
-    params = patch_cluster_params(params, data_dir=data_dir)
+  params = patch_cluster_params(params)
   params = patch_workspace_params(params, root_dir)
   write_json(destination, params)
 
-def install_jeanzay(root_dir):
-  build_param_file(
-    "AFmassive",
-    os.path.join(root_dir, "AFmassive_params.json"),
-    root_dir,
-    host_is_jeanzay=True,
-  )
-  build_param_file(
-    "AlphaFold3",
-    os.path.join(root_dir, "AlphaFold3_params.json"),
-    root_dir,
-    host_is_jeanzay=True,
-  )
-  build_param_file(
-    "ColabFold",
-    os.path.join(root_dir, "ColabFold_params.json"),
-    root_dir,
-    host_is_jeanzay=True,
-  )
-
-  headers = os.path.join(root_dir, "headers")
-  source_to_target = {
-    "example_header_alignment_jeanzay.slurm": "alignment.slurm",
-    "example_header_jobarray_jeanzay.slurm": "jobarray.slurm",
-    "example_header_post_treatment_jeanzay.slurm": "post_treatment.slurm",
-  }
-  for source_name, target_name in source_to_target.items():
-    source = os.path.join(headers, source_name)
-    target = os.path.join(headers, target_name)
-    if os.path.exists(source) and not os.path.exists(target):
-      os.rename(source, target)
-
-def install_standard(root_dir, alphafold_db=None, alphafold3_db=None, colabfold_db=None):
-  if alphafold_db:
-    build_param_file(
-      "AFmassive",
-      os.path.join(root_dir, "AFmassive_params.json"),
-      root_dir,
-      data_dir=alphafold_db,
-    )
-  if alphafold3_db:
-    build_param_file(
-      "AlphaFold3",
-      os.path.join(root_dir, "AlphaFold3_params.json"),
-      root_dir,
-      data_dir=alphafold3_db,
-    )
-  if colabfold_db:
-    build_param_file(
-      "ColabFold",
-      os.path.join(root_dir, "ColabFold_params.json"),
-      root_dir,
-      data_dir=colabfold_db,
-    )
+def link_jeanzay_af3_databases():
+  af3_datadir = os.path.join(os.path.expanduser("~"), "af3_datadir")
+  os.makedirs(af3_datadir, exist_ok=True)
+  for database in glob.glob(os.path.join(os.environ.get("DSDIR", ""), "Alphafold3", "*")):
+    link = os.path.join(af3_datadir, os.path.basename(database))
+    if not os.path.lexists(link):
+      os.symlink(database, link)
 
 def validate_db_paths(args, host_is_jeanzay):
   if host_is_jeanzay:
     return None
 
   provided = False
-  if args.alphafold_databases:
-    provided = True
-    if not os.path.isdir(args.alphafold_databases):
-      return f"{args.alphafold_databases} doesn't exists"
-  if args.alphafold3_databases:
-    provided = True
-    if not os.path.isdir(args.alphafold3_databases):
-      return f"{args.alphafold3_databases} doesn't exists"
-  if args.colabfold_databases:
-    provided = True
-    if not os.path.isdir(args.colabfold_databases):
-      return f"{args.colabfold_databases} doesn't exists"
+  for path in (args.alphafold_databases, args.alphafold3_databases, args.colabfold_databases):
+    if path:
+      provided = True
+      if not os.path.isdir(path):
+        return f"{path} doesn't exists"
   if not provided and not args.only_envs:
     return "At least one of --alphafold-db, --alphafold3-db or --colabfold-db is required."
   return None
@@ -235,31 +178,37 @@ def install_workspace(args):
     print(error)
     return 1
 
-  configure_site_defaults(
-    host_is_jeanzay,
-    alphafold_db=args.alphafold_databases,
-    alphafold3_db=args.alphafold3_databases,
-    colabfold_db=args.colabfold_databases,
-  )
-
-  if args.only_envs:
-    print("Configured internal MassiveFold defaults and skipped workspace file creation because --only-envs is set.")
-    return 0
+  data_dirs = {
+    "AFmassive": args.alphafold_databases,
+    "AlphaFold3": args.alphafold3_databases,
+    "ColabFold": args.colabfold_databases,
+  }
+  # the engines of the given databases, all of them on Jean Zay or with only --only-envs
+  tools = [ tool for tool in TOOLS if data_dirs[tool] ]
+  if host_is_jeanzay or not tools:
+    tools = list(TOOLS)
 
   root_dir = install_root(args.install_path)
+  launchers = {}
+  if args.no_env:
+    print("No engine environment installed: the engines are run from the PATH (engine_prefix is left as is).")
+  else:
+    engines_dir = args.engines_dir or os.path.join(root_dir, "engines")
+    launchers = engines.install_engines(engines_dir, tools)
+
+  configure_site_defaults(host_is_jeanzay, data_dirs, launchers)
+
+  if args.only_envs:
+    print(f"Engine environments installed for {', '.join(tools)}; workspace file creation skipped (--only-envs).")
+    return 0
+
   create_tree(root_dir)
   copy_examples(root_dir)
-  copy_headers(root_dir)
+  copy_headers(root_dir, host_is_jeanzay)
 
   if host_is_jeanzay:
     print("Currently on Jean Zay cluster, using prebuilt headers and json parameter files.")
-    install_jeanzay(root_dir)
-    return 0
-
-  install_standard(
-    root_dir,
-    alphafold_db=args.alphafold_databases,
-    alphafold3_db=args.alphafold3_databases,
-    colabfold_db=args.colabfold_databases,
-  )
+    link_jeanzay_af3_databases()
+  for tool in tools:
+    build_param_file(tool, os.path.join(root_dir, f"{tool}_params.json"), root_dir, host_is_jeanzay)
   return 0

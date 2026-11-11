@@ -86,11 +86,14 @@ def add_install_arguments(install_parser):
   install_parser.add_argument("--colabfold-db", dest="colabfold_databases", default="", help="Path to ColabFold database.")
   install_parser.add_argument("--install-path", dest="install_path", default="massivefold_runs",
                                 help="Where to install MassiveFold files.")
+  install_parser.add_argument("--engines-dir", dest="engines_dir", default="",
+                                help="Where to install the environments of the engines (default: <install-path>/engines).")
   install_parser.add_argument("--no-env", dest="no_env", action="store_true",
-                                help="No environments installation but only files and parameters. At least one of --alphafold-db"
-                                " or --colabfold-db is required with this option.")
+                                help="No environments installation but only files and parameters: the engines are run"
+                                " from the PATH. At least one of --alphafold-db, --alphafold3-db or --colabfold-db is required"
+                                " with this option.")
   install_parser.add_argument("--only-envs", dest="only_envs", action="store_true",
-                                help="Only install the environments (other arguments are not used.")
+                                help="Only install the environments of the engines, of the given databases or all of them.")
 
 def add_screening_arguments(screening_parser):
   # required arguments

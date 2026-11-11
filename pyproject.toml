@@ -1,13 +1,25 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "massivefold"
-version = "1.8.5"
-description = "MassiveFold CLI"
+dynamic = ["version"]
+description = "MassiveFold: massive sampling of protein structure predictions with AFmassive, ColabFold and AlphaFold3"
 readme = "README.md"
-requires-python = ">=3.9"
+license = "CECILL-2.1"
+requires-python = ">=3.10"
+dependencies = [
+  "biopython>=1.81",
+  "glypy>=1.0.14",
+  "matplotlib>=3.8",
+  "numpy>=2",
+  "pandas>=2.2",
+  "scipy>=1.13",
+  "seaborn>=0.13",
+  "simple-slurm>=0.3.6",
+  "tqdm>=4.66",
+]
 
 [project.scripts]
 massivefold = "massivefold.cli:main"
@@ -21,6 +33,9 @@ lighten_output = "massivefold.parallelization.lighten_output:main"
 [tool.setuptools]
 package-dir = {"" = "src"}
 
+[tool.setuptools.dynamic]
+version = {attr = "massivefold.__version__"}
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
@@ -31,5 +46,7 @@ massivefold = [
   "parallelization/headers/*.slurm",
   "parallelization/templates/**/*",
   "plots/**/*.py",
-  "examples/*"
+  "examples/*",
+  "engines/pixi.toml",
+  "engines/pixi.lock"
 ]
