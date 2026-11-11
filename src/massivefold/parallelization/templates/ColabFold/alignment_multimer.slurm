@@ -23,8 +23,6 @@ msas_output="$${output}/$${sequence_name}/msas_colabfold/"
 
 date
 
-. $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-colabfold-1.6.3
 
 echo "colabfold_search
   $${fafile}
@@ -34,7 +32,7 @@ echo "colabfold_search
   --use-templates 1
   --db2 $${pdb_db_templates}"
 
-time colabfold_search \
+time ${engine_prefix} colabfold_search \
   $${fafile} \
   $${data_dir} \
   $${msas_output} \

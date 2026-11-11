@@ -12,8 +12,6 @@ max_template_date=$max_template_date
 
 json_path=${input_dir}/alphafold3_json_requests/$${sequence_name}.json
 
-. $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-alphafold3-1.2.0
 
 date
 echo "$${run_massivefold}
@@ -24,13 +22,9 @@ echo "$${run_massivefold}
   --model_dir $${data_dir}
   --output_dir $${output}/$${sequence_name}
   --force_output_dir
-  --jackhmmer_binary_path $$(which jackhmmer)
-  --hmmalign_binary_path $$(which hmmalign)
-  --hmmbuild_binary_path $$(which hmmbuild)
-  --hmmsearch_binary_path $$(which hmmsearch)
 "
 
-time $${run_massivefold} \
+time ${engine_prefix} $${run_massivefold} \
   --norun_inference \
   --json_path $${json_path} \
   --max_template_date $${max_template_date} \
@@ -38,15 +32,10 @@ time $${run_massivefold} \
   --model_dir $${data_dir} \
   --output_dir $${output}/$${sequence_name} \
   --force_output_dir \
-  --jackhmmer_binary_path $$(which jackhmmer) \
-  --hmmalign_binary_path $$(which hmmalign) \
-  --hmmbuild_binary_path $$(which hmmbuild) \
-  --hmmsearch_binary_path $$(which hmmsearch) \
   || { echo "Alignment has failed. Exiting."; exit 1; }
 
 date
 
-conda deactivate
 
 if $${mf_following_msas}; then
   echo "Inference will follow after this MSAs step. Preparing batches..."
@@ -61,7 +50,7 @@ if $${mf_following_msas}; then
     --to_convert $$json_msas
     --tool AlphaFold3"
 
-  unifier \
+  ${mf_python} -m massivefold.parallelization.unifier \
     --conversion input_inference \
     --batches_file $$batches_file \
     --json_params $$json_params \

@@ -32,7 +32,7 @@ if $${mf_before_inference}; then
       --batches_file $$batches_file
       --tool AlphaFold3"
 
-    unifier \
+    ${mf_python} -m massivefold.parallelization.unifier \
       --conversion input_inference \
       --to_convert $${output_dir}/$${sequence_name}/msas_alphafold3/msas_alphafold3_data.json \
       --json_params $$json_params \
@@ -59,8 +59,6 @@ else
   echo "Batches have already been prepared."
 fi
 
-. $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-alphafold3-1.2.0
 
 date
 echo "run_alphafold.py
@@ -74,12 +72,9 @@ echo "run_alphafold.py
   --xla_python_client_preallocate=$${xla_python_client_preallocate}
   --xla_client_mem_fraction $${xla_client_mem_fraction}
   --tf_force_unified_memory=$${tf_force_unified_memory}
-  --jackhmmer_binary_path $$(which jackhmmer)
-  --hmmalign_binary_path $$(which hmmalign)
-  --hmmbuild_binary_path $$(which hmmbuild)
-  --hmmsearch_binary_path $$(which hmmsearch)"
+"
 
-time run_alphafold.py \
+time ${engine_prefix} run_alphafold.py \
   --norun_data_pipeline \
   --max_template_date $${max_template_date} \
   --json_path $${path_to_msas} \
@@ -90,10 +85,6 @@ time run_alphafold.py \
   --xla_python_client_preallocate=$${xla_python_client_preallocate} \
   --xla_client_mem_fraction $${xla_client_mem_fraction} \
   --tf_force_unified_memory=$${tf_force_unified_memory} \
-  --jackhmmer_binary_path $$(which jackhmmer) \
-  --hmmalign_binary_path $$(which hmmalign) \
-  --hmmbuild_binary_path $$(which hmmbuild) \
-  --hmmsearch_binary_path $$(which hmmsearch) \
   || { echo "Inference has failed. Exiting."; exit 1; }
 date
 

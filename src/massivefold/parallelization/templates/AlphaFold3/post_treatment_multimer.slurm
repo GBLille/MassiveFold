@@ -1,7 +1,6 @@
 sequence_name=$sequence_name
 run_name=$run_name
 output=${output_dir}/$${sequence_name}/$${run_name}/
-mf_plots_path=massivefold_plots
 batches_file=${logs_dir}/$${sequence_name}/$${run_name}/$${sequence_name}_$${run_name}_batches.json
 pkl_format=$pkl_format
 
@@ -13,7 +12,7 @@ echo "unifier
   --to_convert $$output
   --tool AlphaFold3"
 
-time unifier \
+time ${mf_python} -m massivefold.parallelization.unifier \
   --batches_file $${batches_file} \
   --conversion output \
   --to_convert $$output \
@@ -22,17 +21,17 @@ time unifier \
 
 # rename and move files
 echo "organize_outputs --batches_path $$output --nomultithreading"
-time organize_outputs --batches_path $$output --nomultithreading || { echo "Batch gathering has failed. Exiting."; exit 1; }
+time ${mf_python} -m massivefold.parallelization.organize_outputs --batches_path $$output --nomultithreading || { echo "Batch gathering has failed. Exiting."; exit 1; }
 
 # plots
 echo "Generating plots"
 
-echo "python3 $$(which $${mf_plots_path})
+echo "massivefold_plots
   --input_path=$${output} 
   --top_n_predictions=$MF_plots_top_n_predictions
   --chosen_plots=$MF_plots_chosen_plots"
 
-time python3 $$(which $${mf_plots_path}) \
+time ${mf_python} -m massivefold.massivefold_plots \
   --input_path=$${output} \
   --top_n_predictions=$MF_plots_top_n_predictions \
   --chosen_plots=$MF_plots_chosen_plots \
@@ -54,12 +53,12 @@ else
 fi
 
 echo "lighten_output $${output} --pickle_size $${pkl_mode}"
-time lighten_output $${output} --pickle_size $${pkl_mode} || { echo "Output lightening failed. Exiting"; exit 1; }
+time ${mf_python} -m massivefold.parallelization.lighten_output $${output} --pickle_size $${pkl_mode} || { echo "Output lightening failed. Exiting"; exit 1; }
 
 mkdir $${output}/log
 output_logs_path=$$(realpath $${output}/log)
 cp -r ${logs_dir}/$${sequence_name}/$${run_name}/* $${output}/log/
 cd $${output}/log
-zip ../logs.zip *
+${mf_python} -m zipfile -c ../logs.zip *
 rm $$output_logs_path/*
 mv ../logs.zip .

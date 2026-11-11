@@ -34,9 +34,9 @@ path_to_hit_file=$$(ls $${path_to_msas}/*_pdb100_230517.m8)
 date
 
 batches_file=${logs_dir}/${sequence_name}/${run_name}/$${sequence_name}_$${run_name}_batches.json
-batch_model=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batches_file --element model)
-batch_start=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batches_file --element start)
-batch_end=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batches_file --element end)
+batch_model=$$(${mf_python} -m massivefold.parallelization.get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batches_file --element model)
+batch_start=$$(${mf_python} -m massivefold.parallelization.get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batches_file --element start)
+batch_end=$$(${mf_python} -m massivefold.parallelization.get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batches_file --element end)
 
 echo $$batch_model
 num_models=$$(echo $$batch_model | cut -d "_" -f 2)
@@ -54,8 +54,6 @@ num_recycle=$num_recycle
 recycle_early_stop_tolerance=$recycle_early_stop_tolerance
 stop_at_score=$stop_at_score
 
-. $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-colabfold-1.6.3
 
 echo "colabfold_batch
   $${path_to_msas}
@@ -76,7 +74,7 @@ echo "colabfold_batch
   $$use_dropout
   $$disable_cluster_profile"
 
-time colabfold_batch \
+time ${engine_prefix} colabfold_batch \
   $${path_to_msas} \
   $${output_path}/batch_$${SLURM_ARRAY_TASK_ID} \
   --data $${data_dir} \

@@ -35,9 +35,9 @@ path_to_hit_file=$$(ls $${path_to_msas}/*_pdb100_230517.m8)
 date
 
 batch_file=disc_batches.json
-batch_model=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element model)
-batch_start=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element start)
-batch_end=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element end)
+batch_model=$$(${mf_python} -m massivefold.parallelization.get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element model)
+batch_start=$$(${mf_python} -m massivefold.parallelization.get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element start)
+batch_end=$$(${mf_python} -m massivefold.parallelization.get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $$batch_file --element end)
 
 echo $$batch_model
 num_models=$$(echo $$batch_model | cut -d "_" -f 2)
@@ -52,8 +52,6 @@ echo "predictions computed in the batch: $$num_seeds"
 random_seed=$$(shuf -i 0-4000000000 -n 1)
 echo "Batch random seed: $$random_seed"
 
-. $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-colabfold-1.6.3
 
 time colabfold_batch
   $${path_to_msas}
@@ -66,7 +64,7 @@ time colabfold_batch
   --model-order $$num_models
   --num-models 1"
 
-time colabfold_batch \
+time ${engine_prefix} colabfold_batch \
   $${path_to_msas} \
   ../output/$${name}/$${run_name}/batch_$${SLURM_ARRAY_TASK_ID} \
   --data /shared/databases2/2024-01-18/params/ \

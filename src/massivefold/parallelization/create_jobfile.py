@@ -5,6 +5,7 @@ import json
 from string import Template
 import shutil
 import os
+import sys
 
 def create_single_jobfile(
   jobfile_type,
@@ -50,6 +51,15 @@ def create_all_jobfile(
       sequence_name,
       run_name)
 
+def templates_dir(all_params):
+  default = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+  return all_params['massivefold'].get('jobfile_templates_dir') or default
+
+def add_runtime_params(run_params):
+  run_params['mf_python'] = sys.executable
+  run_params.setdefault('engine_prefix', '')
+  return run_params
+
 def group_templates(all_params, job_types, tool):
   templates_paths = all_params['massivefold']
   sequence = all_params['massivefold']['sequence_name']
@@ -69,7 +79,7 @@ def group_templates(all_params, job_types, tool):
   for job_type in job_types:
     template_file = f"{job_type}_{model_preset}"
     header_path = f"{templates_paths['jobfile_headers_dir']}/{job_type}.slurm"
-    template_path = f"{templates_paths['jobfile_templates_dir']}/{tool}/{template_file}.slurm"
+    template_path = f"{templates_dir(all_params)}/{tool}/{template_file}.slurm"
     jobfile = f"{sequence}_{run}_{job_type}.slurm"
     merge_header_and_template(header_path, template_path, jobfile)
 
@@ -142,6 +152,7 @@ def main(
   run_params.update(all_params['custom_params'])
   run_params.update(all_params[f'{tool_code}_run'])
   run_params.update(all_params['plots'])
+  add_runtime_params(run_params)
 
   if job_type == "jobarray":
     print("Parameters of the run:")

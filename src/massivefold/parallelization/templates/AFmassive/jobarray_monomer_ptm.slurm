@@ -47,16 +47,14 @@ fixed_seed=$fixed_seed
 
 # parameters for each task in the job array
 batches_path=${logs_dir}/${sequence_name}/${run_name}
-batch_model=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element model)
-batch_start=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element start)
-batch_end=$$(get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element end)
+batch_model=$$(${mf_python} -m massivefold.parallelization.get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element model)
+batch_start=$$(${mf_python} -m massivefold.parallelization.get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element start)
+batch_end=$$(${mf_python} -m massivefold.parallelization.get_batch --batch_id $$SLURM_ARRAY_TASK_ID --json_path $${batches_path}/$${sequence_name}_$${run_name}_batches.json --element end)
 
 echo Model used is $$batch_model, batch computed between prediction $$batch_start and $$batch_end
 
-. $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-afmassive-1.1.11
 
-echo "python $$(which $${run_massivefold})
+echo "$${run_massivefold}
     --fasta_paths=$${fafile}
     --output_dir=$${output_path}
     --data_dir=$${data_dir}
@@ -92,7 +90,7 @@ echo "python $$(which $${run_massivefold})
     --pdb70_database_path=$${data_dir}/pdb70/pdb70
     --uniref30_database_path=$${uniref_database}"
 
-time python $$(which $${run_massivefold}) \
+time ${engine_prefix} $${run_massivefold} \
     --fasta_paths=$${fafile} \
     --output_dir=$${output_path} \
     --data_dir=$${data_dir} \

@@ -297,6 +297,7 @@ def build_jobfile(
   run_params.update(all_params["custom_params"])
   run_params.update(all_params[f"{tool_code}_run"])
   run_params.update(all_params["plots"])
+  create_jobfile.add_runtime_params(run_params)
 
   if job_type == "jobarray":
     print("Parameters of the run:")

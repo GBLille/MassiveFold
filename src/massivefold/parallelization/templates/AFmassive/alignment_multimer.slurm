@@ -23,8 +23,6 @@ uniprot_max_hits=50000
 uniref_max_hits=10000
 use_gpu_relax=false
 
-. $$(conda info --base)/etc/profile.d/conda.sh
-conda activate mf-afmassive-1.1.11
 
 echo "$${run_massivefold}
     --alignments_only=$${alignments_only} 
@@ -49,7 +47,7 @@ echo "$${run_massivefold}
     --uniprot_database_path=$${data_dir}/uniprot/uniprot.fasta"
 
 
-time $${run_massivefold} \
+time ${engine_prefix} $${run_massivefold} \
     --alignments_only=$${alignments_only} \
     --fasta_paths=$${fafile} \
     --output_dir=$${output} \

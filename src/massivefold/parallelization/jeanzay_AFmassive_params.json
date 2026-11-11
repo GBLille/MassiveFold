@@ -1,10 +1,10 @@
 {
     "massivefold": {
         "run_massivefold": "run_AFmassive.py",
+        "engine_prefix": "",
         "data_dir": "$DSDIR/Alphafold-2024-04",
         "uniref_database": "",
         "jobfile_headers_dir": "./headers",
-        "jobfile_templates_dir": "../src/massivefold/parallelization/templates",
         "output_dir": "./output",
         "logs_dir": "./log",
         "input_dir": "./input",
