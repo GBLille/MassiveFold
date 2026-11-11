@@ -54,6 +54,7 @@ massivefold install -h
   --engines-dir <str>: where to install the environments of the engines (default: <install-path>/engines)
   --no-env: do not install the environments, only files and parameters: the engines are run from the PATH.
   --only-envs: only install the environments of the engines (of the given databases, or all of them)
+  --ignore-conda-envs: install all the engines' environments, even those already found in conda
 ```
 
 **The engines** (AFmassive, ColabFold and AlphaFold3) each run in their own environment, as they need different and 

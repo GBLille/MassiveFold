@@ -2,10 +2,13 @@
 Each engine runs from its own pixi environment, (see pixi.toml and pixi.lock).
 Installed when `massivefold install` is run in an engines directory with one 
 launcher per engine, used as `engine_prefix` in the jobfiles (`<launcher> <command> <args>`).
-"""
 
+If the engine's conda environment (`mf-afmassive-<version>`, ...) is already installed,
+it will be used instead.
+"""
 import glob
 import hashlib
+import json
 import os
 import platform
 import shutil
@@ -21,12 +24,16 @@ PIXI_SHA256 = {
 }
 
 AFMASSIVE_VERSION = "1.1.11"
+COLABFOLD_VERSION = "1.6.3"
 ALPHAFOLD3_VERSION = "1.2.0"
 
 # scripts to download
 ENGINES = {
   "AFmassive": {
     "environment": "afmassive",
+    "conda_environment": f"mf-afmassive-{AFMASSIVE_VERSION}",
+    "command": "run_AFmassive.py",
+    "distribution": None,
     "scripts": {
       "run_AFmassive.py": f"https://raw.githubusercontent.com/GBLille/AFmassive/v{AFMASSIVE_VERSION}/run_AFmassive.py",
     },
@@ -38,12 +45,18 @@ ENGINES = {
   },
   "ColabFold": {
     "environment": "colabfold",
+    "conda_environment": f"mf-colabfold-{COLABFOLD_VERSION}",
+    "command": "colabfold_batch",
+    "distribution": ("colabfold", COLABFOLD_VERSION),
     "scripts": {},
     "package_files": {},
     "post_install": [],
   },
   "AlphaFold3": {
     "environment": "alphafold3",
+    "conda_environment": f"mf-alphafold3-{ALPHAFOLD3_VERSION}",
+    "command": "run_alphafold.py",
+    "distribution": ("alphafold3", ALPHAFOLD3_VERSION),
     "scripts": {
       "run_alphafold.py": f"https://raw.githubusercontent.com/GBLille/mf-alphafold3/v{ALPHAFOLD3_VERSION}/run_alphafold.py",
     },
@@ -101,13 +114,12 @@ def run(command, **kwargs):
   print(" ".join(command), flush=True)
   subprocess.run(command, check=True, env=pixi_env(), **kwargs)
 
-def write_launcher(engines_dir, tool, pixi, manifest):
+def write_launcher(engines_dir, tool, activation_command, env=None):
+  """Launcher sourcing the activation script printed by activation_command (pixi shell-hook or conda)."""
   environment = ENGINES[tool]["environment"]
   activation = os.path.join(engines_dir, f"activate_{environment}.sh")
   with open(activation, "w") as handle:
-    subprocess.run(
-      [pixi, "shell-hook", "--manifest-path", manifest, "--frozen", "-e", environment, "--shell", "bash"],
-      check=True, env=pixi_env(), stdout=handle)
+    subprocess.run(activation_command, check=True, env=env, stdout=handle)
   launcher = launcher_path(engines_dir, tool)
   with open(launcher, "w") as handle:
     handle.write(
@@ -136,21 +148,72 @@ def add_engine_files(engines_dir, tool):
       raise RuntimeError(f"No site-packages in {prefix}")
     download(url, os.path.join(site_packages[0], relative_path))
 
-def install_engines(engines_dir, tools):
+def conda_executable():
+  return os.environ.get("CONDA_EXE") or shutil.which("conda")
+
+def conda_environments(conda):
+  """Prefixes of the environments known to conda: its installation's, the user's and the registered ones."""
+  try:
+    result = subprocess.run([conda, "info", "--json"], check=True, capture_output=True, text=True)
+    return json.loads(result.stdout).get("envs", [])
+  except (OSError, subprocess.CalledProcessError, ValueError) as error:
+    print(f"Could not list the conda environments ({error}), the engines will be installed.", flush=True)
+    return []
+
+def is_engine_environment(tool, prefix):
+  engine = ENGINES[tool]
+  if os.path.basename(os.path.normpath(prefix)) != engine["conda_environment"]:
+    return False
+  if not os.path.isfile(os.path.join(prefix, "bin", engine["command"])):
+    return False
+  if engine["distribution"]:
+    name, version = engine["distribution"]
+    pattern = os.path.join(prefix, "lib", "python3*", "site-packages", f"{name}-{version}.dist-info")
+    return bool(glob.glob(pattern))
+  return True
+
+def find_conda_environment(tool, prefixes):
+  return next((prefix for prefix in prefixes if is_engine_environment(tool, prefix)), None)
+
+def conda_activation_env():
+  # capture the activation of the environment alone, not the deactivation of the one active here
+  env = { key: value for key, value in os.environ.items() if not key.startswith("CONDA_") or key == "CONDA_EXE" }
+  env["CONDA_SHLVL"] = "0"
+  return env
+
+def install_engines(engines_dir, tools, reuse_conda=True):
+  """Install the environments of the given engines and their launchers; returns {tool: launcher}.
+  With reuse_conda, an existing conda environment of the engine is used instead of installing it."""
   engines_dir = os.path.abspath(os.path.expanduser(engines_dir))
   os.makedirs(os.path.join(engines_dir, "bin"), exist_ok=True)
+
+  launchers = {}
+  conda = conda_executable() if reuse_conda else None
+  prefixes = conda_environments(conda) if conda else []
+  for tool in tools:
+    prefix = find_conda_environment(tool, prefixes)
+    if prefix:
+      print(f"Using the existing conda environment {prefix} for {tool}", flush=True)
+      launchers[tool] = write_launcher(
+        engines_dir, tool, [conda, "shell.bash", "activate", prefix], env=conda_activation_env())
+  tools = [ tool for tool in tools if tool not in launchers ]
+  if not tools:
+    return launchers
+
   for name in ("pixi.toml", "pixi.lock"):
     shutil.copy2(os.path.join(manifest_dir(), name), os.path.join(engines_dir, name))
   manifest = os.path.join(engines_dir, "pixi.toml")
   pixi = pixi_binary(engines_dir)
 
-  launchers = {}
   for tool in tools:
     environment = ENGINES[tool]["environment"]
     print(f"Installing the {tool} environment in {environment_prefix(engines_dir, tool)}", flush=True)
     run([pixi, "install", "--manifest-path", manifest, "--frozen", "-e", environment])
     add_engine_files(engines_dir, tool)
-    launchers[tool] = write_launcher(engines_dir, tool, pixi, manifest)
+    launchers[tool] = write_launcher(
+      engines_dir, tool,
+      [pixi, "shell-hook", "--manifest-path", manifest, "--frozen", "-e", environment, "--shell", "bash"],
+      env=pixi_env())
     for command in ENGINES[tool]["post_install"]:
       run([launchers[tool]] + command)
   return launchers

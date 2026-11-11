@@ -194,7 +194,7 @@ def install_workspace(args):
     print("No engine environment installed: the engines are run from the PATH (engine_prefix is left as is).")
   else:
     engines_dir = args.engines_dir or os.path.join(root_dir, "engines")
-    launchers = engines.install_engines(engines_dir, tools)
+    launchers = engines.install_engines(engines_dir, tools, reuse_conda=not args.ignore_conda_envs)
 
   configure_site_defaults(host_is_jeanzay, data_dirs, launchers)
 
