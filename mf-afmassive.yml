@@ -20,7 +20,7 @@ dependencies:
   - setuptools=80.10.1
   - pip
   - pip:
-      - nvidia-cuda-nvcc-cu11==11.8.89
+      - nvidia-cuda-nvcc-cu12==12.2.140
       - seaborn==0.13.2
       - git+https://github.com/GBLille/AFmassive@v1.1.11
 
