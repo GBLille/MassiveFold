@@ -36,8 +36,8 @@ time ${mf_python} -m massivefold.parallelization.unifier \
   || { echo "Output standardization has failed. Exiting."; exit 1; }
 
 # rename and move files
-echo "organize_outputs --batches_path $$output --nomultithreading"
-time ${mf_python} -m massivefold.parallelization.organize_outputs --batches_path $$output --nomultithreading || { echo "Batch gathering has failed. Exiting."; exit 1; }
+echo "organize_outputs --batches_path $$output"
+time ${mf_python} -m massivefold.parallelization.organize_outputs --batches_path $$output || { echo "Batch gathering has failed. Exiting."; exit 1; }
 
 # plots
 echo "Generating plots"

@@ -13,14 +13,10 @@ parser.add_argument(
   default='',
   help='Path of all batches containing the ranking files to add in the global ranking.')
 parser.add_argument(
-  '--nomultithreading',
-  action='store_true',
-  help='Disable multithreaded prediction, confidence, and pickle copy during post-treatment.')
-parser.add_argument(
   '--workers',
   type=int,
-  default=0,
-  help='Number of threads (or processes with --processes) copying the outputs, default: twice the CPU number, up to 32.')
+  default=1,
+  help='Number of threads (or processes with --processes) copying the outputs.')
 parser.add_argument(
   '--processes',
   action='store_true',
@@ -52,10 +48,6 @@ def create_global_ranking(all_batches_path, jobname, ranking_type="debug"):
     fileout.write(json.dumps(global_ranking, indent=4)) 
 
   return map_pred_batch
-
-def post_treatment_threads():
-  cpu_count = os.cpu_count() or 1
-  return max(1, min(32, cpu_count * 2))
 
 def copy_prediction_outputs(all_batches_path, pred_batch_map, jobname, rank, prediction):
   messages = []
@@ -233,8 +225,7 @@ def af3_batch_to_sequence_dir(batch_dir, sequence_name):
 def main():
   args = parser.parse_args()
   batches_path = os.path.normpath(args.batches_path)
-  workers = 1 if args.nomultithreading else (args.workers or post_treatment_threads())
-  executor = make_executor(workers, args.processes)
+  executor = make_executor(args.workers, args.processes)
 
   sequence_name = os.path.basename(os.path.dirname(batches_path))
   run_name = os.path.basename(batches_path)
