@@ -825,7 +825,7 @@ _pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pkl"
 
   return new_names
 
-def rename_colabfold_pdb(pdb_files:list, output_path:str, pred_shift:int, sep:str, to_convert: str):
+def rename_colabfold_pdb(pdb_files:list, output_path:str, pred_shift:int, sep:str, to_convert: str, copy_outputs=True):
   extract = lambda x: int(x.split('_')[-1].replace('.pdb', ''))
   seed = sorted(list(map(extract, pdb_files)))[0]
   print(f"Seed used: {seed}")
@@ -837,9 +837,10 @@ _multimer_v{x.split('multimer_v')[1][0]}_pred_{int(x.split('seed_')[1].split('.'
 _ptm_pred_{int(x.split('seed_')[1].split('.')[0]) + pred_shift - seed}.pdb"
     
   new_names = { old: rename(old) for old in pdb_files }
-  for old in pdb_files:
-    new = new_names[old]
-    cp(f"{output_path}/{old}", f"{output_path}/{new}")
+  if copy_outputs:
+    for old in pdb_files:
+      new = new_names[old]
+      cp(f"{output_path}/{old}", f"{output_path}/{new}")
 
   map_old_to_new = {
     f"alphafold2{old.split('alphafold2')[1].replace('.pdb', '')}": f"model{new_names[old].split('model')[1].replace('.pdb', '')}"
@@ -958,8 +959,7 @@ def convert_output(tool, batches_file: str, to_convert: str, workers: int = 1, p
     if tool == "ColabFold":
       batch_number = batch.split('_')[1]
       batch_shift = int(all_batches_infos[batch_number]['start'])
-      convert_colabfold_output(f"{to_convert}/{batch}", batch_shift, to_convert)
-      move_output(to_convert, batch)
+      convert_colabfold_output(f"{to_convert}/{batch}", batch_shift, to_convert, copy_outputs=False)
     elif tool == "AFmassive":
       sequence_name = os.path.basename(os.path.dirname(os.path.dirname(to_convert)))
       convert_afmassive_output(f"{to_convert}/{batch}/{sequence_name}/")
@@ -1038,7 +1038,18 @@ def create_colabfold_confidences(output_path, pdbs, renamed_pdbs):
     confidences_content = format_colabfold_confidences(json_path)
     json.dump(confidences_content, open(renamed_json, 'w'), indent=1)
 
-def convert_colabfold_output(output_path:str, pred_shift:int, to_convert: str):
+def colabfold_outputs(output_path, renamed_pdbs):
+  outputs = {}
+  for pdb, renamed_pdb in renamed_pdbs.items():
+    prediction = renamed_pdb.replace('unrelaxed_', '', 1).replace('.pdb', '')
+    outputs[prediction] = {
+      "model": pdb,
+      "confidences": os.path.join('confidences', renamed_pdb.replace('.pdb', '.json')),
+      "pkl": pdb.replace("_unrelaxed_", "_all_").replace('.pdb', '.pickle')
+    }
+  json.dump(outputs, open(os.path.join(output_path, "colabfold_outputs.json"), 'w'), indent=4)
+
+def convert_colabfold_output(output_path:str, pred_shift:int, to_convert: str, copy_outputs=True):
   json = [ file for file in os.listdir(output_path) if file.endswith('.json') and 'scores' in file ]
   pkls = [ file for file in os.listdir(output_path) if file.endswith('.pickle') ]
   pdbs = [ file for file in os.listdir(output_path) if file.endswith('.pdb') and 'rank' in file ]
@@ -1050,10 +1061,13 @@ def convert_colabfold_output(output_path:str, pred_shift:int, to_convert: str):
   else:
     raise ValueError('Neither multimer nor monomer_ptm, an error occured somewhere')
   # rename files
-  renamed_pdbs = rename_colabfold_pdb(pdbs, output_path, pred_shift, sep=sep, to_convert=to_convert)
+  renamed_pdbs = rename_colabfold_pdb(pdbs, output_path, pred_shift, sep=sep, to_convert=to_convert, copy_outputs=copy_outputs)
   rank_colabfold_predictions(output_path, pdbs, renamed_pdbs.values(), preset=sep)
   create_colabfold_confidences(output_path, pdbs, renamed_pdbs)
-  rename_colabfold_pkl(pkls, output_path, pred_shift, sep=sep)
+  if copy_outputs:
+    rename_colabfold_pkl(pkls, output_path, pred_shift, sep=sep)
+  else:
+    colabfold_outputs(output_path, renamed_pdbs)
 
 def create_afmassive_confidences(output_path, pdbs):
   confidence_path = os.path.join(output_path, 'confidences')

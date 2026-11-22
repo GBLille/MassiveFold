@@ -166,8 +166,25 @@ def copy_af3_prediction_outputs(all_batches_path, batch, files, rank, prediction
     messages.append(f"{batch}/result_{prediction}.pkl does not exist, probably score < --min_score.")
   return messages
 
-def organize_af3_outputs(all_batches_path, use_multithreading=True):
-  """ Global rankings of AlphaFold3 batches predictions to their ranked names. """
+def copy_colabfold_prediction_outputs(all_batches_path, batch, files, rank, prediction):
+  messages = []
+  new_confidence_path = os.path.join(all_batches_path, 'confidences', f"ranked_{rank}_unrelaxed_{prediction}.json")
+  if not os.path.isfile(files["confidences"]):
+    messages.append(f"{batch}/confidences/unrelaxed_{prediction}.json not found")
+  else:
+    cp(files["confidences"], new_confidence_path)
+  if not os.path.isfile(files["model"]):
+    messages.append(f"{batch}/ranked_{rank}_unrelaxed_{prediction}.pdb does not exist, probably score < --min_score.")
+  else:
+    cp(files["model"], os.path.join(all_batches_path, f"ranked_{rank}_unrelaxed_{prediction}.pdb"))
+  if not os.path.isfile(files["pkl"]):
+    messages.append(f"{batch}/result_{prediction}.pkl does not exist, probably score < --min_score.")
+  else:
+    cp(files["pkl"], os.path.join(all_batches_path, f"result_{prediction}.pkl"))
+  return messages
+
+def organize_listed_outputs(all_batches_path, outputs_name, copy_function, executor=None):
+  """ Global rankings of batches predictions, copied to their final ranked names. """
   # the batch rankings are in the batch directories
   pred_batch_map = create_global_ranking(all_batches_path, "")
   for metric in ["iptm", "actifptm", "ptm"]:
@@ -176,7 +193,7 @@ def organize_af3_outputs(all_batches_path, use_multithreading=True):
 
   outputs = {}
   for batch in set(pred_batch_map.values()):
-    with open(os.path.join(all_batches_path, batch, "af3_outputs.json"), 'r') as outputs_file:
+    with open(os.path.join(all_batches_path, batch, outputs_name), 'r') as outputs_file:
       batch_outputs = json.load(outputs_file)
     for prediction, files in batch_outputs.items():
       outputs[prediction] = { key: os.path.join(all_batches_path, batch, path) for key, path in files.items() }
@@ -186,7 +203,7 @@ def organize_af3_outputs(all_batches_path, use_multithreading=True):
   os.makedirs(os.path.join(all_batches_path, 'confidences'), exist_ok=True)
   mapper = executor.map if executor else map
   results = mapper(
-    copy_af3_prediction_outputs,
+    copy_function,
     [all_batches_path] * len(global_rank_order),
     [pred_batch_map[prediction] for prediction in global_rank_order],
     [outputs[prediction] for prediction in global_rank_order],
@@ -194,6 +211,21 @@ def organize_af3_outputs(all_batches_path, use_multithreading=True):
     global_rank_order)
   for messages in results:
     print_messages(messages)
+  return pred_batch_map, global_rank_order
+
+def organize_af3_outputs(all_batches_path, executor=None):
+  organize_listed_outputs(all_batches_path, "af3_outputs.json", copy_af3_prediction_outputs, executor)
+
+def organize_colabfold_outputs(all_batches_path, executor=None):
+  pred_batch_map, global_rank_order = organize_listed_outputs(
+    all_batches_path, "colabfold_outputs.json", copy_colabfold_prediction_outputs, executor)
+  batch_path = os.path.join(all_batches_path, pred_batch_map[global_rank_order[0]])
+  coverage_plots = [ file for file in os.listdir(batch_path) if file.endswith('coverage.png') ]
+  if coverage_plots:
+    os.makedirs(os.path.join(all_batches_path, "plots"), exist_ok=True)
+    cp(os.path.join(batch_path, coverage_plots[0]), os.path.join(all_batches_path, "plots", "alignment_coverage.png"))
+  else:
+    print('Coverage plot not found')
 
 def remove_batch_dirs(all_batches_path):
   batch_dirs = [d for d in os.listdir(all_batches_path) if d.startswith('batch')]
@@ -283,6 +315,15 @@ def main():
     list(mapper(af3_batch_to_sequence_dir, batch_dirs, [sequence_name] * len(batch_dirs)))
 
   if already_organized(batches_path):
+    return
+
+  batch_dirs = [ os.path.join(batches_path, batch) for batch in os.listdir(batches_path) if batch.startswith('batch_') ]
+  if batch_dirs and all(os.path.isfile(os.path.join(batch_dir, "colabfold_outputs.json")) for batch_dir in batch_dirs):
+    print("ColabFold output detected")
+    organize_colabfold_outputs(batches_path, executor)
+    if executor:
+      executor.shutdown()
+    remove_batch_dirs(batches_path)
     return
 
   batch_0 = os.path.join(batches_path, "batch_0")
