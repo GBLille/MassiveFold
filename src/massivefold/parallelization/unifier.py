@@ -1108,7 +1108,8 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
   df = df.sort_values(all_score_types, ascending=False, ignore_index=True)
   df['rank'] = df.index
   df["ranked_name"] = "ranked_" + df["rank"].astype(str) + "_" + df["prediction_name"] + ".cif"
-  af3_move_and_rename(df, output_path)
+  copy_outputs = not os.path.basename(os.path.normpath(output_path)).startswith('batch_')
+  af3_move_and_rename(df, output_path, copy_outputs)
 
 def af3_prediction_metrics(input_dir: str, nature: str):
   batch_name = os.path.basename(os.path.dirname(input_dir))
@@ -1133,8 +1134,11 @@ def plddts_from_cif(cif_filename):
     residues_plddt.append(np.round(np.mean([ i.get_bfactor() for i in res.get_atoms() ]), decimals=2))
   return residues_plddt
 
-def af3_move_and_rename(df, output_dir):
+def af3_move_and_rename(df, output_dir, copy_outputs=True):
+  """ Write the batch rankings, copy the models and confidences with their ranked and unranked 
+  names, their AlphaFold3 files (relative to the batch) are listed in af3_outputs.json. """
   pred_list = df.to_dict(orient="records")
+  outputs = {}
   score_map = { "ranking_score": "debug", "iptm": "iptm", "actifptm": "actifptm", "ptm": "ptm", "mean_plddt": "plddt"  }
   score_types = ['iptm', 'actifptm', 'ptm', 'ranking_score', 'mean_plddt' ]
   score_types = [ i for i in score_types if i in df.columns ]
@@ -1147,18 +1151,23 @@ def af3_move_and_rename(df, output_dir):
     prefix = f"{batch_name}_{os.path.basename(original_dir)}"
 
     model_cif_name = os.path.join(original_dir, f'{prefix}_model.cif')
-    new_cif_name = os.path.join(os.path.dirname(original_dir), pred["ranked_name"])
-    cp(model_cif_name, new_cif_name)
-
-    path_to_confidence = os.path.join(os.path.dirname(original_dir), "confidences")
-    if not os.path.exists(path_to_confidence):
-      os.makedirs(path_to_confidence)
     model_confidence_file = os.path.join(original_dir, f'{prefix}_summary_confidences.json')
-    new_confidence_file = os.path.join(os.path.dirname(original_dir), "confidences", f'{pred["prediction_name"]}.json')
-    cp(model_confidence_file, new_confidence_file)
+    outputs[pred["prediction_name"]] = {
+      "model": os.path.relpath(model_cif_name, output_dir),
+      "summary_confidences": os.path.relpath(model_confidence_file, output_dir)
+    }
+    if copy_outputs:
+      new_cif_name = os.path.join(os.path.dirname(original_dir), pred["ranked_name"])
+      cp(model_cif_name, new_cif_name)
 
-    model_no_rank = os.path.join(os.path.dirname(original_dir), '_'.join(os.path.basename(new_cif_name).split('_')[2:]))
-    cp(new_cif_name, model_no_rank)
+      path_to_confidence = os.path.join(os.path.dirname(original_dir), "confidences")
+      if not os.path.exists(path_to_confidence):
+        os.makedirs(path_to_confidence)
+      new_confidence_file = os.path.join(os.path.dirname(original_dir), "confidences", f'{pred["prediction_name"]}.json')
+      cp(model_confidence_file, new_confidence_file)
+
+      model_no_rank = os.path.join(os.path.dirname(original_dir), '_'.join(os.path.basename(new_cif_name).split('_')[2:]))
+      cp(new_cif_name, model_no_rank)
     for stype in score_types:
       all_scores[score_map[stype]][stype][pred["prediction_name"]] = pred[stype]
       all_scores[score_map[stype]]["order"].append(pred["prediction_name"])
@@ -1166,6 +1175,8 @@ def af3_move_and_rename(df, output_dir):
   for score_ranking in all_scores:
     ranking_file = os.path.join(output_dir, f"ranking_{score_ranking}.json")
     json.dump(all_scores[score_ranking], open(ranking_file, 'w'), indent=4)
+  if not copy_outputs:
+    json.dump(outputs, open(os.path.join(output_dir, "af3_outputs.json"), 'w'), indent=4)
 
 def af3_extract_plddts_create_pkl(df, output_dir):
   pred_list = df.to_dict(orient="records")

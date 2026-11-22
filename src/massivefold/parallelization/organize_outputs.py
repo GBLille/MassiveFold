@@ -134,6 +134,58 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname, use_multithreadin
     for future in futures:
       print_messages(future.result())
 
+def copy_af3_prediction_outputs(all_batches_path, batch, files, rank, prediction):
+  messages = []
+  new_confidence_path = os.path.join(all_batches_path, 'confidences', f"ranked_{rank}_{prediction}.json")
+  if not os.path.isfile(files["summary_confidences"]):
+    messages.append(f"{batch}/confidences/{prediction}.json not found")
+  else:
+    cp(files["summary_confidences"], new_confidence_path)
+  if not os.path.isfile(files["model"]):
+    messages.append(f"{batch}/ranked_{rank}_{prediction}.cif does not exist, probably score < --min_score.")
+  else:
+    cp(files["model"], os.path.join(all_batches_path, f"ranked_{rank}_{prediction}.cif"))
+  pkl_name = f"result_{prediction}.pkl"
+  pkl_file = os.path.join(all_batches_path, batch, pkl_name)
+  if not os.path.isfile(pkl_file):
+    messages.append(f"{batch}/result_{prediction}.pkl does not exist, probably score < --min_score.")
+  else:
+    cp(pkl_file, os.path.join(all_batches_path, pkl_name))
+  return messages
+
+def organize_af3_outputs(all_batches_path, use_multithreading=True):
+  """ Global rankings of AlphaFold3 batches predictions to their ranked names. """
+  # the batch rankings are in the batch directories
+  pred_batch_map = create_global_ranking(all_batches_path, "")
+  for metric in ["iptm", "actifptm", "ptm"]:
+    if os.path.isfile(os.path.join(all_batches_path, "batch_0", f"ranking_{metric}.json")):
+      create_global_ranking(all_batches_path, "", metric)
+
+  outputs = {}
+  for batch in set(pred_batch_map.values()):
+    with open(os.path.join(all_batches_path, batch, "af3_outputs.json"), 'r') as outputs_file:
+      batch_outputs = json.load(outputs_file)
+    for prediction, files in batch_outputs.items():
+      outputs[prediction] = { key: os.path.join(all_batches_path, batch, path) for key, path in files.items() }
+
+  with open(os.path.join(all_batches_path, 'ranking_debug.json'), 'r') as rank_file:
+    global_rank_order = json.load(rank_file)['order']
+  os.makedirs(os.path.join(all_batches_path, 'confidences'), exist_ok=True)
+  arguments = (
+    [all_batches_path] * len(global_rank_order),
+    [pred_batch_map[prediction] for prediction in global_rank_order],
+    [outputs[prediction] for prediction in global_rank_order],
+    range(len(global_rank_order)),
+    global_rank_order)
+  if not use_multithreading:
+    for messages in map(copy_af3_prediction_outputs, *arguments):
+      print_messages(messages)
+    return
+
+  with ThreadPoolExecutor(max_workers=post_treatment_threads()) as executor:
+    for messages in executor.map(copy_af3_prediction_outputs, *arguments):
+      print_messages(messages)
+
 def remove_batch_dirs(all_batches_path):
   batch_dirs = [d for d in os.listdir(all_batches_path) if d.startswith('batch')]
   for batch_dir in batch_dirs:
@@ -193,6 +245,12 @@ def main():
       sys.exit()
 
     if already_organized(batches_path):
+      return
+
+    batch_dirs = [ os.path.join(batches_path, batch) for batch in all_batches ]
+    if all(os.path.isfile(os.path.join(batch_dir, "af3_outputs.json")) for batch_dir in batch_dirs):
+      organize_af3_outputs(batches_path, not args.nomultithreading)
+      remove_batch_dirs(batches_path)
       return
 
     for batch in all_batches:
