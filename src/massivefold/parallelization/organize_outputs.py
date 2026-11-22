@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import os
 import json
 from shutil import copy as cp, rmtree as rm, move as mv
@@ -16,6 +16,15 @@ parser.add_argument(
   '--nomultithreading',
   action='store_true',
   help='Disable multithreaded prediction, confidence, and pickle copy during post-treatment.')
+parser.add_argument(
+  '--workers',
+  type=int,
+  default=0,
+  help='Number of threads (or processes with --processes) copying the outputs, default: twice the CPU number, up to 32.')
+parser.add_argument(
+  '--processes',
+  action='store_true',
+  help='Copy the outputs with processes instead of threads.')
 
 def create_global_ranking(all_batches_path, jobname, ranking_type="debug"):
   map_pred_batch = {}
@@ -103,7 +112,14 @@ def print_messages(messages):
   for message in messages:
     print(message)
 
-def move_and_rename(all_batches_path, pred_batch_map, jobname, use_multithreading=True):
+def make_executor(workers, use_processes):
+  if workers <= 1:
+    return None
+  if use_processes:
+    return ProcessPoolExecutor(max_workers=workers)
+  return ThreadPoolExecutor(max_workers=workers)
+
+def move_and_rename(all_batches_path, pred_batch_map, jobname, executor=None):
   with open(os.path.join(all_batches_path, 'ranking_debug.json'), 'r') as rank_file:
     global_rank_order = json.load(rank_file)['order']
   first_prediction = global_rank_order[0]
@@ -121,18 +137,17 @@ def move_and_rename(all_batches_path, pred_batch_map, jobname, use_multithreadin
     else:
       print('Either not using colabfold, or coverage plot not found')
 
-  if not use_multithreading:
+  if executor is None:
     for i, prediction in enumerate(global_rank_order):
       print_messages(copy_prediction_outputs(all_batches_path, pred_batch_map, jobname, i, prediction))
     return
 
-  with ThreadPoolExecutor(max_workers=post_treatment_threads()) as executor:
-    futures = [
-      executor.submit(copy_prediction_outputs, all_batches_path, pred_batch_map, jobname, i, prediction)
-      for i, prediction in enumerate(global_rank_order)
-    ]
-    for future in futures:
-      print_messages(future.result())
+  futures = [
+    executor.submit(copy_prediction_outputs, all_batches_path, pred_batch_map, jobname, i, prediction)
+    for i, prediction in enumerate(global_rank_order)
+  ]
+  for future in futures:
+    print_messages(future.result())
 
 def copy_af3_prediction_outputs(all_batches_path, batch, files, rank, prediction):
   messages = []
@@ -171,20 +186,16 @@ def organize_af3_outputs(all_batches_path, use_multithreading=True):
   with open(os.path.join(all_batches_path, 'ranking_debug.json'), 'r') as rank_file:
     global_rank_order = json.load(rank_file)['order']
   os.makedirs(os.path.join(all_batches_path, 'confidences'), exist_ok=True)
-  arguments = (
+  mapper = executor.map if executor else map
+  results = mapper(
+    copy_af3_prediction_outputs,
     [all_batches_path] * len(global_rank_order),
     [pred_batch_map[prediction] for prediction in global_rank_order],
     [outputs[prediction] for prediction in global_rank_order],
     range(len(global_rank_order)),
     global_rank_order)
-  if not use_multithreading:
-    for messages in map(copy_af3_prediction_outputs, *arguments):
-      print_messages(messages)
-    return
-
-  with ThreadPoolExecutor(max_workers=post_treatment_threads()) as executor:
-    for messages in executor.map(copy_af3_prediction_outputs, *arguments):
-      print_messages(messages)
+  for messages in results:
+    print_messages(messages)
 
 def remove_batch_dirs(all_batches_path):
   batch_dirs = [d for d in os.listdir(all_batches_path) if d.startswith('batch')]
@@ -198,9 +209,26 @@ def already_organized(all_batches_path):
   print(f"No batch directory in {all_batches_path}, outputs are already organized.")
   return True
 
+def af3_batch_to_sequence_dir(batch_dir, sequence_name):
+  new_location = os.path.join(batch_dir, sequence_name)
+  os.makedirs(new_location, exist_ok=True)
+  output_files = [ os.path.join(batch_dir, i) for i in os.listdir(batch_dir) if i.endswith('.json') or i.endswith('.cif') or i.endswith('.pkl') ]
+
+  confidence_path = os.path.join(batch_dir, 'confidences')
+  new_confidence_path = os.path.join(new_location, 'confidences')
+
+  os.makedirs(new_confidence_path, exist_ok=True)
+  for confidence_file in os.listdir(confidence_path):
+    cp(os.path.join(confidence_path, confidence_file), new_confidence_path)
+  for file in output_files: 
+    new_file = os.path.join(new_location, os.path.basename(file))
+    cp(file, new_file)
+
 def main():
   args = parser.parse_args()
   batches_path = os.path.normpath(args.batches_path)
+  workers = 1 if args.nomultithreading else (args.workers or post_treatment_threads())
+  executor = make_executor(workers, args.processes)
 
   sequence_name = os.path.basename(os.path.dirname(batches_path))
   run_name = os.path.basename(batches_path)
@@ -249,25 +277,13 @@ def main():
 
     batch_dirs = [ os.path.join(batches_path, batch) for batch in all_batches ]
     if all(os.path.isfile(os.path.join(batch_dir, "af3_outputs.json")) for batch_dir in batch_dirs):
-      organize_af3_outputs(batches_path, not args.nomultithreading)
+      organize_af3_outputs(batches_path, executor)
+      if executor:
+        executor.shutdown()
       remove_batch_dirs(batches_path)
       return
-
-    for batch in all_batches:
-      batch_dir = os.path.join(batches_path, batch)
-      new_location = os.path.join(batch_dir, sequence_name)
-      os.makedirs(new_location, exist_ok=True)
-      output_files = [ os.path.join(batch_dir, i) for i in os.listdir(batch_dir) if i.endswith('.json') or i.endswith('.cif') or i.endswith('.pkl') ]
-
-      confidence_path = os.path.join(batch_dir, 'confidences')
-      new_confidence_path = os.path.join(new_location, 'confidences')
-
-      os.makedirs(new_confidence_path, exist_ok=True)
-      for confidence_file in os.listdir(confidence_path):
-        cp(os.path.join(confidence_path, confidence_file), new_confidence_path)
-      for file in output_files: 
-        new_file = os.path.join(new_location, os.path.basename(file))
-        cp(file, new_file)
+    mapper = executor.map if executor else map
+    list(mapper(af3_batch_to_sequence_dir, batch_dirs, [sequence_name] * len(batch_dirs)))
 
   if already_organized(batches_path):
     return
@@ -281,7 +297,9 @@ def main():
       create_global_ranking(batches_path, sequence_name, metric)
 
   # organize output directory
-  move_and_rename(batches_path, pred_batch_map, sequence_name, not args.nomultithreading)
+  move_and_rename(batches_path, pred_batch_map, sequence_name, executor)
+  if executor:
+    executor.shutdown()
   remove_batch_dirs(batches_path)
 
 if __name__ == "__main__":

@@ -6,6 +6,8 @@ import os
 import sys
 import shutil
 import argparse
+from concurrent.futures import ProcessPoolExecutor
+from itertools import repeat
 import numpy as np
 
 parser = argparse.ArgumentParser()
@@ -17,6 +19,7 @@ parser.add_argument('--pickle_size',
                     required=True)
 parser.add_argument('--parameters', help="Json file containing the parameters for custom pickle size (--pickle_size=custom).")
 parser.add_argument('--keep_full_pickles',  action="store_true")
+parser.add_argument('--workers', type=int, default=1, help="Number of processes lightening the pickles.")
 
 def extract_af3_batch_input_msas(directory: str, json_files: list):
 
@@ -148,7 +151,19 @@ def delete_pickles(pkl_files, directory):
     print(f"\r|{bar}| {percent:3d}% ({i+1}/{total})", end="", flush=True)
   print()
 
-def lighten_all_pkl(directory, parameters, to_json: bool):
+def lighten_pkl(pkl, directory, parameters, json_dir):
+  pkl_content = lighten_single_pkl(pkl, directory, parameters)
+  if not json_dir:
+    return
+  jsonified = {}
+  for key in pkl_content:
+    if isinstance(pkl_content[key], np.ndarray):
+      jsonified[key] = pkl_content[key].tolist()
+    else:
+      jsonified[key] = pkl_content[key]
+  json.dump(jsonified, open(f"{json_dir}/{pkl.replace('.pkl', '.json')}", 'w'), indent=4)
+
+def lighten_all_pkl(directory, parameters, to_json: bool, workers: int = 1):
   directory_content = os.listdir(directory)
 
   # delete screening pkls, need a refactor (should be called on each ligand directory instead)
@@ -180,25 +195,17 @@ def lighten_all_pkl(directory, parameters, to_json: bool):
     shutil.rmtree(f'{directory}/light_pkl')
   os.mkdir(f'{directory}/light_pkl')
 
+  json_dir = None
   if to_json:
     json_dir = f'{directory}/json_output'
     if os.path.isdir(json_dir):
       shutil.rmtree(json_dir)
     os.mkdir(json_dir)
   total = len(pkl_files)
-  for i, pkl in enumerate(pkl_files):
-    pkl_content = lighten_single_pkl(pkl, directory, parameters)
-    jsonified = {}
-    for key in pkl_content:
-      if isinstance(pkl_content[key], np.ndarray):
-        jsonified[key] = pkl_content[key].tolist()
-      else:
-        jsonified[key] = pkl_content[key]
-
-    if to_json:
-      json.dump(jsonified, open(f"{json_dir}/{pkl.replace('.pkl', '.json')}", 'w'), indent=4)
-
-
+  executor = ProcessPoolExecutor(max_workers=workers) if workers > 1 else None
+  mapper = executor.map if executor else map
+  lightened = mapper(lighten_pkl, pkl_files, repeat(directory), repeat(parameters), repeat(json_dir))
+  for i, _ in enumerate(lightened):
     # hand-made progress bar
     bar_length = 50
     progress = (i + 1) / total
@@ -207,6 +214,8 @@ def lighten_all_pkl(directory, parameters, to_json: bool):
     percent = int(progress * 100)
     print(f"\r|{bar}| {percent:3d}% ({i+1}/{total})", end="", flush=True)
   print()
+  if executor:
+    executor.shutdown()
 
   return pkl_files
 
@@ -239,7 +248,7 @@ def pickles_to_json(directory):
     print(f"\r|{bar}| {percent:3d}% ({i+1}/{total})", end="", flush=True)
   print()
 
-def lighten_output(directory, pickle_size, keep_full_pickles, path_to_params, to_json=False):
+def lighten_output(directory, pickle_size, keep_full_pickles, path_to_params, to_json=False, workers=1):
   default_parameters = {
     "keys": [
         "num_recycles", "predicted_aligned_error", "predicted_lddt",
@@ -272,7 +281,7 @@ def lighten_output(directory, pickle_size, keep_full_pickles, path_to_params, to
       print(f"Using custom parameters:\n{path_to_params}")
     else:
       used_parameters = default_parameters
-    pickles = lighten_all_pkl(directory, used_parameters, to_json=False)
+    pickles = lighten_all_pkl(directory, used_parameters, to_json=False, workers=workers)
     if delete_after_lightening and pickles != None:
       delete_pickles(pickles, directory)
 
@@ -310,7 +319,7 @@ def main():
   target_dirs = detect_directories(output_directory)
 
   for directory in target_dirs:
-    lighten_output(directory, pickle_size, keep_full_pickles, parameters, to_json=False)
+    lighten_output(directory, pickle_size, keep_full_pickles, parameters, to_json=False, workers=args.workers)
 
 if __name__ == '__main__':
   main()

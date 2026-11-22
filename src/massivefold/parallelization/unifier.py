@@ -3,6 +3,7 @@ import os
 import re
 import copy
 import argparse
+from concurrent.futures import ProcessPoolExecutor
 
 from pandas._libs.lib import infer_dtype
 from Bio import SeqIO
@@ -41,6 +42,11 @@ parser.add_argument(
   '--batches_file',
   default='',
   help='Path to batches file. If --conversion=output, this file is necessary.')
+parser.add_argument(
+  '--workers',
+  type=int,
+  default=1,
+  help='Number of processes converting the AlphaFold3 predictions (--conversion=output).')
 
 def convert_colabfold_fasta(fasta_path:str):
   records = list(SeqIO.parse(fasta_path, "fasta"))
@@ -911,7 +917,7 @@ def rank_colabfold_predictions(output_path:str, pdb_files:list, new_pdb_names:li
   
   create_colabfold_ranking(all_preds, output_path, preset)
 
-def convert_output(tool, batches_file: str, to_convert: str):
+def convert_output(tool, batches_file: str, to_convert: str, workers: int = 1):
   all_batches_infos = json.load(open(batches_file, 'r'))
 
   if tool == "AlphaFold3":
@@ -933,21 +939,19 @@ def convert_output(tool, batches_file: str, to_convert: str):
     batches_files = batches
 
   working, not_working, error = [], [], []
+  if tool == "AlphaFold3":
+    batches_shifts = [
+      int(all_batches_infos[file.replace('af3_batch_', '').replace('.json', '')]['start'])
+      for file in batches_files
+    ]
+    working, not_working, error = convert_alphafold3_batches(to_convert, batches, batches_shifts, workers)
+
   for file, batch in zip(batches_files, batches):
     if tool == "ColabFold":
       batch_number = batch.split('_')[1]
       batch_shift = int(all_batches_infos[batch_number]['start'])
       convert_colabfold_output(f"{to_convert}/{batch}", batch_shift, to_convert)
       move_output(to_convert, batch)
-    elif tool == "AlphaFold3":
-      batch_number = file.replace('af3_batch_', '').replace('.json', '')
-      batch_shift = int(all_batches_infos[batch_number]['start'])
-      try:
-        convert_alphafold3_output(f"{to_convert}/{batch}", batch_shift)
-        working.append(batch)
-      except FileNotFoundError as e:
-        not_working.append(batch)
-        error.append(str(e))
     elif tool == "AFmassive":
       sequence_name = os.path.basename(os.path.dirname(os.path.dirname(to_convert)))
       convert_afmassive_output(f"{to_convert}/{batch}/{sequence_name}/")
@@ -1062,7 +1066,8 @@ def convert_afmassive_output(output_path:str):
   pdbs = [ file for file in os.listdir(output_path) if file.startswith('unrelaxed_') and file.endswith('.pdb') ]
   create_afmassive_confidences(output_path, pdbs)
 
-def convert_alphafold3_output(output_path: str, pred_shift: int):
+def af3_batch_predictions(output_path: str, pred_shift: int):
+  """ Predictions of an AlphaFold3 batch with their names and scores. """
   batch_name = os.path.basename(output_path)
   df_ranking_scores = pd.read_csv(os.path.join(output_path, f"{batch_name}_ranking_scores.csv"))
   seed_dirs = [ os.path.join(output_path, seed) for seed in os.listdir(output_path) if seed.startswith('seed-')]
@@ -1103,13 +1108,50 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
   df["prediction_name"] = "af3" + "_seed_" + df["seed"].astype(str) \
     + "_sample_" + df["sample"].astype(str) + "_pred_" + df["pred_nb"].astype(str)
   df["pkl_name"] = "result_" + df["prediction_name"] + ".pkl"
-  df = af3_extract_plddts_create_pkl(df, output_path)
+  return df
+
+def af3_rank_and_rename(df, output_path: str):
   all_score_types = [ i for i in ['ranking_score', 'iptm', 'ptm', 'mean_plddt'] if i in df.columns ]
   df = df.sort_values(all_score_types, ascending=False, ignore_index=True)
   df['rank'] = df.index
   df["ranked_name"] = "ranked_" + df["rank"].astype(str) + "_" + df["prediction_name"] + ".cif"
   copy_outputs = not os.path.basename(os.path.normpath(output_path)).startswith('batch_')
   af3_move_and_rename(df, output_path, copy_outputs)
+
+def convert_alphafold3_output(output_path: str, pred_shift: int):
+  df = af3_batch_predictions(output_path, pred_shift)
+  df = af3_extract_plddts_create_pkl(df)
+  af3_rank_and_rename(df, output_path)
+
+def convert_alphafold3_batches(to_convert: str, batches: list, batches_shifts: list, workers: int):
+  """ Convert all the AlphaFold3 batches. """
+  working, not_working, error = [], [], []
+  batches_df = []
+  for batch, batch_shift in zip(batches, batches_shifts):
+    try:
+      batches_df.append((batch, af3_batch_predictions(f"{to_convert}/{batch}", batch_shift)))
+    except FileNotFoundError as e:
+      not_working.append(batch)
+      error.append(str(e))
+
+  original_dirs = [ original_dir for _, df in batches_df for original_dir in df["original_dir"] ]
+  pkl_names = [ pkl_name for _, df in batches_df for pkl_name in df["pkl_name"] ]
+  executor = ProcessPoolExecutor(max_workers=workers) if workers > 1 else None
+  mapper = executor.map if executor else map
+  results = mapper(af3_extract_prediction, original_dirs, pkl_names)
+  for batch, df in batches_df:
+    batch_results = [ next(results) for _ in range(len(df)) ]
+    errors = [ batch_error for _, batch_error in batch_results if batch_error ]
+    if errors:
+      not_working.append(batch)
+      error.append(errors[0])
+      continue
+    df["mean_plddt"] = [ mean_plddt for mean_plddt, _ in batch_results ]
+    af3_rank_and_rename(df, f"{to_convert}/{batch}")
+    working.append(batch)
+  if executor:
+    executor.shutdown()
+  return working, not_working, error
 
 def af3_prediction_metrics(input_dir: str, nature: str):
   batch_name = os.path.basename(os.path.dirname(input_dir))
@@ -1220,28 +1262,33 @@ def af3_move_and_rename(df, output_dir, copy_outputs=True):
   if not copy_outputs:
     json.dump(outputs, open(os.path.join(output_dir, "af3_outputs.json"), 'w'), indent=4)
 
-def af3_extract_plddts_create_pkl(df, output_dir):
-  pred_list = df.to_dict(orient="records")
-  for pred in pred_list:
-    original_dir = pred["original_dir"]
-    batch_name = os.path.basename(os.path.dirname(original_dir))
-    prefix = f"{batch_name}_{os.path.basename(original_dir)}"
-
+def af3_extract_prediction(original_dir: str, pkl_name: str):
+  """ Write pkl (Mean pLDDT, pLDDTs, PAE) of a prediction. """
+  batch_name = os.path.basename(os.path.dirname(original_dir))
+  prefix = f"{batch_name}_{os.path.basename(original_dir)}"
+  try:
     model_cif_name = os.path.join(original_dir, f'{prefix}_model.cif')
     pred_plddts = plddts_from_cif(model_cif_name)
-    pred["mean_plddt"] = np.mean(pred_plddts)
 
     json_confidences_name = os.path.join(original_dir, f'{prefix}_confidences.json')
     json_confidences_file = json.load(open(json_confidences_name, 'r'))
-    json_confidences_file["predicted_aligned_error"] = json_confidences_file["pae"]
-    json_confidences_file["max_predicted_aligned_error"] = np.max(json_confidences_file["pae"])
-    json_confidences_file["plddt"] = pred_plddts
+  except FileNotFoundError as e:
+    return None, str(e)
+  json_confidences_file["predicted_aligned_error"] = json_confidences_file["pae"]
+  json_confidences_file["max_predicted_aligned_error"] = np.max(json_confidences_file["pae"])
+  json_confidences_file["plddt"] = pred_plddts
 
-    pkl_name = os.path.join(os.path.dirname(original_dir), pred["pkl_name"])
-    pickle.dump(json_confidences_file, open(pkl_name, 'wb'))
+  pkl_path = os.path.join(os.path.dirname(original_dir), pkl_name)
+  pickle.dump(json_confidences_file, open(pkl_path, 'wb'))
+  return np.mean(pred_plddts), None
 
-  updated_df = pd.DataFrame(pred_list)
-  return updated_df
+def af3_extract_plddts_create_pkl(df):
+  results = list(map(af3_extract_prediction, df["original_dir"], df["pkl_name"]))
+  errors = [ error for _, error in results if error ]
+  if errors:
+    raise FileNotFoundError(errors[0])
+  df["mean_plddt"] = [ mean_plddt for mean_plddt, _ in results ]
+  return df
 
 def main():
   args = parser.parse_args()
@@ -1278,7 +1325,7 @@ def main():
   elif conversion == 'output':
     assert batches_file, 'Json batches file (--batches_file) is mandatory for output conversion (--conversion output)'
     print(f"Convert for tool {tool}")
-    convert_output(tool, batches_file, to_convert)
+    convert_output(tool, batches_file, to_convert, args.workers)
 
   elif conversion == "output_singular":
     if tool == "ColabFold":
