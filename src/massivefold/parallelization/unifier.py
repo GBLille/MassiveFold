@@ -1122,6 +1122,48 @@ def af3_prediction_metrics(input_dir: str, nature: str):
   return metrics
 
 def plddts_from_cif(cif_filename):
+  """ Extract per-residue pLDDTs grouped by chain. Parsing of structures with 
+  alternate locations, several models or other columns is done with Biopython. """
+  columns = []
+  rows = []
+  with open(cif_filename, 'r') as cif:
+    in_atom_site = False
+    for line in cif:
+      if line.startswith('_atom_site.'):
+        in_atom_site = True
+        columns.append(line.strip()[len('_atom_site.'):])
+      elif in_atom_site:
+        if line.startswith('ATOM') or line.startswith('HETATM'):
+          rows.append(line.split())
+        else:
+          break
+  index = { name: i for i, name in enumerate(columns) }
+  needed = [
+    'group_PDB', 'label_comp_id', 'label_alt_id', 'auth_seq_id', 'pdbx_PDB_ins_code',
+    'auth_asym_id', 'B_iso_or_equiv', 'pdbx_PDB_model_num'
+  ]
+  if not rows or any(name not in index for name in needed):
+    return plddts_from_cif_biopython(cif_filename)
+  group, comp, alt = index['group_PDB'], index['label_comp_id'], index['label_alt_id']
+  seq, ins, chain_col = index['auth_seq_id'], index['pdbx_PDB_ins_code'], index['auth_asym_id']
+  bfactor, model = index['B_iso_or_equiv'], index['pdbx_PDB_model_num']
+  if any(row[alt] not in ('.', '?') or row[model] != rows[0][model] for row in rows):
+    return plddts_from_cif_biopython(cif_filename)
+
+  chains = {}
+  for row in rows:
+    if row[group] == 'HETATM':
+      hetflag = 'W' if row[comp] in ('HOH', 'WAT') else f'H_{row[comp]}'
+    else:
+      hetflag = ' '
+    residue = (hetflag, row[seq], row[ins])
+    chains.setdefault(row[chain_col], {}).setdefault(residue, []).append(float(row[bfactor]))
+  return [
+    np.round(np.mean(bfactors), decimals=2)
+    for residues in chains.values() for bfactors in residues.values()
+  ]
+
+def plddts_from_cif_biopython(cif_filename):
   from Bio.PDB.MMCIFParser import MMCIFParser
   pdb_parser = MMCIFParser(QUIET=True)
   structure = pdb_parser.get_structure(
