@@ -101,7 +101,7 @@ def extract_af3_batch_input_msas(directory: str, json_files: list):
   print()
 
 def format_entry(key: str, value, formats):
-  possible_formats = [ "npfloat32", "lst" ]
+  possible_formats = [ "npfloat32", "npfloat16", "lst" ]
   formattable_entries = [ "predicted_aligned_error", "plddt" ]
   # no format specified for the key
   if key not in formats:
@@ -117,6 +117,8 @@ def format_entry(key: str, value, formats):
   formatted_value = value
   if user_format == "npfloat32":
     formatted_value = np.array(value, dtype="float32")
+  elif user_format == "npfloat16":
+    formatted_value = np.array(value, dtype="float16")
   elif user_format == "lst":
     formatted_value = list(value)
 
@@ -255,7 +257,7 @@ def lighten_output(directory, pickle_size, keep_full_pickles, path_to_params, to
         "plddt", "ptm", "iptm", "ranking_confidence", "max_predicted_aligned_error"
       ],
     "format": {
-      "predicted_aligned_error": "npfloat32", # npfloat32 | lst
+      "predicted_aligned_error": "npfloat16", # npfloat32 | npfloat16 | lst
       "plddt": "npfloat32"
     }
   }
