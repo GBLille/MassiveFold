@@ -161,11 +161,17 @@ def copy_af3_prediction_outputs(all_batches_path, batch, files, rank, prediction
   else:
     cp(files["model"], os.path.join(all_batches_path, f"ranked_{rank}_{prediction}.cif"))
   pkl_name = f"result_{prediction}.pkl"
-  pkl_file = os.path.join(all_batches_path, batch, pkl_name)
-  if not os.path.isfile(pkl_file):
+  pkl_path = os.path.join(all_batches_path, batch, pkl_name)
+  new_pkl_path = os.path.join(all_batches_path, pkl_name)
+  # light pickles of the unifier (--pickle_size light|delete)
+  if not os.path.isfile(pkl_path) and os.path.isfile(os.path.join(all_batches_path, batch, 'light_pkl', pkl_name)):
+    pkl_path = os.path.join(all_batches_path, batch, 'light_pkl', pkl_name)
+    new_pkl_path = os.path.join(all_batches_path, 'light_pkl', pkl_name)
+    os.makedirs(os.path.dirname(new_pkl_path), exist_ok=True)
+  try:
+    cp(pkl_path, new_pkl_path)
+  except FileNotFoundError:
     messages.append(f"{batch}/result_{prediction}.pkl does not exist, probably score < --min_score.")
-  else:
-    cp(pkl_file, os.path.join(all_batches_path, pkl_name))
   return messages
 
 def organize_af3_outputs(all_batches_path, use_multithreading=True):

@@ -14,6 +14,7 @@ import json
 import sys
 
 from massivefold.install import parse_tool_from_param_basename, resolve_site_default_path
+from massivefold.parallelization.lighten_output import default_light_parameters, light_content
 import shutil
 import string
 import random
@@ -47,6 +48,12 @@ parser.add_argument(
   type=int,
   default=1,
   help='Number of processes converting the AlphaFold3 predictions (--conversion=output).')
+parser.add_argument(
+  '--pickle_size',
+  default='full',
+  choices=['full', 'light', 'custom', 'delete'],
+  help="lighten_output --pickle_size of the run. With light or delete, the AlphaFold3 batches get light pickles \
+(light_pkl/) instead of full ones (--conversion=output).")
 
 def convert_colabfold_fasta(fasta_path:str):
   records = list(SeqIO.parse(fasta_path, "fasta"))
@@ -917,7 +924,7 @@ def rank_colabfold_predictions(output_path:str, pdb_files:list, new_pdb_names:li
   
   create_colabfold_ranking(all_preds, output_path, preset)
 
-def convert_output(tool, batches_file: str, to_convert: str, workers: int = 1):
+def convert_output(tool, batches_file: str, to_convert: str, workers: int = 1, pickle_size: str = "full"):
   all_batches_infos = json.load(open(batches_file, 'r'))
 
   if tool == "AlphaFold3":
@@ -944,7 +951,8 @@ def convert_output(tool, batches_file: str, to_convert: str, workers: int = 1):
       int(all_batches_infos[file.replace('af3_batch_', '').replace('.json', '')]['start'])
       for file in batches_files
     ]
-    working, not_working, error = convert_alphafold3_batches(to_convert, batches, batches_shifts, workers)
+    light_pickles = pickle_size in ["light", "delete"]
+    working, not_working, error = convert_alphafold3_batches(to_convert, batches, batches_shifts, workers, light_pickles)
 
   for file, batch in zip(batches_files, batches):
     if tool == "ColabFold":
@@ -1123,7 +1131,7 @@ def convert_alphafold3_output(output_path: str, pred_shift: int):
   df = af3_extract_plddts_create_pkl(df)
   af3_rank_and_rename(df, output_path)
 
-def convert_alphafold3_batches(to_convert: str, batches: list, batches_shifts: list, workers: int):
+def convert_alphafold3_batches(to_convert: str, batches: list, batches_shifts: list, workers: int, light_pickles=False):
   """ Convert all the AlphaFold3 batches. """
   working, not_working, error = [], [], []
   batches_df = []
@@ -1136,9 +1144,11 @@ def convert_alphafold3_batches(to_convert: str, batches: list, batches_shifts: l
 
   original_dirs = [ original_dir for _, df in batches_df for original_dir in df["original_dir"] ]
   pkl_names = [ pkl_name for _, df in batches_df for pkl_name in df["pkl_name"] ]
+  # screening batches keep full pickles, lighten_output deletes them in their ligand directories
+  lights = [ light_pickles and batch.startswith('batch_') for batch, df in batches_df for _ in range(len(df)) ]
   executor = ProcessPoolExecutor(max_workers=workers) if workers > 1 else None
   mapper = executor.map if executor else map
-  results = mapper(af3_extract_prediction, original_dirs, pkl_names)
+  results = mapper(af3_extract_prediction, original_dirs, pkl_names, lights)
   for batch, df in batches_df:
     batch_results = [ next(results) for _ in range(len(df)) ]
     errors = [ batch_error for _, batch_error in batch_results if batch_error ]
@@ -1262,8 +1272,8 @@ def af3_move_and_rename(df, output_dir, copy_outputs=True):
   if not copy_outputs:
     json.dump(outputs, open(os.path.join(output_dir, "af3_outputs.json"), 'w'), indent=4)
 
-def af3_extract_prediction(original_dir: str, pkl_name: str):
-  """ Write pkl (Mean pLDDT, pLDDTs, PAE) of a prediction. """
+def af3_extract_prediction(original_dir: str, pkl_name: str, light=False):
+  """ Write pkl (Mean pLDDT, pLDDTs, PAE) of a prediction, or as a light pkl. """
   batch_name = os.path.basename(os.path.dirname(original_dir))
   prefix = f"{batch_name}_{os.path.basename(original_dir)}"
   try:
@@ -1279,6 +1289,10 @@ def af3_extract_prediction(original_dir: str, pkl_name: str):
   json_confidences_file["plddt"] = pred_plddts
 
   pkl_path = os.path.join(os.path.dirname(original_dir), pkl_name)
+  if light:
+    json_confidences_file = light_content(json_confidences_file, default_light_parameters(alphafold3=True))
+    pkl_path = os.path.join(os.path.dirname(original_dir), 'light_pkl', pkl_name)
+    os.makedirs(os.path.dirname(pkl_path), exist_ok=True)
   pickle.dump(json_confidences_file, open(pkl_path, 'wb'))
   return np.mean(pred_plddts), None
 
@@ -1325,7 +1339,7 @@ def main():
   elif conversion == 'output':
     assert batches_file, 'Json batches file (--batches_file) is mandatory for output conversion (--conversion output)'
     print(f"Convert for tool {tool}")
-    convert_output(tool, batches_file, to_convert, args.workers)
+    convert_output(tool, batches_file, to_convert, args.workers, args.pickle_size)
 
   elif conversion == "output_singular":
     if tool == "ColabFold":

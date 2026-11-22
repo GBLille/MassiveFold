@@ -124,16 +124,20 @@ def format_entry(key: str, value, formats):
 
   return formatted_value
 
-def lighten_single_pkl(pkl, directory, parameters):
-  with open(f"{directory}/{pkl}", 'rb') as pickle_input:
-    initial_content = pickle.load(pickle_input)
-  # lighten the pkl content
+def light_content(initial_content, parameters):
   content = {}
   for elem in initial_content:
     if elem not in parameters["keys"]:
       continue
     formatted_value = format_entry(elem, initial_content[elem], parameters["format"])
     content[elem] = formatted_value
+  return content
+
+def lighten_single_pkl(pkl, directory, parameters):
+  with open(f"{directory}/{pkl}", 'rb') as pickle_input:
+    initial_content = pickle.load(pickle_input)
+  # lighten the pkl content
+  content = light_content(initial_content, parameters)
   # write out the lightened pkl
   with open(f"{directory}/light_pkl/{pkl}", 'wb') as pickle_output:
     pickle.dump(content, pickle_output)
@@ -290,6 +294,9 @@ def lighten_output(directory, pickle_size, keep_full_pickles, path_to_params, to
   elif pickle_size == "delete":
     pickles = [ pkl for pkl in os.listdir(directory) if pkl.endswith('.pkl') ]
     delete_pickles(pickles, directory)
+    # light pickles written by the unifier (AlphaFold3 --pickle_size light|delete)
+    if os.path.isdir(os.path.join(directory, 'light_pkl')):
+      shutil.rmtree(os.path.join(directory, 'light_pkl'))
 
 def detect_directories(directory):
   rankings = [ i for i in os.listdir(directory) if i.startswith('ranking_') and i.endswith('.json') ]
