@@ -1304,7 +1304,7 @@ def af3_extract_prediction(original_dir: str, pkl_name: str, light=False):
 
   pkl_path = os.path.join(os.path.dirname(original_dir), pkl_name)
   if light:
-    json_confidences_file = light_content(json_confidences_file, default_light_parameters(alphafold3=True))
+    json_confidences_file = light_content(json_confidences_file, default_light_parameters())
     pkl_path = os.path.join(os.path.dirname(original_dir), 'light_pkl', pkl_name)
     os.makedirs(os.path.dirname(pkl_path), exist_ok=True)
   pickle.dump(json_confidences_file, open(pkl_path, 'wb'))

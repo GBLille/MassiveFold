@@ -254,8 +254,9 @@ def pickles_to_json(directory):
     print(f"\r|{bar}| {percent:3d}% ({i+1}/{total})", end="", flush=True)
   print()
 
-def lighten_output(directory, pickle_size, keep_full_pickles, path_to_params, to_json=False, workers=1):
-  default_parameters = {
+
+def default_light_parameters():
+  return {
     "keys": [
         "num_recycles", "predicted_aligned_error", "predicted_lddt",
         "plddt", "ptm", "iptm", "ranking_confidence", "max_predicted_aligned_error"
@@ -266,6 +267,7 @@ def lighten_output(directory, pickle_size, keep_full_pickles, path_to_params, to
     }
   }
 
+def lighten_output(directory, pickle_size, keep_full_pickles, path_to_params, to_json=False, workers=1):
   af3_batch_files = [ i for i in os.listdir(directory) if i.startswith('af3') and i.endswith('.json') ]
   if af3_batch_files:
     print("Detected AlphaFold3 output.")
@@ -286,7 +288,7 @@ def lighten_output(directory, pickle_size, keep_full_pickles, path_to_params, to
       used_parameters = json.load(open(path_to_params, "r"))
       print(f"Using custom parameters:\n{path_to_params}")
     else:
-      used_parameters = default_parameters
+      used_parameters = default_light_parameters()
     pickles = lighten_all_pkl(directory, used_parameters, to_json=False, workers=workers)
     if delete_after_lightening and pickles != None:
       delete_pickles(pickles, directory)
