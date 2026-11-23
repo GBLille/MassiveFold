@@ -51,10 +51,6 @@ def create_all_jobfile(
       sequence_name,
       run_name)
 
-def templates_dir(all_params):
-  default = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
-  return all_params['massivefold'].get('jobfile_templates_dir') or default
-
 def add_runtime_params(run_params):
   run_params['mf_python'] = sys.executable
   run_params.setdefault('engine_prefix', '')
@@ -82,7 +78,7 @@ def group_templates(all_params, job_types, tool):
     template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
     template_path = f"{template_dir}/{tool}/{template_file}.slurm"
     if job_type == "post_treatment":
-      template_path = f"{templates_dir}/post_treatment.slurm"
+      template_path = f"{template_dir}/post_treatment.slurm"
     jobfile = f"{sequence}_{run}_{job_type}.slurm"
     merge_header_and_template(header_path, template_path, jobfile)
 

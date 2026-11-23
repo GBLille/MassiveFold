@@ -220,7 +220,6 @@ The paths in the section are filled by `massivefold install` but can be changed 
 **engine_prefix** is the command the jobs put in front of the engine's commands to run them in the engine's environment: 
 the launcher written by `massivefold install`, another command (e.g. a container: `apptainer exec --nv <image.sif>`), or 
 empty if the engine is in the `PATH` of the jobs. The jobfile templates are taken from the installed package, unless a 
-**jobfile_templates_dir** parameter points to other ones.
 Headers (**jobfile_headers_dir**) are specified to setup the run, in order to give the parameters that are required to 
 run the jobs on your cluster/server.
 Build your own according to the [Jobfile's header building](#jobfiles-header-building) section.   
