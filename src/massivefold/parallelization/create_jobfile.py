@@ -79,7 +79,10 @@ def group_templates(all_params, job_types, tool):
   for job_type in job_types:
     template_file = f"{job_type}_{model_preset}"
     header_path = f"{templates_paths['jobfile_headers_dir']}/{job_type}.slurm"
-    template_path = f"{templates_dir(all_params)}/{tool}/{template_file}.slurm"
+    template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+    template_path = f"{template_dir}/{tool}/{template_file}.slurm"
+    if job_type == "post_treatment":
+      template_path = f"{templates_dir}/post_treatment.slurm"
     jobfile = f"{sequence}_{run}_{job_type}.slurm"
     merge_header_and_template(header_path, template_path, jobfile)
 
@@ -123,7 +126,8 @@ def main(
   run_params = {
       'run_name': run_name,
       'sequence_name': sequence_name,
-      'substitute_batch_number': list(batches.keys())[-1]
+      'substitute_batch_number': list(batches.keys())[-1],
+      'tool': tool
     }
 
   # parameters parsing, computing and display

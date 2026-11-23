@@ -279,6 +279,7 @@ def build_jobfile(
     "run_name": run_name,
     "sequence_name": sequence_name,
     "substitute_batch_number": list(batches.keys())[-1],
+    "tool": tool,
   }
 
   all_params = json.load(open(path_to_parameters, 'r'))
